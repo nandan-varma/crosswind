@@ -13,3 +13,5 @@ target/
 *.cer
 *.mobileprovision
 .env
+
+/Crosswind.xcodeproj/

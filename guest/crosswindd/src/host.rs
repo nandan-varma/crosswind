@@ -96,6 +96,7 @@ impl State {
     }
 
     fn input(&mut self, input: pb::Input) {
+        tracing::debug!(?input, "input");
         let Some(win) = self.windows.iter().find(|w| w.id == input.window) else { return };
         let surface = win.surface.clone();
         let Some(event) = input.event else { return };

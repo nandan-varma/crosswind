@@ -1,0 +1,81 @@
+# XcodeGen spec. Generate the project with `make project`; Crosswind.xcodeproj is not committed.
+name: Crosswind
+options:
+  bundleIdPrefix: dev.crosswind
+  createIntermediateGroups: true
+  deploymentTarget:
+    macOS: "27.0"
+settings:
+  base:
+    SWIFT_VERSION: "6"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    DEVELOPMENT_TEAM: 72CW7UW6RB
+    CODE_SIGN_STYLE: Manual
+    # Ad-hoc signing by default (CI, local builds); release builds set RELEASE_SIGN to a Developer ID identity.
+    CODE_SIGN_IDENTITY: "$(RELEASE_SIGN:default=-)"
+    ENABLE_HARDENED_RUNTIME: YES
+packages:
+  CrosswindKit:
+    path: Packages/CrosswindKit
+  ArgumentParser:
+    url: https://github.com/apple/swift-argument-parser
+    exactVersion: 1.8.2
+targets:
+  Crosswind:
+    type: application
+    platform: macOS
+    sources:
+      - path: App
+        excludes:
+          - Crosswind.entitlements
+    dependencies:
+      - package: CrosswindKit
+    info:
+      path: build/Info.plist
+      properties:
+        CFBundleName: Crosswind
+        CFBundleDisplayName: Crosswind
+        CFBundleIdentifier: dev.crosswind.app
+        CFBundleExecutable: Crosswind
+        CFBundlePackageType: APPL
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSMinimumSystemVersion: "27.0"
+        LSApplicationCategoryType: public.app-category.developer-tools
+        NSHumanReadableCopyright: "AGPL-3.0-or-later"
+        NSPrincipalClass: NSApplication
+    entitlements:
+      path: App/Crosswind.entitlements
+      properties:
+        com.apple.security.virtualization: true
+  crosswindctl:
+    type: tool
+    platform: macOS
+    sources:
+      - path: tools/crosswindctl
+    dependencies:
+      - package: ArgumentParser
+        product: ArgumentParser
+  CrosswindTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: Tests/CrosswindTests
+    dependencies:
+      - target: Crosswind
+    settings:
+      base:
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Crosswind.app/Contents/MacOS/Crosswind"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  Crosswind:
+    build:
+      targets:
+        Crosswind: all
+        crosswindctl: all
+        CrosswindTests: [test]
+    test:
+      targets:
+        - CrosswindTests

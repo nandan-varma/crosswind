@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  macos:
+    name: App, tool and tests (macOS 27)
+    # Xcode 27 image label from actions/runner-images (public preview). No plain macos-27 label exists yet.
+    runs-on: xcode-27
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install tools
+        run: brew install xcodegen swiftlint
+      - name: Build
+        run: make build
+      - name: Test
+        run: make test
+      - name: Lint
+        run: make lint
+
+  guest:
+    name: Guest (Rust, Linux arm64)
+    runs-on: ubuntu-24.04-arm
+    defaults:
+      run:
+        working-directory: guest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install system packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler libwayland-dev libxkbcommon-dev libpixman-1-dev
+      - name: Build
+        run: cargo build --locked
+      - name: Clippy
+        run: cargo clippy --locked --all-targets -- -D warnings
+      - name: Test
+        run: cargo test --locked

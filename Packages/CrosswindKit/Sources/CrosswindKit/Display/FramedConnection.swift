@@ -20,7 +20,8 @@ public final class FramedConnection: @unchecked Sendable {
         self.fd = fd
         self.owner = owner
         (messages, continuation) = AsyncStream.makeStream(of: ToHost.self, bufferingPolicy: .unbounded)
-        let fd = fd, continuation = continuation
+        let fd = fd
+        let continuation = continuation
         Thread.detachNewThread {
             Self.readLoop(fd: fd, continuation: continuation)
         }

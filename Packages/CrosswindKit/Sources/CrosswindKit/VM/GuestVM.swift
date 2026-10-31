@@ -41,12 +41,13 @@ public final class GuestVM: NSObject {
 
         let listener = VZVirtioSocketListener()
         listener.delegate = self
-        machine.socketDevices.compactMap { $0 as? VZVirtioSocketDevice }.first?.setSocketListener(listener, forPort: DisplayPort.display)
+        machine.socketDevices.compactMap { $0 as? VZVirtioSocketDevice }.first?.setSocketListener(
+            listener, forPort: DisplayPort.display)
         self.listener = listener
         self.machine = machine
 
         console.fileHandleForReading.readabilityHandler = { handle in
-            for line in String(decoding: handle.availableData, as: UTF8.self).split(whereSeparator: \.isNewline) {
+            for line in String(data: handle.availableData, encoding: .utf8) ?? "".split(whereSeparator: \.isNewline) {
                 Log.vm.info("guest: \(line, privacy: .public)")
             }
         }
@@ -61,7 +62,8 @@ public final class GuestVM: NSObject {
 
     private func createDataDiskIfNeeded() throws {
         guard !FileManager.default.fileExists(atPath: dataDisk.path) else { return }
-        try FileManager.default.createDirectory(at: dataDisk.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(
+            at: dataDisk.deletingLastPathComponent(), withIntermediateDirectories: true)
         FileManager.default.createFile(atPath: dataDisk.path, contents: nil)
         let handle = try FileHandle(forWritingTo: dataDisk)
         try handle.truncate(atOffset: resources.dataDiskBytes)
@@ -81,9 +83,12 @@ public final class GuestVM: NSObject {
         config.socketDevices = [VZVirtioSocketDeviceConfiguration()]
         config.entropyDevices = [VZVirtioEntropyDeviceConfiguration()]
 
-        let system = try VZDiskImageStorageDeviceAttachment(url: imageDirectory.appending(path: "system.erofs"), readOnly: true)
+        let system = try VZDiskImageStorageDeviceAttachment(
+            url: imageDirectory.appending(path: "system.erofs"), readOnly: true)
         let data = try VZDiskImageStorageDeviceAttachment(url: dataDisk, readOnly: false)
-        config.storageDevices = [VZVirtioBlockDeviceConfiguration(attachment: system), VZVirtioBlockDeviceConfiguration(attachment: data)]
+        config.storageDevices = [
+            VZVirtioBlockDeviceConfiguration(attachment: system), VZVirtioBlockDeviceConfiguration(attachment: data),
+        ]
 
         let network = VZVirtioNetworkDeviceConfiguration()
         network.attachment = VZNATNetworkDeviceAttachment()

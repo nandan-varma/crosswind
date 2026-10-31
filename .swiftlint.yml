@@ -1,0 +1,15 @@
+# SwiftLint config. Generated protobuf bindings and build output are excluded.
+excluded:
+  - "**/.build"
+  - spikes
+  - Packages/CrosswindKit/Sources/CrosswindKit/Generated
+line_length:
+  warning: 120
+  error: 120
+identifier_name:
+  min_length: 1
+  excluded: [id]
+cyclomatic_complexity:
+  ignores_case_statements: true
+disabled_rules:
+  - trailing_comma  # swift-format owns comma style

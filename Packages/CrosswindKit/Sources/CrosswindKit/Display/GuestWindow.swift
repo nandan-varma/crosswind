@@ -31,7 +31,12 @@ final class GuestWindow: NSObject, NSWindowDelegate {
         super.init()
         view.onInput = { [weak self] event in
             guard let self else { return }
-            self.send?(.input(.with { $0.window = self.id; $0.event = event }))
+            self.send?(
+                .input(
+                    .with {
+                        $0.window = self.id
+                        $0.event = event
+                    }))
         }
     }
 
@@ -43,7 +48,8 @@ final class GuestWindow: NSObject, NSWindowDelegate {
 
     func apply(_ frame: Frame, title: String) {
         let scale = CGFloat(frame.scale120) / 120
-        let width = Int(frame.width), height = Int(frame.height)
+        let width = Int(frame.width)
+        let height = Int(frame.height)
         if surface == nil || surface!.width != width || surface!.height != height {
             surface = IOSurface(properties: [
                 .width: width, .height: height, .bytesPerElement: 4, .pixelFormat: 0x4247_5241,  // 'BGRA'
@@ -53,15 +59,17 @@ final class GuestWindow: NSObject, NSWindowDelegate {
         self.scale = scale
 
         surface.lock(options: [], seed: nil)
-        let base = surface.baseAddress, stride = surface.bytesPerRow
+        let base = surface.baseAddress
+        let stride = surface.bytesPerRow
         for rect in frame.damage {
             Self.decode(rect, into: base, stride: stride)
         }
         surface.unlock(options: [], seed: nil)
 
         let logical = NSSize(width: CGFloat(width) / scale, height: CGFloat(height) / scale)
-        if window == nil { makeWindow(size: logical, title: title) }
-        else if let window, window.contentView!.bounds.size != logical, !window.inLiveResize {
+        if window == nil {
+            makeWindow(size: logical, title: title)
+        } else if let window, window.contentView!.bounds.size != logical, !window.inLiveResize {
             guestDrivenResize = true
             window.setContentSize(logical)
             guestDrivenResize = false
@@ -73,11 +81,13 @@ final class GuestWindow: NSObject, NSWindowDelegate {
     }
 
     private static func decode(_ rect: Crosswind_Display_Rect, into base: UnsafeMutableRawPointer, stride: Int) {
-        let w = Int(rect.width), h = Int(rect.height)
+        let w = Int(rect.width)
+        let h = Int(rect.height)
         let packed = UnsafeMutablePointer<UInt8>.allocate(capacity: w * h * 4)
         defer { packed.deallocate() }
         let n = rect.pixels.withUnsafeBytes {
-            compression_decode_buffer(packed, w * h * 4, $0.bindMemory(to: UInt8.self).baseAddress!, $0.count, nil, COMPRESSION_LZ4_RAW)
+            compression_decode_buffer(
+                packed, w * h * 4, $0.bindMemory(to: UInt8.self).baseAddress!, $0.count, nil, COMPRESSION_LZ4_RAW)
         }
         guard n == w * h * 4 else { return }
         for row in 0..<h {
@@ -94,7 +104,12 @@ final class GuestWindow: NSObject, NSWindowDelegate {
 
     @objc private func tick() {
         if let seq = pendingAck {
-            send?(.ack(.with { $0.window = id; $0.seq = seq }))
+            send?(
+                .ack(
+                    .with {
+                        $0.window = id
+                        $0.seq = seq
+                    }))
             pendingAck = nil
         } else {
             displayLink?.invalidate()
@@ -108,7 +123,8 @@ final class GuestWindow: NSObject, NSWindowDelegate {
         let frame = NSRect(origin: .zero, size: size)
         let window: NSWindow
         if kind == .popup {
-            let panel = NSPanel(contentRect: frame, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+            let panel = NSPanel(
+                contentRect: frame, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
             panel.level = .popUpMenu
             panel.hasShadow = true
             panel.isOpaque = false
@@ -116,7 +132,9 @@ final class GuestWindow: NSObject, NSWindowDelegate {
             panel.hidesOnDeactivate = false
             window = panel
         } else {
-            window = NSWindow(contentRect: frame, styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
+            window = NSWindow(
+                contentRect: frame, styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered,
+                defer: false)
             window.title = title
             window.tabbingMode = .disallowed
             window.collectionBehavior = [.fullScreenPrimary]
@@ -129,7 +147,8 @@ final class GuestWindow: NSObject, NSWindowDelegate {
 
         if kind == .popup, let parentWindow = parent?.window {
             let content = parentWindow.contentLayoutRect
-            let topLeft = parentWindow.convertToScreen(NSRect(x: content.minX, y: content.maxY, width: 0, height: 0)).origin
+            let topLeft = parentWindow.convertToScreen(NSRect(x: content.minX, y: content.maxY, width: 0, height: 0))
+                .origin
             window.setFrameOrigin(NSPoint(x: topLeft.x + popupOffset.x, y: topLeft.y - popupOffset.y - size.height))
             parentWindow.addChildWindow(window, ordered: .above)
             window.orderFront(nil)
@@ -153,15 +172,17 @@ final class GuestWindow: NSObject, NSWindowDelegate {
     private func configure() {
         guard kind == .toplevel, let window, !guestDrivenResize else { return }
         let size = window.contentView!.bounds.size
-        send?(.configure(.with {
-            $0.window = id
-            $0.width = UInt32(size.width.rounded())
-            $0.height = UInt32(size.height.rounded())
-            $0.scale120 = UInt32((window.backingScaleFactor * 120).rounded())
-            $0.activated = window.isKeyWindow
-            $0.fullscreen = window.styleMask.contains(.fullScreen)
-            $0.maximized = window.isZoomed
-        }))
+        send?(
+            .configure(
+                .with {
+                    $0.window = id
+                    $0.width = UInt32(size.width.rounded())
+                    $0.height = UInt32(size.height.rounded())
+                    $0.scale120 = UInt32((window.backingScaleFactor * 120).rounded())
+                    $0.activated = window.isKeyWindow
+                    $0.fullscreen = window.styleMask.contains(.fullScreen)
+                    $0.maximized = window.isZoomed
+                }))
     }
 
     func windowDidResize(_ notification: Notification) { configure() }

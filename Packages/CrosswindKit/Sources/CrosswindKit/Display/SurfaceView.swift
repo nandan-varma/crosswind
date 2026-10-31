@@ -20,7 +20,10 @@ final class SurfaceView: NSView {
         wantsLayer = true
         layer?.contentsGravity = .topLeft
         layer?.isOpaque = false
-        addTrackingArea(NSTrackingArea(rect: .zero, options: [.activeInActiveApp, .mouseMoved, .mouseEnteredAndExited, .inVisibleRect], owner: self))
+        addTrackingArea(
+            NSTrackingArea(
+                rect: .zero, options: [.activeInActiveApp, .mouseMoved, .mouseEnteredAndExited, .inVisibleRect],
+                owner: self))
     }
     required init?(coder: NSCoder) { fatalError("not used") }
 
@@ -49,7 +52,13 @@ final class SurfaceView: NSView {
 
     private func motion(_ event: NSEvent) {
         let p = convert(event.locationInWindow, from: nil)
-        onInput?(.motion(.with { $0.x = p.x; $0.y = p.y; $0.timeMs = ms(event) }))
+        onInput?(
+            .motion(
+                .with {
+                    $0.x = p.x
+                    $0.y = p.y
+                    $0.timeMs = ms(event)
+                }))
     }
 
     override func mouseMoved(with event: NSEvent) { motion(event) }
@@ -61,7 +70,13 @@ final class SurfaceView: NSView {
 
     private func button(_ event: NSEvent, _ code: UInt32, pressed: Bool) {
         motion(event)
-        onInput?(.button(.with { $0.button = code; $0.pressed = pressed; $0.timeMs = ms(event) }))
+        onInput?(
+            .button(
+                .with {
+                    $0.button = code
+                    $0.pressed = pressed
+                    $0.timeMs = ms(event)
+                }))
     }
 
     override func mouseDown(with event: NSEvent) { button(event, 0x110, pressed: true) }
@@ -75,13 +90,16 @@ final class SurfaceView: NSView {
         // Wayland axis: positive is down/right; AppKit's natural-scroll delta is the opposite sign.
         let precise = event.hasPreciseScrollingDeltas
         let factor: CGFloat = precise ? 1 : 10
-        let ended = event.phase.contains(.ended) || event.phase.contains(.cancelled) || event.momentumPhase.contains(.ended)
-        onInput?(.axis(.with {
-            $0.dx = -event.scrollingDeltaX * factor
-            $0.dy = -event.scrollingDeltaY * factor
-            $0.finished = ended
-            $0.timeMs = ms(event)
-        }))
+        let ended =
+            event.phase.contains(.ended) || event.phase.contains(.cancelled) || event.momentumPhase.contains(.ended)
+        onInput?(
+            .axis(
+                .with {
+                    $0.dx = -event.scrollingDeltaX * factor
+                    $0.dy = -event.scrollingDeltaY * factor
+                    $0.finished = ended
+                    $0.timeMs = ms(event)
+                }))
     }
 
     // MARK: Keyboard
@@ -110,6 +128,12 @@ final class SurfaceView: NSView {
             if macCode == 54 { evdev = UInt32(KeyMap.rightControl) }
         }
         guard let evdev else { return }
-        onInput?(.key(.with { $0.keycode = evdev; $0.pressed = pressed; $0.timeMs = time }))
+        onInput?(
+            .key(
+                .with {
+                    $0.keycode = evdev
+                    $0.pressed = pressed
+                    $0.timeMs = time
+                }))
     }
 }
