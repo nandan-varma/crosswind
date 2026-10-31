@@ -13,4 +13,11 @@ start() {
     mount --bind /data/home /home
     # The daemon runs as crosswind (uid 1000): its home persists on the data disk, its runtime dir is tmpfs.
     install -d -o 1000 -g 1000 -m 700 /data/home/crosswind /run/crosswind
+    # GTK settings and the Flatpak permission that lets sandboxed apps read them (read-only image files).
+    home=/home/crosswind
+    mkdir -p $home/.config/gtk-3.0 $home/.config/gtk-4.0 $home/.local/share/flatpak/overrides
+    cp /usr/share/crosswind/flatpak/global $home/.local/share/flatpak/overrides/global
+    chown -R 1000:1000 $home/.config $home/.local
+    mount --bind /usr/share/crosswind/gtk-3.0 $home/.config/gtk-3.0
+    mount --bind /usr/share/crosswind/gtk-4.0 $home/.config/gtk-4.0
 }

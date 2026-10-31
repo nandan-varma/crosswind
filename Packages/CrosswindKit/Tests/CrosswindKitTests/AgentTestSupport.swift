@@ -217,7 +217,7 @@ final class AgentHarness {
     let core: AgentCore
 
     init() {
-        core = AgentCore(session: session, output: { Crosswind_Display_Output() })
+        core = AgentCore(session: session, output: { Crosswind_Display_Output() }, openURL: { _ in true })
     }
 
     func connect(_ role: Crosswind_Agent_Role, appID: String = "") -> TestClient {

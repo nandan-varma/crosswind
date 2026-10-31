@@ -53,10 +53,15 @@ public final class AgentCore {
 
     /// Describes the host display to the guest (main screen size, scale, refresh rate).
     private let output: () -> Crosswind_Display_Output
+    /// Opens a URL with the Mac's default handler; returns whether it was opened.
+    private let openURL: (URL) -> Bool
 
-    public init(session: GuestSession, output: @escaping () -> Crosswind_Display_Output) {
+    public init(
+        session: GuestSession, output: @escaping () -> Crosswind_Display_Output, openURL: @escaping (URL) -> Bool
+    ) {
         self.session = session
         self.output = output
+        self.openURL = openURL
         session.onStateChange = { [weak self] state in self?.broadcast(.with { $0.state = state }) }
         session.onDisplay = { [weak self] in self?.attach(display: $0) }
         session.onControl = { [weak self] in self?.attach(control: $0) }
@@ -118,6 +123,10 @@ public final class AgentCore {
     }
 
     private func forward(_ request: Crosswind_Control_Request, from client: Client) {
+        if case .callReply? = request.body {  // answers a guest call; the guest does not respond to it
+            controlToGuest?.send(request)
+            return
+        }
         let id = issue(ForwardedRequest(client: ObjectIdentifier(client), clientRequestID: request.id, reply: nil))
         var outgoing = request
         outgoing.id = id
@@ -153,8 +162,32 @@ public final class AgentCore {
         case .event(let event)?:
             session.apply(event)
             broadcast(.with { $0.guest = message })
+        case .call(let call)?:
+            route(call: call, message: message)
         case nil:
             break
+        }
+    }
+
+    /// Calls go to the stub of the app that triggered them; links open straight away.
+    private func route(call: Crosswind_Control_Call, message: Crosswind_Control_Message) {
+        if case .openURL(let open)? = call.body {
+            let ok = URL(string: open.url).map(openURL) ?? false
+            controlToGuest?.send(.with {
+                $0.callReply = .with {
+                    $0.id = call.id
+                    if ok { $0.ok = .init() } else { $0.error = .with { $0.message = "cannot open \(open.url)" } }
+                }
+            })
+        } else if let stub = stubs[call.appID] {
+            stub.connection.send(.with { $0.guest = message })
+        } else {
+            controlToGuest?.send(.with {
+                $0.callReply = .with {
+                    $0.id = call.id
+                    $0.error = .with { $0.message = "\(call.appID) has no open window to ask" }
+                }
+            })
         }
     }
 

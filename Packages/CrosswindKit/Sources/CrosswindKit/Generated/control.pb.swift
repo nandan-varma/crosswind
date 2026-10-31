@@ -153,6 +153,23 @@ public nonisolated struct Crosswind_Control_Request: Sendable {
     set {body = .shutdown(newValue)}
   }
 
+  public var setAppearance: Crosswind_Control_SetAppearance {
+    get {
+      if case .setAppearance(let v)? = body {return v}
+      return Crosswind_Control_SetAppearance()
+    }
+    set {body = .setAppearance(newValue)}
+  }
+
+  /// answer to a guest-initiated Call
+  public var callReply: Crosswind_Control_CallReply {
+    get {
+      if case .callReply(let v)? = body {return v}
+      return Crosswind_Control_CallReply()
+    }
+    set {body = .callReply(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public nonisolated enum OneOf_Body: Equatable, Sendable {
@@ -170,6 +187,9 @@ public nonisolated struct Crosswind_Control_Request: Sendable {
     case getPermissions(Crosswind_Control_GetPermissions)
     case setPermissions(Crosswind_Control_SetPermissions)
     case shutdown(Crosswind_Control_Shutdown)
+    case setAppearance(Crosswind_Control_SetAppearance)
+    /// answer to a guest-initiated Call
+    case callReply(Crosswind_Control_CallReply)
 
   }
 
@@ -191,6 +211,22 @@ public nonisolated struct Crosswind_Control_Hello: Sendable {
   public var locale: String = String()
 
   public var darkMode: Bool = false
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+/// Host appearance changed (the guest's Settings portal reports it to apps).
+public nonisolated struct Crosswind_Control_SetAppearance: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var darkMode: Bool = false
+
+  /// 0xRRGGBB, 0 = default
+  public var accentRgb: UInt32 = 0
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -411,13 +447,231 @@ public nonisolated struct Crosswind_Control_Message: Sendable {
     set {body = .event(newValue)}
   }
 
+  public var call: Crosswind_Control_Call {
+    get {
+      if case .call(let v)? = body {return v}
+      return Crosswind_Control_Call()
+    }
+    set {body = .call(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public nonisolated enum OneOf_Body: Equatable, Sendable {
     case response(Crosswind_Control_Response)
     case event(Crosswind_Control_Event)
+    case call(Crosswind_Control_Call)
 
   }
+
+  public init() {}
+}
+
+/// Guest-initiated request that only the host can answer (portal backends). The host replies with a `CallReply`.
+public nonisolated struct Crosswind_Control_Call: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var id: UInt64 = 0
+
+  /// the Flatpak app that triggered it; routes the call to that app's stub
+  public var appID: String = String()
+
+  public var body: Crosswind_Control_Call.OneOf_Body? = nil
+
+  public var fileChooser: Crosswind_Control_FileChooser {
+    get {
+      if case .fileChooser(let v)? = body {return v}
+      return Crosswind_Control_FileChooser()
+    }
+    set {body = .fileChooser(newValue)}
+  }
+
+  public var notify: Crosswind_Control_Notify {
+    get {
+      if case .notify(let v)? = body {return v}
+      return Crosswind_Control_Notify()
+    }
+    set {body = .notify(newValue)}
+  }
+
+  public var openURL: Crosswind_Control_OpenUrl {
+    get {
+      if case .openURL(let v)? = body {return v}
+      return Crosswind_Control_OpenUrl()
+    }
+    set {body = .openURL(newValue)}
+  }
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public nonisolated enum OneOf_Body: Equatable, Sendable {
+    case fileChooser(Crosswind_Control_FileChooser)
+    case notify(Crosswind_Control_Notify)
+    case openURL(Crosswind_Control_OpenUrl)
+
+  }
+
+  public init() {}
+}
+
+public nonisolated struct Crosswind_Control_FileChooser: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var mode: Crosswind_Control_FileChooser.Mode = .open
+
+  public var title: String = String()
+
+  public var multiple: Bool = false
+
+  /// glob patterns or MIME types, as given by the app
+  public var filters: [String] = []
+
+  /// SAVE
+  public var suggestedName: String = String()
+
+  public var acceptLabel: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public nonisolated enum Mode: SwiftProtobuf.Enum, Swift.CaseIterable {
+    public typealias RawValue = Int
+    case `open` // = 0
+    case save // = 1
+    case openDirectory // = 2
+    case UNRECOGNIZED(Int)
+
+    public init() {
+      self = .open
+    }
+
+    public init?(rawValue: Int) {
+      switch rawValue {
+      case 0: self = .open
+      case 1: self = .save
+      case 2: self = .openDirectory
+      default: self = .UNRECOGNIZED(rawValue)
+      }
+    }
+
+    public var rawValue: Int {
+      switch self {
+      case .open: return 0
+      case .save: return 1
+      case .openDirectory: return 2
+      case .UNRECOGNIZED(let i): return i
+      }
+    }
+
+    // The compiler won't synthesize support with the UNRECOGNIZED case.
+    public static let allCases: [Crosswind_Control_FileChooser.Mode] = [
+      .open,
+      .save,
+      .openDirectory,
+    ]
+
+  }
+
+  public init() {}
+}
+
+public nonisolated struct Crosswind_Control_Notify: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var notificationID: String = String()
+
+  public var title: String = String()
+
+  public var body: String = String()
+
+  public var iconPng: Data = Data()
+
+  public var defaultAction: String = String()
+
+  /// update an existing notification with the same id
+  public var replace: Bool = false
+
+  /// remove it
+  public var withdraw: Bool = false
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public nonisolated struct Crosswind_Control_OpenUrl: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var url: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public nonisolated struct Crosswind_Control_CallReply: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var id: UInt64 = 0
+
+  public var result: Crosswind_Control_CallReply.OneOf_Result? = nil
+
+  public var error: Crosswind_Control_Error {
+    get {
+      if case .error(let v)? = result {return v}
+      return Crosswind_Control_Error()
+    }
+    set {result = .error(newValue)}
+  }
+
+  public var ok: Crosswind_Control_Ok {
+    get {
+      if case .ok(let v)? = result {return v}
+      return Crosswind_Control_Ok()
+    }
+    set {result = .ok(newValue)}
+  }
+
+  public var fileChooser: Crosswind_Control_FileChooserResult {
+    get {
+      if case .fileChooser(let v)? = result {return v}
+      return Crosswind_Control_FileChooserResult()
+    }
+    set {result = .fileChooser(newValue)}
+  }
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public nonisolated enum OneOf_Result: Equatable, Sendable {
+    case error(Crosswind_Control_Error)
+    case ok(Crosswind_Control_Ok)
+    case fileChooser(Crosswind_Control_FileChooserResult)
+
+  }
+
+  public init() {}
+}
+
+/// Guest paths of the chosen files (inside a granted shared folder); empty when cancelled.
+public nonisolated struct Crosswind_Control_FileChooserResult: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var paths: [String] = []
+
+  public var cancelled: Bool = false
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 }
@@ -789,7 +1043,7 @@ fileprivate nonisolated let _protobuf_package = "crosswind.control"
 
 nonisolated extension Crosswind_Control_Request: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Request"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}hello\0\u{3}refresh_catalog\0\u{3}get_catalog\0\u{3}list_installed\0\u{1}install\0\u{1}uninstall\0\u{1}update\0\u{1}cancel\0\u{1}launch\0\u{1}stop\0\u{3}list_running\0\u{3}get_permissions\0\u{3}set_permissions\0\u{1}shutdown\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}hello\0\u{3}refresh_catalog\0\u{3}get_catalog\0\u{3}list_installed\0\u{1}install\0\u{1}uninstall\0\u{1}update\0\u{1}cancel\0\u{1}launch\0\u{1}stop\0\u{3}list_running\0\u{3}get_permissions\0\u{3}set_permissions\0\u{1}shutdown\0\u{3}set_appearance\0\u{3}call_reply\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -980,6 +1234,32 @@ nonisolated extension Crosswind_Control_Request: SwiftProtobuf.Message, SwiftPro
           self.body = .shutdown(v)
         }
       }()
+      case 16: try {
+        var v: Crosswind_Control_SetAppearance?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .setAppearance(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .setAppearance(v)
+        }
+      }()
+      case 17: try {
+        var v: Crosswind_Control_CallReply?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .callReply(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .callReply(v)
+        }
+      }()
       default: break
       }
     }
@@ -1050,6 +1330,14 @@ nonisolated extension Crosswind_Control_Request: SwiftProtobuf.Message, SwiftPro
       guard case .shutdown(let v)? = self.body else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 15)
     }()
+    case .setAppearance?: try {
+      guard case .setAppearance(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 16)
+    }()
+    case .callReply?: try {
+      guard case .callReply(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 17)
+    }()
     case nil: break
     }
     try unknownFields.traverse(visitor: &visitor)
@@ -1103,6 +1391,41 @@ nonisolated extension Crosswind_Control_Hello: SwiftProtobuf.Message, SwiftProto
     if lhs.timeZone != rhs.timeZone {return false}
     if lhs.locale != rhs.locale {return false}
     if lhs.darkMode != rhs.darkMode {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Crosswind_Control_SetAppearance: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".SetAppearance"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}dark_mode\0\u{3}accent_rgb\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularBoolField(value: &self.darkMode) }()
+      case 2: try { try decoder.decodeSingularUInt32Field(value: &self.accentRgb) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.darkMode != false {
+      try visitor.visitSingularBoolField(value: self.darkMode, fieldNumber: 1)
+    }
+    if self.accentRgb != 0 {
+      try visitor.visitSingularUInt32Field(value: self.accentRgb, fieldNumber: 2)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Crosswind_Control_SetAppearance, rhs: Crosswind_Control_SetAppearance) -> Bool {
+    if lhs.darkMode != rhs.darkMode {return false}
+    if lhs.accentRgb != rhs.accentRgb {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -1514,7 +1837,7 @@ nonisolated extension Crosswind_Control_Permissions: SwiftProtobuf.Message, Swif
 
 nonisolated extension Crosswind_Control_Message: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Message"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}response\0\u{1}event\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}response\0\u{1}event\0\u{1}call\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1548,6 +1871,19 @@ nonisolated extension Crosswind_Control_Message: SwiftProtobuf.Message, SwiftPro
           self.body = .event(v)
         }
       }()
+      case 3: try {
+        var v: Crosswind_Control_Call?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .call(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .call(v)
+        }
+      }()
       default: break
       }
     }
@@ -1567,6 +1903,10 @@ nonisolated extension Crosswind_Control_Message: SwiftProtobuf.Message, SwiftPro
       guard case .event(let v)? = self.body else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
     }()
+    case .call?: try {
+      guard case .call(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
+    }()
     case nil: break
     }
     try unknownFields.traverse(visitor: &visitor)
@@ -1574,6 +1914,373 @@ nonisolated extension Crosswind_Control_Message: SwiftProtobuf.Message, SwiftPro
 
   public static func ==(lhs: Crosswind_Control_Message, rhs: Crosswind_Control_Message) -> Bool {
     if lhs.body != rhs.body {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Crosswind_Control_Call: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".Call"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{3}app_id\0\u{3}file_chooser\0\u{1}notify\0\u{3}open_url\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularUInt64Field(value: &self.id) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.appID) }()
+      case 3: try {
+        var v: Crosswind_Control_FileChooser?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .fileChooser(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .fileChooser(v)
+        }
+      }()
+      case 4: try {
+        var v: Crosswind_Control_Notify?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .notify(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .notify(v)
+        }
+      }()
+      case 5: try {
+        var v: Crosswind_Control_OpenUrl?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .openURL(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .openURL(v)
+        }
+      }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    if self.id != 0 {
+      try visitor.visitSingularUInt64Field(value: self.id, fieldNumber: 1)
+    }
+    if !self.appID.isEmpty {
+      try visitor.visitSingularStringField(value: self.appID, fieldNumber: 2)
+    }
+    switch self.body {
+    case .fileChooser?: try {
+      guard case .fileChooser(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
+    }()
+    case .notify?: try {
+      guard case .notify(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
+    }()
+    case .openURL?: try {
+      guard case .openURL(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 5)
+    }()
+    case nil: break
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Crosswind_Control_Call, rhs: Crosswind_Control_Call) -> Bool {
+    if lhs.id != rhs.id {return false}
+    if lhs.appID != rhs.appID {return false}
+    if lhs.body != rhs.body {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Crosswind_Control_FileChooser: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".FileChooser"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}mode\0\u{1}title\0\u{1}multiple\0\u{1}filters\0\u{3}suggested_name\0\u{3}accept_label\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularEnumField(value: &self.mode) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.title) }()
+      case 3: try { try decoder.decodeSingularBoolField(value: &self.multiple) }()
+      case 4: try { try decoder.decodeRepeatedStringField(value: &self.filters) }()
+      case 5: try { try decoder.decodeSingularStringField(value: &self.suggestedName) }()
+      case 6: try { try decoder.decodeSingularStringField(value: &self.acceptLabel) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.mode != .open {
+      try visitor.visitSingularEnumField(value: self.mode, fieldNumber: 1)
+    }
+    if !self.title.isEmpty {
+      try visitor.visitSingularStringField(value: self.title, fieldNumber: 2)
+    }
+    if self.multiple != false {
+      try visitor.visitSingularBoolField(value: self.multiple, fieldNumber: 3)
+    }
+    if !self.filters.isEmpty {
+      try visitor.visitRepeatedStringField(value: self.filters, fieldNumber: 4)
+    }
+    if !self.suggestedName.isEmpty {
+      try visitor.visitSingularStringField(value: self.suggestedName, fieldNumber: 5)
+    }
+    if !self.acceptLabel.isEmpty {
+      try visitor.visitSingularStringField(value: self.acceptLabel, fieldNumber: 6)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Crosswind_Control_FileChooser, rhs: Crosswind_Control_FileChooser) -> Bool {
+    if lhs.mode != rhs.mode {return false}
+    if lhs.title != rhs.title {return false}
+    if lhs.multiple != rhs.multiple {return false}
+    if lhs.filters != rhs.filters {return false}
+    if lhs.suggestedName != rhs.suggestedName {return false}
+    if lhs.acceptLabel != rhs.acceptLabel {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Crosswind_Control_FileChooser.Mode: SwiftProtobuf._ProtoNameProviding {
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0OPEN\0\u{1}SAVE\0\u{1}OPEN_DIRECTORY\0")
+}
+
+nonisolated extension Crosswind_Control_Notify: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".Notify"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}notification_id\0\u{1}title\0\u{1}body\0\u{3}icon_png\0\u{3}default_action\0\u{1}replace\0\u{1}withdraw\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.notificationID) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.title) }()
+      case 3: try { try decoder.decodeSingularStringField(value: &self.body) }()
+      case 4: try { try decoder.decodeSingularBytesField(value: &self.iconPng) }()
+      case 5: try { try decoder.decodeSingularStringField(value: &self.defaultAction) }()
+      case 6: try { try decoder.decodeSingularBoolField(value: &self.replace) }()
+      case 7: try { try decoder.decodeSingularBoolField(value: &self.withdraw) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.notificationID.isEmpty {
+      try visitor.visitSingularStringField(value: self.notificationID, fieldNumber: 1)
+    }
+    if !self.title.isEmpty {
+      try visitor.visitSingularStringField(value: self.title, fieldNumber: 2)
+    }
+    if !self.body.isEmpty {
+      try visitor.visitSingularStringField(value: self.body, fieldNumber: 3)
+    }
+    if !self.iconPng.isEmpty {
+      try visitor.visitSingularBytesField(value: self.iconPng, fieldNumber: 4)
+    }
+    if !self.defaultAction.isEmpty {
+      try visitor.visitSingularStringField(value: self.defaultAction, fieldNumber: 5)
+    }
+    if self.replace != false {
+      try visitor.visitSingularBoolField(value: self.replace, fieldNumber: 6)
+    }
+    if self.withdraw != false {
+      try visitor.visitSingularBoolField(value: self.withdraw, fieldNumber: 7)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Crosswind_Control_Notify, rhs: Crosswind_Control_Notify) -> Bool {
+    if lhs.notificationID != rhs.notificationID {return false}
+    if lhs.title != rhs.title {return false}
+    if lhs.body != rhs.body {return false}
+    if lhs.iconPng != rhs.iconPng {return false}
+    if lhs.defaultAction != rhs.defaultAction {return false}
+    if lhs.replace != rhs.replace {return false}
+    if lhs.withdraw != rhs.withdraw {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Crosswind_Control_OpenUrl: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".OpenUrl"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}url\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.url) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.url.isEmpty {
+      try visitor.visitSingularStringField(value: self.url, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Crosswind_Control_OpenUrl, rhs: Crosswind_Control_OpenUrl) -> Bool {
+    if lhs.url != rhs.url {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Crosswind_Control_CallReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".CallReply"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}error\0\u{1}ok\0\u{3}file_chooser\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularUInt64Field(value: &self.id) }()
+      case 2: try {
+        var v: Crosswind_Control_Error?
+        var hadOneofValue = false
+        if let current = self.result {
+          hadOneofValue = true
+          if case .error(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.result = .error(v)
+        }
+      }()
+      case 3: try {
+        var v: Crosswind_Control_Ok?
+        var hadOneofValue = false
+        if let current = self.result {
+          hadOneofValue = true
+          if case .ok(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.result = .ok(v)
+        }
+      }()
+      case 4: try {
+        var v: Crosswind_Control_FileChooserResult?
+        var hadOneofValue = false
+        if let current = self.result {
+          hadOneofValue = true
+          if case .fileChooser(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.result = .fileChooser(v)
+        }
+      }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    if self.id != 0 {
+      try visitor.visitSingularUInt64Field(value: self.id, fieldNumber: 1)
+    }
+    switch self.result {
+    case .error?: try {
+      guard case .error(let v)? = self.result else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
+    }()
+    case .ok?: try {
+      guard case .ok(let v)? = self.result else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
+    }()
+    case .fileChooser?: try {
+      guard case .fileChooser(let v)? = self.result else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
+    }()
+    case nil: break
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Crosswind_Control_CallReply, rhs: Crosswind_Control_CallReply) -> Bool {
+    if lhs.id != rhs.id {return false}
+    if lhs.result != rhs.result {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Crosswind_Control_FileChooserResult: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".FileChooserResult"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}paths\0\u{1}cancelled\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeRepeatedStringField(value: &self.paths) }()
+      case 2: try { try decoder.decodeSingularBoolField(value: &self.cancelled) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.paths.isEmpty {
+      try visitor.visitRepeatedStringField(value: self.paths, fieldNumber: 1)
+    }
+    if self.cancelled != false {
+      try visitor.visitSingularBoolField(value: self.cancelled, fieldNumber: 2)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Crosswind_Control_FileChooserResult, rhs: Crosswind_Control_FileChooserResult) -> Bool {
+    if lhs.paths != rhs.paths {return false}
+    if lhs.cancelled != rhs.cancelled {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

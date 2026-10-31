@@ -23,6 +23,9 @@ public actor GuestControl {
 
     public nonisolated let events: AsyncStream<Event>
     private let eventContinuation: AsyncStream<Event>.Continuation
+    /// Requests the guest makes of the host (file dialogs, notifications); answer each with `reply(to:)`.
+    public nonisolated let calls: AsyncStream<Crosswind_Control_Call>
+    private let callContinuation: AsyncStream<Crosswind_Control_Call>.Continuation
     private let sendRequest: @Sendable (Crosswind_Control_Request) -> Void
     private var nextID: UInt64 = 0
     private var pending: [UInt64: (Result<Crosswind_Control_Response, Error>) -> Void] = [:]
@@ -36,6 +39,7 @@ public actor GuestControl {
     ) {
         sendRequest = send
         (events, eventContinuation) = AsyncStream.makeStream(of: Event.self, bufferingPolicy: .unbounded)
+        (calls, callContinuation) = AsyncStream.makeStream(of: Crosswind_Control_Call.self, bufferingPolicy: .unbounded)
         Task { [weak self] in
             for await message in messages {
                 guard let self else { return }
@@ -129,6 +133,17 @@ public actor GuestControl {
         try await startOperation(.update(Crosswind_Control_Update.with { $0.appID = appID }))
     }
 
+    /// Answers a guest call.
+    public func reply(to call: Crosswind_Control_Call, _ result: Crosswind_Control_CallReply.OneOf_Result) {
+        sendRequest(
+            .with {
+                $0.callReply = .with {
+                    $0.id = call.id
+                    $0.result = result
+                }
+            })
+    }
+
     func cancel(operation: UInt64) async throws {
         try await expectOk(.cancel(Crosswind_Control_Cancel.with { $0.operation = operation }))
     }
@@ -195,6 +210,8 @@ public actor GuestControl {
             }
         case .event(let event)?:
             await route(event)
+        case .call(let call)?:
+            callContinuation.yield(call)
         case nil:
             break
         }
@@ -236,5 +253,6 @@ public actor GuestControl {
         operations.removeAll()
         for handle in handles { await handle.finish(.failure(GuestControlError.disconnected)) }
         eventContinuation.finish()
+        callContinuation.finish()
     }
 }

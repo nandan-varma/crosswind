@@ -69,6 +69,10 @@ pub struct Control {
     tz: Option<String>,
     locale: Option<String>,
     dark_mode: bool,
+    accent_rgb: u32,
+    /// Guest-initiated calls waiting for the host's reply (portal backends).
+    calls: HashMap<u64, std::sync::mpsc::Sender<pb::CallReply>>,
+    next_call: u64,
     ops: HashMap<u64, SendCancel>,
     next_op: u64,
     procs: HashMap<String, Proc>,
@@ -85,10 +89,24 @@ impl Control {
             tz: None,
             locale: None,
             dark_mode: false,
+            accent_rgb: 0,
+            calls: HashMap::new(),
+            next_call: 1,
             ops: HashMap::new(),
             next_op: 1,
             procs: HashMap::new(),
         }
+    }
+
+    /// Asks the host something only it can answer; the reply arrives on the returned channel.
+    pub fn call(&mut self, app_id: &str, body: pb::call::Body) -> std::sync::mpsc::Receiver<pb::CallReply> {
+        let id = self.next_call;
+        self.next_call += 1;
+        let (tx, rx) = std::sync::mpsc::channel();
+        self.calls.insert(id, tx);
+        let call = pb::Call { id, app_id: app_id.to_owned(), body: Some(body) };
+        self.link.send(&pb::Message { body: Some(message::Body::Call(call)) });
+        rx
     }
 
     fn reply(&mut self, id: u64, result: response::Result) {
@@ -124,6 +142,16 @@ impl Control {
                 self.locale = (!h.locale.is_empty()).then_some(h.locale);
                 self.dark_mode = h.dark_mode;
                 self.reply(id, response::Result::Ok(pb::Ok {}));
+            }
+            request::Body::SetAppearance(a) => {
+                self.dark_mode = a.dark_mode;
+                self.accent_rgb = a.accent_rgb;
+                self.reply(id, response::Result::Ok(pb::Ok {}));
+            }
+            request::Body::CallReply(reply) => {
+                if let Some(waiting) = self.calls.remove(&reply.id) {
+                    let _ = waiting.send(reply);
+                }
             }
             request::Body::RefreshCatalog(_) => self.reply_later(id, || {
                 flatpak::refresh_catalog()?;

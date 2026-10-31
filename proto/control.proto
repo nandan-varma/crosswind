@@ -26,6 +26,8 @@ message Request {
     GetPermissions get_permissions = 13;
     SetPermissions set_permissions = 14;
     Shutdown shutdown = 15;
+    SetAppearance set_appearance = 16;
+    CallReply call_reply = 17;       // answer to a guest-initiated Call
   }
 }
 
@@ -35,6 +37,12 @@ message Hello {
   string time_zone = 2;   // IANA name
   string locale = 3;      // POSIX, e.g. en_US.UTF-8
   bool dark_mode = 4;
+}
+
+// Host appearance changed (the guest's Settings portal reports it to apps).
+message SetAppearance {
+  bool dark_mode = 1;
+  uint32 accent_rgb = 2;   // 0xRRGGBB, 0 = default
 }
 
 // Pulls the Flathub AppStream metadata for aarch64 (verified by Flatpak against the pinned repo key).
@@ -100,7 +108,62 @@ message Message {
   oneof body {
     Response response = 1;
     Event event = 2;
+    Call call = 3;
   }
+}
+
+// Guest-initiated request that only the host can answer (portal backends). The host replies with a `CallReply`.
+message Call {
+  uint64 id = 1;
+  string app_id = 2;      // the Flatpak app that triggered it; routes the call to that app's stub
+  oneof body {
+    FileChooser file_chooser = 3;
+    Notify notify = 4;
+    OpenUrl open_url = 5;
+  }
+}
+
+message FileChooser {
+  enum Mode {
+    OPEN = 0;
+    SAVE = 1;
+    OPEN_DIRECTORY = 2;
+  }
+  Mode mode = 1;
+  string title = 2;
+  bool multiple = 3;
+  repeated string filters = 4;       // glob patterns or MIME types, as given by the app
+  string suggested_name = 5;         // SAVE
+  string accept_label = 6;
+}
+
+message Notify {
+  string notification_id = 1;
+  string title = 2;
+  string body = 3;
+  bytes icon_png = 4;
+  string default_action = 5;
+  bool replace = 6;                   // update an existing notification with the same id
+  bool withdraw = 7;                  // remove it
+}
+
+message OpenUrl {
+  string url = 1;
+}
+
+message CallReply {
+  uint64 id = 1;
+  oneof result {
+    Error error = 2;
+    Ok ok = 3;
+    FileChooserResult file_chooser = 4;
+  }
+}
+
+// Guest paths of the chosen files (inside a granted shared folder); empty when cancelled.
+message FileChooserResult {
+  repeated string paths = 1;
+  bool cancelled = 2;
 }
 
 message Response {

@@ -19,9 +19,15 @@ public struct GuestPaths: Sendable {
 @MainActor
 public final class GuestSession {
     public private(set) var state = Crosswind_Agent_State() {
-        didSet { onStateChange?(state) }
+        didSet {
+            onStateChange?(state)
+            stateContinuation.yield(state)
+        }
     }
     public var onStateChange: ((Crosswind_Agent_State) -> Void)?
+    /// Every change to `state`, as a stream for a second observer alongside `onStateChange`. Keeps only the latest.
+    public let states: AsyncStream<Crosswind_Agent_State>
+    private let stateContinuation: AsyncStream<Crosswind_Agent_State>.Continuation
     public var onDisplay: ((DisplayConnection) -> Void)?
     public var onControl: ((ControlConnection) -> Void)?
     /// Called once the control channel is up, before the session reports `running`; lets the agent greet the guest.
@@ -31,7 +37,13 @@ public final class GuestSession {
     private var vm: GuestVM?
     private var starting: Task<Void, Error>?
 
-    public init(paths: GuestPaths) { self.paths = paths }
+    public init(paths: GuestPaths) {
+        self.paths = paths
+        let (stream, continuation) = AsyncStream<Crosswind_Agent_State>.makeStream(
+            bufferingPolicy: .bufferingNewest(1))
+        states = stream
+        stateContinuation = continuation
+    }
 
     /// Boots the VM if it is not running and returns once the control channel is up.
     public func ensureRunning() async throws {

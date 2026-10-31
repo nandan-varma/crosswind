@@ -9,10 +9,13 @@ final class HostDelegate: NSObject, NSApplicationDelegate {
     private let session = GuestSession(paths: .standard)
     private var core: AgentCore?
     private var endpoint: AgentEndpoint?
+    private var statusItem: StatusItemController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        let core = AgentCore(session: session, output: Self.mainScreenOutput)
+        let core = AgentCore(
+            session: session, output: Self.mainScreenOutput, openURL: { NSWorkspace.shared.open($0) })
         self.core = core
+        statusItem = StatusItemController(session: session)
         let endpoint = AgentEndpoint { connection, role, appID in
             Task { @MainActor in core.accept(connection, role: role, appID: appID) }
         }
