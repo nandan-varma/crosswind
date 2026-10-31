@@ -28,6 +28,13 @@ grep -q '^crosswind:' "$ROOT/etc/group" || echo 'crosswind:x:1000:' >> "$ROOT/et
 grep -q '^crosswind:' "$ROOT/etc/passwd" || echo 'crosswind:x:1000:1000:Crosswind:/home/crosswind:/sbin/nologin' >> "$ROOT/etc/passwd"
 grep -q '^crosswind:' "$ROOT/etc/shadow" || echo 'crosswind:!:19000:0:99999:7:::' >> "$ROOT/etc/shadow"
 
+# Every library crosswindd needs must be in the image.
+if [ -x "$ROOT/usr/bin/crosswindd" ] && chroot "$ROOT" ldd /usr/bin/crosswindd | grep -q 'not found'; then
+    chroot "$ROOT" ldd /usr/bin/crosswindd | grep 'not found' >&2
+    echo "crosswindd has unresolved libraries; add their packages to image/packages" >&2
+    exit 1
+fi
+
 # OpenRC runlevels: only what a headless Wayland host needs.
 link() { mkdir -p "$ROOT/etc/runlevels/$1"; ln -sf "/etc/init.d/$2" "$ROOT/etc/runlevels/$1/$2"; }
 for s in devfs dmesg; do link sysinit "$s"; done

@@ -10,3 +10,4 @@ pidfile=/run/crosswind/crosswindd.pid
 output_log=/dev/console
 error_log=/dev/console
 depend() { need dbus crosswind-data; }
+start_pre() { chmod 622 /dev/console; }  # dev: let the daemon log to the VM console

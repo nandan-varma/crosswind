@@ -20,6 +20,8 @@ loaded() {
 unload() {
     if loaded; then
         launchctl bootout "$DOMAIN/$LABEL"
+        # bootout returns before the service is gone; bootstrapping too early fails with an I/O error.
+        for _ in 1 2 3 4 5 6 7 8 9 10; do loaded || break; sleep 0.5; done
     fi
 }
 

@@ -6,7 +6,7 @@ description="Crosswind data disk"
 depend() { need localmount; }
 start() {
     modprobe -q ext4
-    [ "$(blkid -o value -s TYPE /dev/vdb)" = ext4 ] || mkfs.ext4 -q -L crosswind-data /dev/vdb || return 1
+    blkid /dev/vdb 2>/dev/null | grep -q 'TYPE="ext4"' || mkfs.ext4 -q -L crosswind-data /dev/vdb || return 1
     mkdir -p /data && mount /dev/vdb /data || return 1
     mkdir -p /data/flatpak /data/home /var/lib/flatpak /home
     mount --bind /data/flatpak /var/lib/flatpak
