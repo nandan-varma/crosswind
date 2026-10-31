@@ -189,10 +189,10 @@ impl FileChooser {
             }
         };
         let mut results = HashMap::new();
-        if response == RESPONSE_SUCCESS {
-            if let Ok(value) = OwnedVariant::try_from(Variant::from(uris)) {
-                results.insert("uris".to_owned(), value);
-            }
+        if response == RESPONSE_SUCCESS
+            && let Ok(value) = OwnedVariant::try_from(Variant::from(uris))
+        {
+            results.insert("uris".to_owned(), value);
         }
         (response, results)
     }

@@ -26,6 +26,11 @@ struct DiagnosticsRedactorTests {
         #expect(redactor.redact("guest 192.168.64.2 gateway 192.168.64.1") == "guest 192.168.64.2 gateway 192.168.64.1")
     }
 
+    @Test("a four-part dotted number is an IPv4 address and is replaced")
+    func fourPartNumbersAreAddresses() {
+        #expect(redactor.redact("build 46.0.2.1") == "build <ipv4>")
+    }
+
     @Test("IPv6 is replaced, clock times are kept")
     func ipv6() {
         #expect(redactor.redact("route fd00::1 up") == "route <ipv6> up")
@@ -57,7 +62,7 @@ struct DiagnosticsRedactorTests {
     func falsePositives() {
         let samples = [
             "macOS 26.1", "Flatpak 1.16.0", "version 51.1", "release 2026.10.31.1", "commit a1b2c3d",
-            "short hash 9f8e7d6", "org.gnome.Calculator", "dev.crosswind.host", "app 46.0.2.1",
+            "short hash 9f8e7d6", "org.gnome.Calculator", "dev.crosswind.host", "app 46.0.2",
             "PID 4242", "size 1280x720", "frames 90210",
         ]
         for sample in samples {

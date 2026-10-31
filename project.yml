@@ -26,6 +26,10 @@ targets:
   Crosswind:
     type: application
     platform: macOS
+    settings:
+      base:
+        SKIP_INSTALL: NO
+        INSTALL_PATH: /Applications
     sources:
       - path: App/Store
         excludes:
@@ -71,6 +75,9 @@ targets:
       - path: App/Host
     dependencies:
       - package: CrosswindKit
+    settings:
+      base:
+        SKIP_INSTALL: YES
     info:
       path: build/CrosswindHost-Info.plist
       properties:
@@ -98,6 +105,9 @@ targets:
       - path: App/Stub
     dependencies:
       - package: CrosswindKit
+    settings:
+      base:
+        SKIP_INSTALL: YES
     info:
       path: build/CrosswindAppStub-Info.plist
       properties:
@@ -114,6 +124,9 @@ targets:
   crosswindctl:
     type: tool
     platform: macOS
+    settings:
+      base:
+        SKIP_INSTALL: YES
     sources:
       - path: tools/crosswindctl
     dependencies:
@@ -137,9 +150,9 @@ schemes:
     build:
       targets:
         Crosswind: all
-        CrosswindHost: [build]
-        CrosswindAppStub: [build]
-        crosswindctl: [build]
+        CrosswindHost: all
+        CrosswindAppStub: all
+        crosswindctl: all
         CrosswindTests: [test]
     test:
       targets:

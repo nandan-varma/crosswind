@@ -21,6 +21,7 @@ final class StubDelegate: NSObject, NSApplicationDelegate {
     private let appID = Bundle.main.object(forInfoDictionaryKey: "CrosswindAppID") as? String ?? ""
     private var client: AgentClient?
     private var server: DisplayServer?
+    private let fileChooser = FileChooserHandler()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         Task {
@@ -56,11 +57,18 @@ final class StubDelegate: NSObject, NSApplicationDelegate {
                 case .notify(let notify)?:
                     await post(notify)
                     await client.control.reply(to: call, .ok(.init()))
+                case .fileChooser(let request)?:
+                    // Each panel is its own task, so one open panel never delays notifications.
+                    Task { await client.control.reply(to: call, await fileChooser.handle(request)) }
                 default:
                     await client.control.reply(to: call, .error(.with { $0.message = "not supported yet" }))
                 }
             }
         }
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        fileChooser.finish()
     }
 
     private func post(_ notify: Crosswind_Control_Notify) async {

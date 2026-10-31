@@ -16,6 +16,8 @@ struct SettingsView: View {
                 .tabItem { Label("Environment", systemImage: "cpu") }
             StorageSettings()
                 .tabItem { Label("Storage", systemImage: "internaldrive") }
+            SharedFoldersSettings()
+                .tabItem { Label("Shared Folders", systemImage: "folder.badge.person.crop") }
             AboutSettings()
                 .tabItem { Label("About", systemImage: "info.circle") }
         }

@@ -71,6 +71,12 @@ public final class GuestVM: NSObject {
         balloon.targetVirtualMachineMemorySize = min(bytes ?? resources.memoryBytes, resources.memoryBytes)
     }
 
+    /// Replaces the shared folders while the VM runs. The guest sees the change at once.
+    public func updateSharedFolders(_ folders: SharedFolders) {
+        guard let device = machine?.directorySharingDevices.first as? VZVirtioFileSystemDevice else { return }
+        device.share = ShareLayout.share(for: folders)
+    }
+
     public func stop() async throws {
         try await machine?.stop()
         machine = nil
@@ -109,6 +115,12 @@ public final class GuestVM: NSObject {
         let network = VZVirtioNetworkDeviceConfiguration()
         network.attachment = VZNATNetworkDeviceAttachment()
         config.networkDevices = [network]
+
+        // Shared folders: only the granted folders and the staging directory are exported (see `ShareLayout`).
+        try FileManager.default.createDirectory(at: Staging.root, withIntermediateDirectories: true)
+        let shares = VZVirtioFileSystemDeviceConfiguration(tag: SharedFolders.mountTag)
+        shares.share = ShareLayout.share(for: try SharedFolders.load(from: SharedFolders.defaultFile))
+        config.directorySharingDevices = [shares]
 
         let serial = VZVirtioConsoleDeviceSerialPortConfiguration()
         serial.attachment = VZFileHandleSerialPortAttachment(
