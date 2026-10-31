@@ -11,4 +11,6 @@ start() {
     mkdir -p /data/flatpak /data/home /var/lib/flatpak /home
     mount --bind /data/flatpak /var/lib/flatpak
     mount --bind /data/home /home
+    # The daemon runs as crosswind (uid 1000): its home persists on the data disk, its runtime dir is tmpfs.
+    install -d -o 1000 -g 1000 -m 700 /data/home/crosswind /run/crosswind
 }

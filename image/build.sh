@@ -23,6 +23,11 @@ apk --root "$ROOT" --initdb --update-cache --no-cache add $(grep -v '^#' "$HERE/
 cp -a "$HERE/overlay/." "$ROOT/"
 [ -x "${CROSSWINDD:-}" ] && install -Dm755 "$CROSSWINDD" "$ROOT/usr/bin/crosswindd"
 
+# Unprivileged account for the daemon (uid 1000). Appended, not overlaid, so the base databases stay intact.
+grep -q '^crosswind:' "$ROOT/etc/group" || echo 'crosswind:x:1000:' >> "$ROOT/etc/group"
+grep -q '^crosswind:' "$ROOT/etc/passwd" || echo 'crosswind:x:1000:1000:Crosswind:/home/crosswind:/sbin/nologin' >> "$ROOT/etc/passwd"
+grep -q '^crosswind:' "$ROOT/etc/shadow" || echo 'crosswind:!:19000:0:99999:7:::' >> "$ROOT/etc/shadow"
+
 # OpenRC runlevels: only what a headless Wayland host needs.
 link() { mkdir -p "$ROOT/etc/runlevels/$1"; ln -sf "/etc/init.d/$2" "$ROOT/etc/runlevels/$1/$2"; }
 for s in devfs dmesg; do link sysinit "$s"; done

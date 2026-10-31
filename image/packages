@@ -13,6 +13,8 @@ dbus
 dbus-openrc
 flatpak
 bubblewrap
+xdg-dbus-proxy
+curl
 xdg-desktop-portal
 xdg-desktop-portal-gtk
 pipewire

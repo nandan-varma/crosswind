@@ -9,6 +9,7 @@ use std::os::fd::{AsFd, BorrowedFd};
 use std::time::Duration;
 
 use prost::Message;
+use smithay::reexports::calloop::{Interest, LoopHandle, Mode, PostAction, RegistrationToken, generic::Generic};
 use vsock::{VMADDR_CID_HOST, VsockAddr, VsockStream};
 
 const MAX_FRAME: usize = 64 << 20;
@@ -90,4 +91,35 @@ impl Link {
         }
         Ok(out)
     }
+}
+
+/// Keeps a write-readiness source registered while `link` has queued bytes.
+///
+/// Call after `link.flush()`. `select` reaches the link and its token inside the loop state `D`;
+/// `on_error` runs when a later flush from the loop fails.
+pub fn arm_write<D: 'static>(
+    handle: &LoopHandle<'static, D>,
+    link: &Link,
+    token: &mut Option<RegistrationToken>,
+    select: fn(&mut D) -> (&mut Link, &mut Option<RegistrationToken>),
+    on_error: fn(&mut D),
+) {
+    if !link.wants_write() || token.is_some() {
+        return;
+    }
+    let fd = link.fd().try_clone_to_owned().expect("dup vsock fd");
+    let registered = handle.insert_source(Generic::new(fd, Interest::WRITE, Mode::Level), move |_, _, state| {
+        if select(state).0.flush().is_err() {
+            on_error(state);
+            return Ok(PostAction::Remove);
+        }
+        let (link, token) = select(state);
+        if link.wants_write() {
+            Ok(PostAction::Continue)
+        } else {
+            *token = None;
+            Ok(PostAction::Remove)
+        }
+    });
+    *token = Some(registered.expect("write source"));
 }

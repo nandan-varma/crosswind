@@ -196,11 +196,11 @@ impl DataDeviceHandler for State {
 impl DndGrabHandler for State {}
 impl WaylandDndGrabHandler for State {
     fn dnd_requested<S: Source>(&mut self, source: S, _: Option<WlSurface>, seat: Seat<Self>, serial: Serial, ty: GrabType) {
-        if let (GrabType::Pointer, Some(ptr)) = (ty, seat.get_pointer()) {
-            if let Some(start) = ptr.grab_start_data() {
-                let grab = DnDGrab::new_pointer(&self.display_handle, start, source, seat);
-                ptr.set_grab(self, grab, serial, Focus::Keep);
-            }
+        if let (GrabType::Pointer, Some(ptr)) = (ty, seat.get_pointer())
+            && let Some(start) = ptr.grab_start_data()
+        {
+            let grab = DnDGrab::new_pointer(&self.display_handle, start, source, seat);
+            ptr.set_grab(self, grab, serial, Focus::Keep);
         }
     }
 }

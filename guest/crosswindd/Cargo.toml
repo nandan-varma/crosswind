@@ -13,6 +13,8 @@ pixman = "0.2.1"
 vsock = "0.5"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+libflatpak = "0.7"
+libc = "0.2"
 
 [dependencies.smithay]
 git = "https://github.com/Smithay/smithay"

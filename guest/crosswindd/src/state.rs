@@ -7,7 +7,7 @@ use smithay::{
     input::{Seat, SeatState},
     output::{Output, PhysicalProperties, Subpixel},
     reexports::{
-        calloop::{EventLoop, Interest, LoopHandle, LoopSignal, Mode, PostAction, RegistrationToken, generic::Generic},
+        calloop::{EventLoop, Interest, LoopHandle, LoopSignal, Mode, PostAction, RegistrationToken, channel, generic::Generic},
         wayland_server::{
             Display, DisplayHandle,
             backend::{ClientData, ClientId, DisconnectReason},
@@ -26,7 +26,11 @@ use smithay::{
     },
 };
 
-use crate::{link::Link, pb};
+use crate::{
+    control::{self, Control},
+    link::{Link, arm_write},
+    pb,
+};
 
 pub enum Role {
     Toplevel(ToplevelSurface),
@@ -63,12 +67,17 @@ pub struct State {
 
     pub compositor_state: CompositorState,
     pub xdg_shell_state: XdgShellState,
+    // Held for their globals; never read after construction.
+    #[allow(dead_code)]
     pub xdg_decoration_state: XdgDecorationState,
     pub shm_state: ShmState,
+    #[allow(dead_code)]
     pub output_manager_state: OutputManagerState,
     pub seat_state: SeatState<State>,
     pub data_device_state: DataDeviceState,
+    #[allow(dead_code)]
     pub fractional_scale_state: FractionalScaleManagerState,
+    #[allow(dead_code)]
     pub viewporter_state: ViewporterState,
     pub popups: PopupManager,
     pub seat: Seat<State>,
@@ -79,6 +88,7 @@ pub struct State {
     pub next_id: u32,
     pub scale_120: u32,
     pub link: Link,
+    pub control: Control,
     pub pointer_window: Option<u32>,
     write_token: Option<RegistrationToken>,
 }
@@ -94,7 +104,13 @@ impl ClientData for ClientState {
 }
 
 impl State {
-    pub fn new(event_loop: &mut EventLoop<'static, Self>, display: Display<Self>, link: Link) -> Self {
+    pub fn new(
+        event_loop: &mut EventLoop<'static, Self>,
+        display: Display<Self>,
+        link: Link,
+        control_link: Link,
+        session_bus: String,
+    ) -> Self {
         let dh = display.handle();
         let loop_handle = event_loop.handle();
 
@@ -132,6 +148,28 @@ impl State {
             })
             .expect("host source");
 
+        let control_fd = control_link.fd().try_clone_to_owned().expect("dup vsock fd");
+        loop_handle
+            .insert_source(Generic::new(control_fd, Interest::READ, Mode::Level), |_, _, state| {
+                state.on_control_readable();
+                Ok(PostAction::Continue)
+            })
+            .expect("control source");
+        let (notes_tx, notes_rx) = channel::channel::<control::Note>();
+        loop_handle
+            .insert_source(notes_rx, |event, _, state| {
+                if let channel::Event::Msg(note) = event {
+                    state.control.on_note(note);
+                }
+            })
+            .expect("control notes");
+        let runtime_dir = std::env::var("XDG_RUNTIME_DIR").unwrap_or_else(|_| "/run/crosswind".into());
+        let env = vec![
+            ("WAYLAND_DISPLAY".to_owned(), socket_name.to_string_lossy().into_owned()),
+            ("XDG_RUNTIME_DIR".to_owned(), runtime_dir),
+            ("DBUS_SESSION_BUS_ADDRESS".to_owned(), session_bus),
+        ];
+
         Self {
             start_time: Instant::now(),
             socket_name,
@@ -153,6 +191,7 @@ impl State {
             next_id: 1,
             scale_120: 120,
             link,
+            control: Control::new(control_link, notes_tx, env),
             pointer_window: None,
             write_token: None,
             display_handle: dh,
@@ -166,29 +205,21 @@ impl State {
 
     /// Called once per loop iteration: push queued bytes to the host and release clients.
     pub fn flush(&mut self) {
-        if let Err(e) = self.link.flush() {
-            tracing::error!("host link lost: {e}");
-            self.loop_signal.stop();
+        if self.link.flush().is_err() {
+            link_lost(self);
         }
-        if self.link.wants_write() && self.write_token.is_none() {
-            let fd = self.link.fd().try_clone_to_owned().expect("dup vsock fd");
-            let token = self
-                .loop_handle
-                .insert_source(Generic::new(fd, Interest::WRITE, Mode::Level), |_, _, state| {
-                    if let Err(e) = state.link.flush() {
-                        tracing::error!("host link lost: {e}");
-                        state.loop_signal.stop();
-                    }
-                    if state.link.wants_write() {
-                        Ok(PostAction::Continue)
-                    } else {
-                        state.write_token = None;
-                        Ok(PostAction::Remove)
-                    }
-                })
-                .expect("write source");
-            self.write_token = Some(token);
+        arm_write(&self.loop_handle, &self.link, &mut self.write_token, |s| (&mut s.link, &mut s.write_token), link_lost);
+
+        if self.control.link.flush().is_err() {
+            link_lost(self);
         }
+        arm_write(
+            &self.loop_handle,
+            &self.control.link,
+            &mut self.control.write_token,
+            |s| (&mut s.control.link, &mut s.control.write_token),
+            link_lost,
+        );
         let _ = self.display_handle.flush_clients();
     }
 
@@ -199,4 +230,10 @@ impl State {
     pub fn win_by_id(&mut self, id: u32) -> Option<&mut Win> {
         self.windows.iter_mut().find(|w| w.id == id)
     }
+}
+
+/// Either link failing ends the session: the host is gone or the protocol is broken.
+fn link_lost(state: &mut State) {
+    tracing::error!("host link lost");
+    state.loop_signal.stop();
 }

@@ -135,6 +135,9 @@ impl State {
             min_height: min.h as u32,
             max_width: max.w as u32,
             max_height: max.h as u32,
+            // TODO: fill from the guest process tree once the proto's flatpak_id/launch_id attribution lands.
+            flatpak_id: String::new(),
+            launch_id: String::new(),
         };
         self.send(pb::to_host::Msg::Opened(opened));
     }
