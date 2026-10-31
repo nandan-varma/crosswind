@@ -211,13 +211,14 @@ public final class StoreModel {
                 }
                 do {
                     bundle = try stubs.install(appID: appID, name: name, version: version, iconPNG: iconPNG)
-                } catch where iconPNG != nil {
+                } catch  where iconPNG != nil {
                     bundle = try stubs.install(appID: appID, name: name, version: version, iconPNG: nil)
                 }
             }
             try await opener(bundle)
         } catch {
-            operations[appID] = AppOperation(kind: .install, fraction: 0, detail: "", failure: error.localizedDescription)
+            operations[appID] = AppOperation(
+                kind: .install, fraction: 0, detail: "", failure: error.localizedDescription)
         }
     }
 

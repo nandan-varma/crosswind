@@ -71,9 +71,6 @@ targets:
       - path: App/Host
     dependencies:
       - package: CrosswindKit
-    settings:
-      base:
-        SKIP_INSTALL: YES
     info:
       path: build/CrosswindHost-Info.plist
       properties:
@@ -86,11 +83,13 @@ targets:
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSMinimumSystemVersion: "27.0"
         LSUIElement: true
+        NSMicrophoneUsageDescription: "Linux apps can record from your microphone when you allow it in Crosswind settings."
         NSPrincipalClass: NSApplication
     entitlements:
       path: App/Host/CrosswindHost.entitlements
       properties:
         com.apple.security.virtualization: true
+        com.apple.security.device.audio-input: true
   # Template for the per-app stub bundles. Generated copies set CrosswindAppID later.
   CrosswindAppStub:
     type: application
@@ -99,9 +98,6 @@ targets:
       - path: App/Stub
     dependencies:
       - package: CrosswindKit
-    settings:
-      base:
-        SKIP_INSTALL: YES
     info:
       path: build/CrosswindAppStub-Info.plist
       properties:
@@ -118,9 +114,6 @@ targets:
   crosswindctl:
     type: tool
     platform: macOS
-    settings:
-      base:
-        SKIP_INSTALL: YES
     sources:
       - path: tools/crosswindctl
     dependencies:
@@ -144,9 +137,9 @@ schemes:
     build:
       targets:
         Crosswind: all
-        CrosswindHost: all
-        CrosswindAppStub: all
-        crosswindctl: all
+        CrosswindHost: [build]
+        CrosswindAppStub: [build]
+        crosswindctl: [build]
         CrosswindTests: [test]
     test:
       targets:

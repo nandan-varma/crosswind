@@ -78,6 +78,8 @@ pub struct Control {
     procs: HashMap<String, Proc>,
     /// Settings/Notification backends; told about every appearance change.
     pub portal: Option<crate::portal::Portal>,
+    /// Latest `OfferClipboard` from the host, applied by the loop after the batch.
+    pub clipboard_offer: Option<Vec<String>>,
 }
 
 impl Control {
@@ -98,6 +100,7 @@ impl Control {
             next_op: 1,
             procs: HashMap::new(),
             portal: None,
+            clipboard_offer: None,
         }
     }
 
@@ -110,6 +113,11 @@ impl Control {
         let call = pb::Call { id, app_id: app_id.to_owned(), body: Some(body) };
         self.link.send(&pb::Message { body: Some(message::Body::Call(call)) });
         rx
+    }
+
+    /// A sender for events from worker threads.
+    pub fn notes_sender(&self) -> channel::Sender<Note> {
+        self.notes.clone()
     }
 
     /// Pushes dark_mode/accent_rgb to the Settings portal; it emits SettingChanged for changes.
@@ -210,6 +218,10 @@ impl Control {
                     flatpak::set_permissions(&app_id, &perms)?;
                     Ok(response::Result::Ok(pb::Ok {}))
                 })
+            }
+            request::Body::OfferClipboard(offer) => {
+                self.clipboard_offer = Some(offer.mimes);
+                self.reply(id, response::Result::Ok(pb::Ok {}));
             }
             request::Body::Shutdown(_) => {
                 self.reply(id, response::Result::Ok(pb::Ok {}));
@@ -437,6 +449,9 @@ impl State {
             Ok(requests) => {
                 for req in requests {
                     self.control.handle(req);
+                }
+                if let Some(mimes) = self.control.clipboard_offer.take() {
+                    crate::clipboard::offer(self, mimes);
                 }
                 if self.control.shutdown {
                     self.loop_signal.stop();

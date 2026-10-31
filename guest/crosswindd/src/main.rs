@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 //! crosswindd: a headless Wayland compositor that mirrors each client window to the macOS host.
 
+mod audio;
+mod clipboard;
 mod control;
 mod flatpak;
 mod handlers;
@@ -10,6 +12,7 @@ mod portal;
 mod render;
 mod satellite;
 mod state;
+mod supervisor;
 
 pub mod pb {
     include!(concat!(env!("OUT_DIR"), "/crosswind.display.rs"));
@@ -37,6 +40,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut state = state::State::new(&mut event_loop, display, link, control_link, session_bus);
     tracing::info!(socket = ?state.socket_name, "compositor ready");
     let runtime_dir = std::env::var("XDG_RUNTIME_DIR").expect("XDG_RUNTIME_DIR");
+    audio::start(&runtime_dir);
     satellite::supervise(state.socket_name.to_string_lossy().into_owned(), runtime_dir);
 
     event_loop.run(None, &mut state, |state| state.flush())?;

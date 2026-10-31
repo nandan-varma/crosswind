@@ -20,6 +20,9 @@ xdg-desktop-portal-gtk
 pipewire
 wireplumber
 pipewire-pulse
+pipewire-alsa
+alsa-lib
+alsa-ucm-conf
 xwayland
 mesa-dri-gallium
 mesa-egl
@@ -33,3 +36,4 @@ foot
 weston-clients
 flatpak-libs
 xcb-util-cursor
+fuse3

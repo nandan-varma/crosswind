@@ -8,6 +8,10 @@ public enum Preferences {
     public enum Key {
         /// Command acts as Control in Linux apps (Cmd+C copies). Default on.
         public static let commandActsAsControl = "commandActsAsControl"
+        /// Shares the clipboard with Linux apps while a Crosswind app is frontmost. Default on.
+        public static let clipboardSync = "clipboardSync"
+        /// Lets Linux apps record from the Mac's microphone. Off by default. Applies when the environment starts.
+        public static let microphoneEnabled = "microphoneEnabled"
         /// Virtual CPUs given to the Linux environment. Applies when it starts.
         public static let cpuCount = "cpuCount"
         /// Memory in GiB given to the Linux environment. Applies when it starts.
@@ -18,6 +22,14 @@ public enum Preferences {
 
     public static var commandActsAsControl: Bool {
         suite.object(forKey: Key.commandActsAsControl) as? Bool ?? true
+    }
+
+    public static var clipboardSync: Bool {
+        suite.object(forKey: Key.clipboardSync) as? Bool ?? true
+    }
+
+    public static var microphoneEnabled: Bool {
+        suite.object(forKey: Key.microphoneEnabled) as? Bool ?? false
     }
 
     // MARK: Resources

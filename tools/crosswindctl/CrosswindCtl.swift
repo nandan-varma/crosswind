@@ -11,7 +11,7 @@ struct CrosswindCtl: AsyncParsableCommand {
         subcommands: [
             Status.self, Start.self, Stop.self, Installed.self, Install.self, Uninstall.self, Update.self,
             Launch.self, Logs.self, CatalogCommand.self, StubCommand.self, ImageCommand.self,
-            Windows.self, TypeText.self, Click.self,
+            Windows.self, TypeText.self, Click.self, Diagnose.self,
         ]
     )
 }
@@ -282,5 +282,22 @@ struct Click: AsyncParsableCommand {
         try await Task.sleep(for: .milliseconds(500))
         let info = try await client.command(.listWindows(.init())).windows.first { $0.id == window }
         print(String(format: "click-to-frame %.1f ms", info?.lastInputToFrameMs ?? -1))
+    }
+}
+
+struct Diagnose: AsyncParsableCommand {
+    static let configuration = CommandConfiguration(
+        abstract: "Write a diagnostic bundle (zip): system, agent state, windows, apps, logs, with personal data redacted.")
+    @Option(help: "Output .zip path (default: crosswind-diagnostics-<time>.zip in the current directory).")
+    var output: String?
+
+    func run() async throws {
+        let client = try await connect()
+        let snapshot = await DiagnosticBundle.collect(agent: client, guestLogs: [])
+        let stamp = Date().formatted(.iso8601.year().month().day().time(includingFractionalSeconds: false))
+            .replacingOccurrences(of: ":", with: "-")
+        let destination = URL(fileURLWithPath: output ?? "crosswind-diagnostics-\(stamp).zip")
+        print(try DiagnosticBundle.write(snapshot, to: destination).path)
+        for problem in snapshot.problems { FileHandle.standardError.write(Data("warning: \(problem)\n".utf8)) }
     }
 }

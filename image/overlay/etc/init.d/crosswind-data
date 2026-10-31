@@ -3,16 +3,21 @@
 # Mounts the persistent data disk (vdb), formatting it on first use, and binds
 # Flatpak's installation and the home directory onto it.
 description="Crosswind data disk"
-depend() { need localmount; }
+depend() { need localmount; after modules; }
 start() {
     modprobe -q ext4
     blkid /dev/vdb 2>/dev/null | grep -q 'TYPE="ext4"' || mkfs.ext4 -q -L crosswind-data /dev/vdb || return 1
     mkdir -p /data && mount /dev/vdb /data || return 1
+    # Shared folders: the host exports them as the virtiofs tag `mac`; each granted folder is one directory in it.
+    modprobe -q virtiofs
+    mkdir -p /mnt/mac && mount -t virtiofs mac /mnt/mac || ewarn 'shared folders not mounted'
     mkdir -p /data/flatpak /data/home /var/lib/flatpak /home
     mount --bind /data/flatpak /var/lib/flatpak
     mount --bind /data/home /home
     # The daemon runs as crosswind (uid 1000): its home persists on the data disk, its runtime dir is tmpfs.
     install -d -o 1000 -g 1000 -m 700 /data/home/crosswind /run/crosswind
+    # Sound devices from virtio_snd (loaded by the modules service): group audio, so the daemon's audio stack can open them.
+    if ls /dev/snd/* >/dev/null 2>&1; then chgrp audio /dev/snd/*; chmod 660 /dev/snd/*; fi
     # X11 socket directory for xwayland-satellite (root-owned and sticky, as X servers require); Flatpak binds it into X11 apps.
     install -d -o root -g root -m 1777 /tmp/.X11-unix
     # GTK settings and the Flatpak permission that lets sandboxed apps read them (read-only image files).

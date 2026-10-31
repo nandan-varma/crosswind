@@ -6,6 +6,7 @@ import SwiftUI
 @main
 struct CrosswindApp: App {
     @State private var model = Self.makeModel()
+    @State private var diagnostics = DiagnosticsModel()
 
     var body: some Scene {
         WindowGroup {
@@ -13,9 +14,16 @@ struct CrosswindApp: App {
                 .task {
                     HostRegistration.register()
                     await model.start()
+                    await diagnostics.connect()
                 }
         }
         .defaultSize(width: 1080, height: 720)
+        .commands { DiagnosticsCommands() }
+
+        Window("Diagnostics", id: "diagnostics") {
+            DiagnosticsView(model: diagnostics)
+        }
+        .defaultSize(width: 980, height: 640)
 
         Settings { SettingsView(model: model) }
     }

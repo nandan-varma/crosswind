@@ -8,7 +8,7 @@ Status: draft, updated as features land. Facts come from the code in this reposi
 - Privacy: no telemetry, no crash upload unless the user opts in.
 
 ## Trust boundaries
-1. **Host <-> guest VM.** The guest is untrusted. It sees: a virtio NAT network, a read-only system disk, its own data disk, and two vsock channels. Nothing else is attached: no shared folders, no host clipboard, no audio, no USB until the user grants them explicitly (planned features, each with its own prompt).
+1. **Host <-> guest VM.** The guest is untrusted. It sees: a virtio NAT network, a read-only system disk, its own data disk, and two vsock channels. Nothing else is attached: no shared folders, no audio, no USB until the user grants them explicitly (planned features, each with its own prompt).
 2. **Host processes.** Store app, host agent, per-app stubs (planned split). They talk over XPC; the agent only accepts connections from code-signed Crosswind binaries or registered stubs.
 3. **Network.** Flatpak downloads go over TLS and are verified by OSTree commit signatures against the pinned Flathub key. Catalog XML is delivered through Flatpak's verified path. Flathub JSON (popularity, sizes) is display-only.
 4. **Updates.** App updates are delivered by Sparkle with EdDSA signatures plus Developer ID code signing (planned). Guest image updates are verified by SHA-256 pinned in the signed app release metadata (planned).
@@ -33,4 +33,4 @@ A malicious Linux app (or a Flatpak escape) controls the guest. What it can do t
 ## Not covered / known limitations
 - No protection against a compromised host OS.
 - Side channels between guest and host (timing, memory pressure) are out of scope.
-- Clipboard and drag-and-drop between host and guest, once added, can exfiltrate or inject content; they will be user-visible and per-app opt-in.
+- Clipboard: text and images are shared only while a Crosswind app is frontmost (the Mac offers MIME types; data is sent only when the guest pastes). Guest copies are written to the Mac clipboard. Settings > General can turn it off. Drag-and-drop, once added, can exfiltrate or inject content and will be user-visible and per-app opt-in.

@@ -55,7 +55,7 @@ Crosswind is a macOS app (AGPL-3.0-or-later, Developer ID distribution) that run
 - Swift 6 language mode. macOS 27 deployment target. Four-space indentation, lines up to 120 columns.
 - `swift-format` (from the Xcode toolchain, `xcrun swift-format`) and SwiftLint with the root `.swift-format` and `.swiftlint.yml`. Do not add SwiftFormat.
 - Every Swift source file carries `SPDX-License-Identifier: AGPL-3.0-or-later` in its first line.
-- Entitlements: `com.apple.security.virtualization` only, on `CrosswindHost`. The apps are not sandboxed (direct distribution).
+- Entitlements: `com.apple.security.virtualization` and `com.apple.security.device.audio-input` (microphone), on `CrosswindHost`. The apps are not sandboxed (direct distribution).
 - Signing: ad-hoc (`-`) by default. Release builds set `RELEASE_SIGN` to a Developer ID identity. Team `72CW7UW6RB`.
 - No dead code, no speculative abstractions. Keep scaffolding minimal.
 - Do not edit `Packages/`, `guest/`, `image/`, `proto/` or `spikes/` unless the task is about them.

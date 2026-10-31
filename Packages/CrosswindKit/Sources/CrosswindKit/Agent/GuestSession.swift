@@ -122,7 +122,9 @@ public final class GuestSession {
     func apply(_ event: Crosswind_Control_Event) {
         switch event.body {
         case .appStarted(let started)?:
-            if !state.runningApps.contains(started.appID) { state.runningApps = (state.runningApps + [started.appID]).sorted() }
+            if !state.runningApps.contains(started.appID) {
+                state.runningApps = (state.runningApps + [started.appID]).sorted()
+            }
             restoreMemory()
         case .appExited(let exited)?:
             state.runningApps.removeAll { $0 == exited.appID }

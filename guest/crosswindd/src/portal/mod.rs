@@ -5,6 +5,7 @@
 //! over a calloop channel; the loop thread issues `Control::call` and hands back the reply
 //! receiver. The caller then waits for the reply off the zbus executor, with a timeout.
 
+pub mod filechooser;
 pub mod notification;
 pub mod open_url;
 pub mod settings;
@@ -47,7 +48,17 @@ impl Bridge {
 
     /// Sends a call to the host and waits for its reply. Blocks; never call it on the loop thread.
     pub fn call_blocking(&self, app_id: &str, body: call::Body) -> Result<pb::CallReply, String> {
-        let deadline = Instant::now() + CALL_TIMEOUT;
+        self.call_blocking_for(app_id, body, CALL_TIMEOUT)
+    }
+
+    /// Like `call_blocking`, with a custom reply timeout (a file chooser waits for the user).
+    pub fn call_blocking_for(
+        &self,
+        app_id: &str,
+        body: call::Body,
+        timeout: Duration,
+    ) -> Result<pb::CallReply, String> {
+        let deadline = Instant::now() + timeout;
         let (tx, rx) = mpsc::channel();
         self.calls
             .send(CallRequest { app_id: app_id.to_owned(), body, reply: tx })
@@ -76,15 +87,16 @@ pub struct Portal {
 }
 
 impl Portal {
-    /// Connects to `address`, requests `BUS_NAME` and serves the Settings and Notification
-    /// interfaces at `OBJECT_PATH`.
+    /// Connects to `address`, requests `BUS_NAME` and serves the Settings, Notification and
+    /// FileChooser interfaces at `OBJECT_PATH`.
     pub fn start(address: &str, bridge: Bridge, appearance: settings::Appearance) -> zbus::Result<Self> {
         let shared = Arc::new(Mutex::new(appearance));
         let conn = zbus::block_on(async {
             Builder::address(address)
                 .name(BUS_NAME)
                 .serve_at(OBJECT_PATH, settings::Settings { appearance: shared.clone() })
-                .serve_at(OBJECT_PATH, notification::Notifications { bridge })
+                .serve_at(OBJECT_PATH, notification::Notifications { bridge: bridge.clone() })
+                .serve_at(OBJECT_PATH, filechooser::FileChooser { bridge })
                 .build()
                 .await
         })?;

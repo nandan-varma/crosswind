@@ -143,7 +143,7 @@ impl State {
     }
 
     /// The Flatpak app and launch behind a Wayland client, from its process.
-    fn owner_of(&self, surface: &WlSurface) -> Option<(String, String)> {
+    pub fn owner_of(&self, surface: &WlSurface) -> Option<(String, String)> {
         let client = self.display_handle.get_client(surface.id()).ok()?;
         let pid = client.get_credentials(&self.display_handle).ok()?.pid;
         self.control.owner_of(pid).map(|(app, launch)| (app.to_owned(), launch.to_owned()))

@@ -59,6 +59,7 @@ public final class AgentCore {
     private let output: () -> Crosswind_Display_Output
     /// Opens a URL with the Mac's default handler; returns whether it was opened.
     private let openURL: (URL) -> Bool
+    private var clipboard: ClipboardBridge!  // set in init, after `self` can be captured
 
     public init(
         session: GuestSession, output: @escaping () -> Crosswind_Display_Output, openURL: @escaping (URL) -> Bool
@@ -70,6 +71,12 @@ public final class AgentCore {
         session.onDisplay = { [weak self] in self?.attach(display: $0) }
         session.onControl = { [weak self] in self?.attach(control: $0) }
         session.onReady = { [weak self] in try await self?.greetGuest() }
+        clipboard = ClipboardBridge(
+            pasteboard: SystemPasteboard(), frontmost: SystemFrontmost(), timer: SystemTimer(),
+            isEnabled: { Preferences.clipboardSync },
+            sendToGuest: { [weak self] body in Task { _ = try? await self?.request(body) } },
+            replyToCall: { [weak self] reply in self?.controlToGuest?.send(.with { $0.callReply = reply }) })
+        clipboard.start()
     }
 
     /// Takes ownership of a freshly accepted client connection.
@@ -142,14 +149,15 @@ public final class AgentCore {
                 try await self.ensureRunning()
                 self.sendToGuest(request, from: client)
             } catch {
-                client.connection.send(.with {
-                    $0.guest = .with {
-                        $0.response = .with {
-                            $0.id = request.id
-                            $0.error = .with { $0.message = error.localizedDescription }
+                client.connection.send(
+                    .with {
+                        $0.guest = .with {
+                            $0.response = .with {
+                                $0.id = request.id
+                                $0.error = .with { $0.message = error.localizedDescription }
+                            }
                         }
-                    }
-                })
+                    })
             }
         }
     }
@@ -165,11 +173,13 @@ public final class AgentCore {
     func request(_ body: Crosswind_Control_Request.OneOf_Body) async throws -> Crosswind_Control_Response {
         guard controlToGuest != nil else { throw GuestControlError.disconnected }
         return await withCheckedContinuation { continuation in
-            let id = issue(ForwardedRequest(client: nil, clientRequestID: 0, reply: { continuation.resume(returning: $0) }))
-            controlToGuest?.send(.with {
-                $0.id = id
-                $0.body = body
-            })
+            let id = issue(
+                ForwardedRequest(client: nil, clientRequestID: 0, reply: { continuation.resume(returning: $0) }))
+            controlToGuest?.send(
+                .with {
+                    $0.id = id
+                    $0.body = body
+                })
         }
     }
 
@@ -188,6 +198,7 @@ public final class AgentCore {
             response.id = request.clientRequestID
             client.connection.send(.with { $0.guest = .with { $0.response = response } })
         case .event(let event)?:
+            if case .clipboardChanged(let changed)? = event.body { return clipboard.guestCopied(changed.items) }
             session.apply(event)
             broadcast(.with { $0.guest = message })
         case .call(let call)?:
@@ -199,23 +210,26 @@ public final class AgentCore {
 
     /// Calls go to the stub of the app that triggered them; links open straight away.
     private func route(call: Crosswind_Control_Call, message: Crosswind_Control_Message) {
+        if case .clipboardRead(let read)? = call.body { return clipboard.read(callID: call.id, mime: read.mime) }
         if case .openURL(let open)? = call.body {
             let ok = URL(string: open.url).map(openURL) ?? false
-            controlToGuest?.send(.with {
-                $0.callReply = .with {
-                    $0.id = call.id
-                    if ok { $0.ok = .init() } else { $0.error = .with { $0.message = "cannot open \(open.url)" } }
-                }
-            })
+            controlToGuest?.send(
+                .with {
+                    $0.callReply = .with {
+                        $0.id = call.id
+                        if ok { $0.ok = .init() } else { $0.error = .with { $0.message = "cannot open \(open.url)" } }
+                    }
+                })
         } else if let stub = stubs[call.appID] {
             stub.connection.send(.with { $0.guest = message })
         } else {
-            controlToGuest?.send(.with {
-                $0.callReply = .with {
-                    $0.id = call.id
-                    $0.error = .with { $0.message = "\(call.appID) has no open window to ask" }
-                }
-            })
+            controlToGuest?.send(
+                .with {
+                    $0.callReply = .with {
+                        $0.id = call.id
+                        $0.error = .with { $0.message = "\(call.appID) has no open window to ask" }
+                    }
+                })
         }
     }
 
@@ -223,14 +237,15 @@ public final class AgentCore {
 
     private func run(_ command: Crosswind_Agent_Command, for client: Client) {
         let reply = { (error: String) in
-            client.connection.send(.with {
-                $0.result = .with {
-                    $0.id = command.id
-                    $0.error = error
-                    $0.state = self.session.state
-                    $0.windows = self.info()
-                }
-            })
+            client.connection.send(
+                .with {
+                    $0.result = .with {
+                        $0.id = command.id
+                        $0.error = error
+                        $0.state = self.session.state
+                        $0.windows = self.info()
+                    }
+                })
         }
         Task {
             do {
@@ -245,7 +260,12 @@ public final class AgentCore {
                     send(.with { $0.input = inject.input })
                 case .launchApp(let launch)?:
                     try await ensureRunning()
-                    let response = try await request(.launch(.with { $0.appID = launch.appID; $0.args = launch.args }))
+                    let response = try await request(
+                        .launch(
+                            .with {
+                                $0.appID = launch.appID
+                                $0.args = launch.args
+                            }))
                     if case .error(let error)? = response.result { throw GuestSessionError.guest(error.message) }
                 case nil: break
                 }
@@ -336,7 +356,8 @@ public final class AgentCore {
         record.scale120 = frame.scale120
         if let start = record.lastInput {
             let elapsed = ContinuousClock.now - start
-            record.lastLatencyMs = Double(elapsed.components.attoseconds) / 1e15 + Double(elapsed.components.seconds) * 1e3
+            record.lastLatencyMs =
+                Double(elapsed.components.attoseconds) / 1e15 + Double(elapsed.components.seconds) * 1e3
             record.lastInput = nil
         }
         windows[frame.window] = record

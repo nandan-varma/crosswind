@@ -53,7 +53,6 @@ private struct SetupView: View {
         switch phase {
         case .connecting: "Connecting…"
         case .installingImage: "Setting up Linux apps"
-        case .startingEnvironment: "Starting the Linux environment"
         case .loadingCatalog: "Loading apps"
         case .ready, .failed: ""
         }

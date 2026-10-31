@@ -141,6 +141,7 @@ checksum = "a31eee39dddec8330830986fcd7625edb5a24ec90ea038215273bbc3adb08ac6"
 name = "crosswindd"
 version = "0.1.0"
 dependencies = [
+ "futures-channel",
  "libc",
  "libflatpak",
  "lz4_flex",

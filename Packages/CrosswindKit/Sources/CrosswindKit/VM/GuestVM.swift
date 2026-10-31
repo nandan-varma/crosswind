@@ -68,7 +68,7 @@ public final class GuestVM: NSObject {
         guard let balloon = machine?.memoryBalloonDevices.first as? VZVirtioTraditionalMemoryBalloonDevice else {
             return
         }
-        balloon.targetVirtualMemorySize = min(bytes ?? resources.memoryBytes, resources.memoryBytes)
+        balloon.targetVirtualMachineMemorySize = min(bytes ?? resources.memoryBytes, resources.memoryBytes)
     }
 
     public func stop() async throws {
@@ -116,7 +116,24 @@ public final class GuestVM: NSObject {
             fileHandleForWriting: console.fileHandleForWriting
         )
         config.serialPorts = [serial]
+
+        config.audioDevices = [makeSoundDevice()]
         return config
+    }
+
+    /// Output always goes to the Mac's default output. Input (the Mac's microphone) is added only when enabled.
+    private func makeSoundDevice() -> VZVirtioSoundDeviceConfiguration {
+        let output = VZVirtioSoundDeviceOutputStreamConfiguration()
+        output.sink = VZHostAudioOutputStreamSink()
+        var streams: [VZVirtioSoundDeviceStreamConfiguration] = [output]
+        if Preferences.microphoneEnabled {
+            let input = VZVirtioSoundDeviceInputStreamConfiguration()
+            input.source = VZHostAudioInputStreamSource()
+            streams.append(input)
+        }
+        let sound = VZVirtioSoundDeviceConfiguration()
+        sound.streams = streams
+        return sound
     }
 }
 

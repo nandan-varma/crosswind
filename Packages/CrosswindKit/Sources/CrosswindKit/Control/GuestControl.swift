@@ -233,6 +233,8 @@ public actor GuestControl {
             eventContinuation.yield(.appExited(exited))
         case .log(let line)?:
             eventContinuation.yield(.log(line))
+        case .clipboardChanged?:
+            break  // consumed by the agent's clipboard bridge
         case nil:
             break
         }

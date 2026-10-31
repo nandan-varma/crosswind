@@ -15,6 +15,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 libflatpak = "0.7"
 libc = "0.2"
+futures-channel = "0.3"
 zbus = "6"
 
 [dependencies.smithay]

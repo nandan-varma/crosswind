@@ -20,7 +20,7 @@ use smithay::{
         output::OutputHandler,
         pointer_constraints::PointerConstraintsHandler,
         selection::{
-            SelectionHandler,
+            SelectionHandler, SelectionSource, SelectionTarget,
             data_device::{DataDeviceHandler, DataDeviceState, WaylandDndGrabHandler, set_data_device_focus},
         },
         shell::xdg::{
@@ -33,8 +33,10 @@ use smithay::{
 use smithay::input::dnd::{DnDGrab, DndGrabHandler, GrabType, Source};
 use smithay::input::pointer::Focus;
 
+use std::os::fd::OwnedFd;
+
 use crate::{
-    pb,
+    clipboard, pb,
     state::{ClientState, Role, State, Win},
 };
 
@@ -185,7 +187,20 @@ impl SeatHandler for State {
 }
 
 impl SelectionHandler for State {
-    type SelectionUserData = ();
+    type SelectionUserData = clipboard::Offered;
+
+    fn new_selection(&mut self, ty: SelectionTarget, source: Option<SelectionSource>, seat: Seat<Self>) {
+        // Only client-set clipboard selections reach here; clearing (None) and primary are not forwarded.
+        if ty != SelectionTarget::Clipboard {
+            return;
+        }
+        let Some(source) = source else { return };
+        clipboard::copy(&seat, &source, self.control.notes_sender());
+    }
+
+    fn send_selection(&mut self, _: SelectionTarget, mime_type: String, fd: OwnedFd, seat: Seat<Self>, _: &clipboard::Offered) {
+        clipboard::paste(self, &seat, mime_type, fd);
+    }
 }
 
 impl DataDeviceHandler for State {
