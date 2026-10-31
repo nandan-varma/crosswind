@@ -5,6 +5,8 @@ import SwiftProtobuf
 public typealias ToHost = Crosswind_Display_ToHost
 public typealias ToGuest = Crosswind_Display_ToGuest
 
+private let maxFrame = 64 << 20
+
 public typealias DisplayConnection = FramedConnection<ToHost, ToGuest>
 
 /// A vsock stream carrying length-prefixed (little-endian u32) protobuf messages.
@@ -15,7 +17,6 @@ public final class FramedConnection<Incoming: SwiftProtobuf.Message & Sendable, 
     private let fd: Int32
     private let owner: AnyObject  // keeps the VZVirtioSocketConnection alive
     private let writeQueue = DispatchQueue(label: "dev.crosswind.vsock.write")
-    private static let maxFrame = 64 << 20
 
     public let messages: AsyncStream<Incoming>
     private let continuation: AsyncStream<Incoming>.Continuation
