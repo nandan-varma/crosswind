@@ -265,4 +265,44 @@ import Testing
         let late = harness.connect(.store)
         #expect(await late.inbox.next()?.stateUpdate?.runningApps == ["org.example.A"])
     }
+
+    // MARK: Share refresh
+
+    @Test func refreshSharesIsAllowedForStubsStoreAndCtl() async throws {
+        let harness = AgentHarness()
+        let stub = harness.connect(.stub, appID: "org.example.A")
+        let store = harness.connect(.store)
+        let ctl = harness.connect(.ctl)
+
+        // With no VM running the refresh is a successful no-op.
+        stub.send(command: .refreshShares(.init()), id: 1)
+        let fromStub = try #require(await stub.inbox.first { $0.commandResult?.id == 1 }?.commandResult)
+        #expect(fromStub.error.isEmpty)
+        store.send(command: .refreshShares(.init()), id: 2)
+        let fromStore = try #require(await store.inbox.first { $0.commandResult?.id == 2 }?.commandResult)
+        #expect(fromStore.error.isEmpty)
+        ctl.send(command: .refreshShares(.init()), id: 3)
+        let fromCtl = try #require(await ctl.inbox.first { $0.commandResult?.id == 3 }?.commandResult)
+        #expect(fromCtl.error.isEmpty)
+    }
+
+    @Test func stubsMayNotSendCommandsOtherThanLaunchAndRefreshShares() async throws {
+        let harness = AgentHarness()
+        let stub = harness.connect(.stub, appID: "org.example.A")
+
+        // The stop is dropped without a result. The refresh after it is answered, so the stop had its chance.
+        stub.send(command: .stopVm(.init()), id: 4)
+        stub.send(command: .refreshShares(.init()), id: 5)
+        let answered = await stub.inbox.first { $0.commandResult?.id == 5 }
+        #expect(answered?.commandResult?.error.isEmpty == true)
+        #expect(await stub.inbox.first(timeout: .milliseconds(300)) { $0.commandResult?.id == 4 } == nil)
+    }
+
+    @Test func stubPolicyAllowsOnlyItsLaunchAndRefresh() {
+        #expect(StubCommandPolicy.allows(.launchApp(.with { $0.appID = "org.example.A" }), appID: "org.example.A"))
+        #expect(!StubCommandPolicy.allows(.launchApp(.with { $0.appID = "org.example.B" }), appID: "org.example.A"))
+        #expect(StubCommandPolicy.allows(.refreshShares(.init()), appID: "org.example.A"))
+        #expect(!StubCommandPolicy.allows(.stopVm(.init()), appID: "org.example.A"))
+        #expect(!StubCommandPolicy.allows(nil, appID: "org.example.A"))
+    }
 }

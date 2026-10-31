@@ -247,6 +247,11 @@ public final class StoreModel {
         await refreshInstalled()
     }
 
+    /// Tells the agent to re-read the shared folders after the user changed them.
+    public func sharedFoldersChanged() async {
+        _ = try? await agent?.command(.refreshShares(.init()))
+    }
+
     /// Restarts the Linux environment so changed resource settings apply.
     public func restartEnvironment() async throws {
         _ = try await agent?.command(.restartVm(.init()))

@@ -8,22 +8,23 @@ import Testing
 struct CompatMatrixTests {
     private static let when = Date(timeIntervalSince1970: 1_780_000_000)
 
-    private static func record(_ id: String, _ name: String, _ status: CompatStatus, note: String = "") -> CompatRecord {
+    private static func record(_ id: String, _ name: String, _ status: CompatStatus, note: String = "") -> CompatRecord
+    {
         CompatRecord(
             appID: id, name: name, status: status, notes: note.isEmpty ? [] : [note], testedAt: when,
             guestImageVersion: "0.4.0", arch: "aarch64")
     }
 
     @Test("matrix sorts by status, then name, and counts each status")
-    func sorting() {
+    func sorting() throws {
         let markdown = CompatMatrix.markdown([
             Self.record("org.z.Z", "Zed", .works),
             Self.record("org.b.B", "beta", .broken, note: "no window"),
             Self.record("org.a.A", "Alpha", .works),
         ])
-        let alpha = try! #require(markdown.range(of: "`org.a.A`"))
-        let zed = try! #require(markdown.range(of: "`org.z.Z`"))
-        let beta = try! #require(markdown.range(of: "`org.b.B`"))
+        let alpha = try #require(markdown.range(of: "`org.a.A`"))
+        let zed = try #require(markdown.range(of: "`org.z.Z`"))
+        let beta = try #require(markdown.range(of: "`org.b.B`"))
         #expect(alpha.lowerBound < zed.lowerBound)
         #expect(zed.lowerBound < beta.lowerBound)
         #expect(markdown.contains("- Works: 2"))

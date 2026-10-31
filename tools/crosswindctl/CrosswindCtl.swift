@@ -356,13 +356,16 @@ struct CompatCommand: AsyncParsableCommand {
             var options = CompatHarness.Options(screenshotDirectory: screenshots)
             options.timeout = .seconds(timeout)
             options.keepInstalled = keep
-            options.imageVersion = ImageStore(paths: .standard).installedVersion() ?? "dev"
+            options.imageVersion = await ImageStore(paths: .standard).installedVersion() ?? "dev"
 
-            let records = try await CompatHarness.run(ids: appIDs, control: client, options: options) {
-                FileHandle.standardError.write(Data(($0 + "\n").utf8))
-            }
-            try CompatReport.write(
-                records, directory: directory, ratingsFile: ratings.map { URL(fileURLWithPath: $0) })
+            let ratingsFile = ratings.map { URL(fileURLWithPath: $0) }
+            // Each app is written as soon as it is tested, so an interrupted run keeps what it finished.
+            let records = try await CompatHarness.run(
+                ids: appIDs, control: client, options: options,
+                log: { FileHandle.standardError.write(Data(($0 + "\n").utf8)) },
+                onRecord: { record in
+                    try? CompatReport.write([record], directory: directory, ratingsFile: ratingsFile)
+                })
             print(records.map { "\($0.status.rawValue)\t\($0.appID)" }.joined(separator: "\n"))
         }
     }

@@ -5,6 +5,7 @@ import SwiftUI
 
 /// The folders the user shares with Linux apps. Nothing is shared until a folder is added.
 struct SharedFoldersSettings: View {
+    let model: StoreModel
     @State private var folders = (try? SharedFolders.load(from: SharedFolders.defaultFile)) ?? SharedFolders()
     @State private var failure: String?
 
@@ -89,6 +90,7 @@ struct SharedFoldersSettings: View {
         do {
             try folders.save(to: SharedFolders.defaultFile)
             failure = nil
+            Task { await model.sharedFoldersChanged() }
         } catch {
             failure = "Could not save the shared folders: \(error.localizedDescription)"
         }

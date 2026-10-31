@@ -28,6 +28,7 @@ final class StubDelegate: NSObject, NSApplicationDelegate {
             do {
                 let client = try await AgentClient.connect(role: .stub, appID: appID)
                 self.client = client
+                fileChooser.refreshShares = { _ = try? await client.command(.refreshShares(.init())) }
                 server = DisplayServer(
                     messages: client.display, send: { message in Task { await client.send(display: message) } })
                 watchForExit(client)

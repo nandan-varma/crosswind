@@ -100,9 +100,7 @@ public final class AgentCore {
         case .request(let request)?:
             forward(request, from: client)
         case .command(let command)?:
-            if client.role == .stub {  // a stub may only launch its own app
-                guard case .launchApp(let launch)? = command.body, launch.appID == client.appID else { return }
-            }
+            if client.role == .stub, !StubCommandPolicy.allows(command.body, appID: client.appID) { return }
             run(command, for: client)
         case .display(let input)?:
             guard client.role == .stub, owns(client, window: windowID(of: input)) else { return }
@@ -261,6 +259,7 @@ public final class AgentCore {
                 case .restartVm?: try await session.restart()
                 case .resetEnvironment?: try await session.resetDataDisk()
                 case .getState?, .listWindows?, .getLogs?: break
+                case .refreshShares?: try session.applySharedFolders()
                 case .injectInput(let inject)?:
                     guard client.role == .ctl else { throw GuestSessionError.guest("not permitted") }
                     send(.with { $0.input = inject.input })

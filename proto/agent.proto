@@ -39,6 +39,7 @@ message Command {
     RestartVm restart_vm = 8;
     ResetEnvironment reset_environment = 9;
     GetLogs get_logs = 10;
+    RefreshShares refresh_shares = 11;
   }
 }
 
@@ -61,6 +62,8 @@ message GetState {}
 message RestartVm {}
 // Stops the VM and deletes the data disk: every installed app and its data are gone.
 message ResetEnvironment {}
+// Re-reads the shared folders from disk and applies them to the running VM (no-op when no VM runs).
+message RefreshShares {}
 
 // Starts the VM if needed and launches the app; its windows are delivered to the app's stub.
 message LaunchApp {

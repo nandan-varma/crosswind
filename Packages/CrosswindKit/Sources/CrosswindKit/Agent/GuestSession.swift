@@ -65,6 +65,14 @@ public final class GuestSession {
         try await task.value
     }
 
+    /// Reloads the shared folders from disk and applies them to the running VM. A VM that boots later builds its
+    /// configuration from the same file, so nothing happens when no VM runs.
+    public func applySharedFolders() throws {
+        guard let vm else { return }
+        try FileManager.default.createDirectory(at: Staging.root, withIntermediateDirectories: true)
+        vm.updateSharedFolders(try SharedFolders.load(from: SharedFolders.defaultFile))
+    }
+
     public func stop() async {
         guard let vm else { return }
         setPhase(.stopping)

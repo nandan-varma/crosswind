@@ -239,6 +239,14 @@ public nonisolated struct Crosswind_Agent_Command: Sendable {
     set {body = .getLogs(newValue)}
   }
 
+  public var refreshShares: Crosswind_Agent_RefreshShares {
+    get {
+      if case .refreshShares(let v)? = body {return v}
+      return Crosswind_Agent_RefreshShares()
+    }
+    set {body = .refreshShares(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public nonisolated enum OneOf_Body: Equatable, Sendable {
@@ -251,6 +259,7 @@ public nonisolated struct Crosswind_Agent_Command: Sendable {
     case restartVm(Crosswind_Agent_RestartVm)
     case resetEnvironment(Crosswind_Agent_ResetEnvironment)
     case getLogs(Crosswind_Agent_GetLogs)
+    case refreshShares(Crosswind_Agent_RefreshShares)
 
   }
 
@@ -345,6 +354,17 @@ public nonisolated struct Crosswind_Agent_RestartVm: Sendable {
 
 /// Stops the VM and deletes the data disk: every installed app and its data are gone.
 public nonisolated struct Crosswind_Agent_ResetEnvironment: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+/// Re-reads the shared folders from disk and applies them to the running VM (no-op when no VM runs).
+public nonisolated struct Crosswind_Agent_RefreshShares: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -604,7 +624,7 @@ nonisolated extension Crosswind_Agent_ClientMessage: SwiftProtobuf.Message, Swif
 
 nonisolated extension Crosswind_Agent_Command: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Command"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{3}start_vm\0\u{3}stop_vm\0\u{3}get_state\0\u{3}launch_app\0\u{3}inject_input\0\u{3}list_windows\0\u{3}restart_vm\0\u{3}reset_environment\0\u{3}get_logs\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{3}start_vm\0\u{3}stop_vm\0\u{3}get_state\0\u{3}launch_app\0\u{3}inject_input\0\u{3}list_windows\0\u{3}restart_vm\0\u{3}reset_environment\0\u{3}get_logs\0\u{3}refresh_shares\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -730,6 +750,19 @@ nonisolated extension Crosswind_Agent_Command: SwiftProtobuf.Message, SwiftProto
           self.body = .getLogs(v)
         }
       }()
+      case 11: try {
+        var v: Crosswind_Agent_RefreshShares?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .refreshShares(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .refreshShares(v)
+        }
+      }()
       default: break
       }
     }
@@ -779,6 +812,10 @@ nonisolated extension Crosswind_Agent_Command: SwiftProtobuf.Message, SwiftProto
     case .getLogs?: try {
       guard case .getLogs(let v)? = self.body else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 10)
+    }()
+    case .refreshShares?: try {
+      guard case .refreshShares(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 11)
     }()
     case nil: break
     }
@@ -966,6 +1003,25 @@ nonisolated extension Crosswind_Agent_ResetEnvironment: SwiftProtobuf.Message, S
   }
 
   public static func ==(lhs: Crosswind_Agent_ResetEnvironment, rhs: Crosswind_Agent_ResetEnvironment) -> Bool {
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Crosswind_Agent_RefreshShares: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".RefreshShares"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap()
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    // Load everything into unknown fields
+    while try decoder.nextFieldNumber() != nil {}
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Crosswind_Agent_RefreshShares, rhs: Crosswind_Agent_RefreshShares) -> Bool {
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

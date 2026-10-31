@@ -73,7 +73,8 @@ public struct Canvas: Sendable, Equatable {
         guard width > 0, height > 0, let provider = CGDataProvider(data: Data(pixels) as CFData) else {
             throw CompatError.pngFailed("empty canvas")
         }
-        let bitmap = CGBitmapInfo(rawValue: CGImageAlphaInfo.noneSkipFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue)
+        let bitmap = CGBitmapInfo(
+            rawValue: CGImageAlphaInfo.noneSkipFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue)
         guard
             let image = CGImage(
                 width: width, height: height, bitsPerComponent: 8, bitsPerPixel: 32, bytesPerRow: width * 4,
@@ -99,7 +100,8 @@ public enum PixelStatistics {
         var index = 0
         while index < count {
             let offset = index * 4
-            let luma = 0.114 * Double(pixels[offset]) + 0.587 * Double(pixels[offset + 1])
+            let luma =
+                0.114 * Double(pixels[offset]) + 0.587 * Double(pixels[offset + 1])
                 + 0.299 * Double(pixels[offset + 2])
             sum += luma
             squares += luma * luma

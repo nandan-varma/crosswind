@@ -13,6 +13,10 @@ import UniformTypeIdentifiers
 final class FileChooserHandler {
     private var session: URL?
     private var syncs: [StagedFileSync] = []
+    /// Tells the agent to re-read the shares. Set by the stub once it is connected.
+    var refreshShares: (() async -> Void)?
+    /// Set when the current call used the staging directory.
+    private var stagedThisCall = false
 
     private enum OutsideChoice {
         case shareFolder
@@ -20,7 +24,15 @@ final class FileChooserHandler {
         case cancel
     }
 
+    /// Answers one call. A call that used staging asks the agent to refresh the share before the app gets the path.
     func handle(_ request: Crosswind_Control_FileChooser) async -> Crosswind_Control_CallReply.OneOf_Result {
+        stagedThisCall = false
+        let result = await answer(request)
+        if stagedThisCall { await refreshShares?() }
+        return result
+    }
+
+    private func answer(_ request: Crosswind_Control_FileChooser) async -> Crosswind_Control_CallReply.OneOf_Result {
         switch request.mode {
         case .save:
             return await save(request)
@@ -156,6 +168,7 @@ final class FileChooserHandler {
 
     /// The session directory, created on first use.
     private func currentSession() throws -> URL {
+        stagedThisCall = true
         if let session { return session }
         let created = try Staging.makeSession()
         session = created

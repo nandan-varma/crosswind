@@ -67,7 +67,7 @@ struct CompatTypesTests {
             screenshot: "screenshots/org.gnome.Calculator.png")
         let data = try CompatResults.encode([record])
         #expect(try CompatResults.decode(data) == [record])
-        #expect(String(decoding: data, as: UTF8.self).contains("\"no-arm-build\"") == false)
+        #expect((String(data: data, encoding: .utf8) ?? "").contains("\"caveats\""))
     }
 
     @Test("status raw values match the file format")
