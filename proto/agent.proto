@@ -1,0 +1,79 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Protocol between the host agent (CrosswindHost) and its clients: the store app, crosswindctl and per-app stubs.
+// Transport: a connection established through the agent's Mach service; the client's role and (for stubs) app id
+// travel in that XPC handshake, the agent replies with one end of a socketpair, and both sides then exchange
+// length-prefixed messages on it (same framing as display.proto).
+syntax = "proto3";
+
+package crosswind.agent;
+
+import "control.proto";
+import "display.proto";
+
+enum Role {
+  STORE = 0;
+  CTL = 1;
+  STUB = 2;
+}
+
+// ---- client -> agent ----
+
+message ClientMessage {
+  oneof body {
+    crosswind.control.Request request = 2;    // forwarded to the guest; ids are scoped to this connection
+    Command command = 3;
+    crosswind.display.ToGuest display = 4;    // stubs only: input, configure, ack, close for their windows
+  }
+}
+
+message Command {
+  uint64 id = 1;
+  oneof body {
+    StartVm start_vm = 2;
+    StopVm stop_vm = 3;
+    GetState get_state = 4;
+    LaunchApp launch_app = 5;
+  }
+}
+
+message StartVm {}
+message StopVm {}
+message GetState {}
+
+// Starts the VM if needed and launches the app; its windows are delivered to the app's stub.
+message LaunchApp {
+  string app_id = 1;
+  repeated string args = 2;
+}
+
+// ---- agent -> client ----
+
+message AgentMessage {
+  oneof body {
+    crosswind.control.Message guest = 1;      // responses to forwarded requests and guest events
+    CommandResult result = 2;
+    State state = 3;                          // sent on connect and on every change
+    crosswind.display.ToHost display = 4;     // stubs only: window lifecycle and frames for their windows
+  }
+}
+
+message CommandResult {
+  uint64 id = 1;
+  string error = 2;    // empty on success
+  State state = 3;     // for GetState
+}
+
+enum VmPhase {
+  STOPPED = 0;
+  STARTING = 1;
+  RUNNING = 2;
+  STOPPING = 3;
+  FAILED = 4;
+}
+
+message State {
+  VmPhase phase = 1;
+  string detail = 2;                    // human-readable reason for FAILED, progress text for STARTING
+  repeated string running_apps = 3;     // Flatpak app ids with a live process in the guest
+}

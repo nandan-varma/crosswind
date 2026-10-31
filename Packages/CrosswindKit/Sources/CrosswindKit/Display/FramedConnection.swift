@@ -15,13 +15,14 @@ public final class FramedConnection<Incoming: SwiftProtobuf.Message & Sendable, 
     @unchecked Sendable
 {
     private let fd: Int32
-    private let owner: AnyObject  // keeps the VZVirtioSocketConnection alive
+    private let owner: AnyObject?  // keeps the VZVirtioSocketConnection alive
     private let writeQueue = DispatchQueue(label: "dev.crosswind.vsock.write")
 
     public let messages: AsyncStream<Incoming>
     private let continuation: AsyncStream<Incoming>.Continuation
 
-    public init(fd: Int32, owner: AnyObject) {
+    /// `closesDescriptor`: the connection owns `fd` (a socketpair end) and closes it when the stream ends.
+    public init(fd: Int32, owner: AnyObject? = nil, closesDescriptor: Bool = false) {
         self.fd = fd
         self.owner = owner
         (messages, continuation) = AsyncStream.makeStream(of: Incoming.self, bufferingPolicy: .unbounded)
@@ -29,7 +30,13 @@ public final class FramedConnection<Incoming: SwiftProtobuf.Message & Sendable, 
         let continuation = continuation
         Thread.detachNewThread {
             Self.readLoop(fd: fd, continuation: continuation)
+            if closesDescriptor { close(fd) }
         }
+    }
+
+    /// Ends the stream: pending reads fail, the peer sees EOF.
+    public func disconnect() {
+        shutdown(fd, SHUT_RDWR)
     }
 
     public func send(_ message: Outgoing) {

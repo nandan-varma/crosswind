@@ -69,3 +69,10 @@ extension Crosswind_Control_Request {
         return cancel.operation
     }
 }
+
+extension GuestControl {
+    /// Test convenience: drive the control client straight over a vsock-style connection.
+    init(connection: ControlConnection) {
+        self.init(messages: connection.messages, send: { connection.send($0) })
+    }
+}

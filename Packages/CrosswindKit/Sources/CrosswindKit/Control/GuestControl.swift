@@ -23,16 +23,19 @@ public actor GuestControl {
 
     public nonisolated let events: AsyncStream<Event>
     private let eventContinuation: AsyncStream<Event>.Continuation
-    private let connection: ControlConnection
+    private let sendRequest: @Sendable (Crosswind_Control_Request) -> Void
     private var nextID: UInt64 = 0
     private var pending: [UInt64: (Result<Crosswind_Control_Response, Error>) -> Void] = [:]
     private var operations: [UInt64: OperationHandle] = [:]
     private var isClosed = false
 
-    public init(connection: ControlConnection) {
-        self.connection = connection
+    /// `messages` and `send` are the two directions of any transport (a vsock connection, or the host agent's socket).
+    public init(
+        messages: AsyncStream<Crosswind_Control_Message>,
+        send: @escaping @Sendable (Crosswind_Control_Request) -> Void
+    ) {
+        sendRequest = send
         (events, eventContinuation) = AsyncStream.makeStream(of: Event.self, bufferingPolicy: .unbounded)
-        let messages = connection.messages
         Task { [weak self] in
             for await message in messages {
                 guard let self else { return }
@@ -178,7 +181,7 @@ public actor GuestControl {
             $0.body = body
         }
         pending[nextID] = reply
-        connection.send(request)
+        sendRequest(request)
     }
 
     private func route(_ message: Crosswind_Control_Message) async {

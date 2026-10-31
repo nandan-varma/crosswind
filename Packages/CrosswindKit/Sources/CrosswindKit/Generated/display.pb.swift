@@ -155,6 +155,11 @@ public nonisolated struct Crosswind_Display_WindowOpened: Sendable {
 
   public var maxHeight: UInt32 = 0
 
+  /// Flatpak app that owns the window, from the guest process tree; empty if the client was not started by us.
+  public var flatpakID: String = String()
+
+  public var launchID: String = String()
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -750,7 +755,7 @@ nonisolated extension Crosswind_Display_ToHost: SwiftProtobuf.Message, SwiftProt
 
 nonisolated extension Crosswind_Display_WindowOpened: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".WindowOpened"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}kind\0\u{1}parent\0\u{1}x\0\u{1}y\0\u{1}title\0\u{3}app_id\0\u{3}min_width\0\u{3}min_height\0\u{3}max_width\0\u{3}max_height\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}kind\0\u{1}parent\0\u{1}x\0\u{1}y\0\u{1}title\0\u{3}app_id\0\u{3}min_width\0\u{3}min_height\0\u{3}max_width\0\u{3}max_height\0\u{3}flatpak_id\0\u{3}launch_id\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -769,6 +774,8 @@ nonisolated extension Crosswind_Display_WindowOpened: SwiftProtobuf.Message, Swi
       case 9: try { try decoder.decodeSingularUInt32Field(value: &self.minHeight) }()
       case 10: try { try decoder.decodeSingularUInt32Field(value: &self.maxWidth) }()
       case 11: try { try decoder.decodeSingularUInt32Field(value: &self.maxHeight) }()
+      case 12: try { try decoder.decodeSingularStringField(value: &self.flatpakID) }()
+      case 13: try { try decoder.decodeSingularStringField(value: &self.launchID) }()
       default: break
       }
     }
@@ -808,6 +815,12 @@ nonisolated extension Crosswind_Display_WindowOpened: SwiftProtobuf.Message, Swi
     if self.maxHeight != 0 {
       try visitor.visitSingularUInt32Field(value: self.maxHeight, fieldNumber: 11)
     }
+    if !self.flatpakID.isEmpty {
+      try visitor.visitSingularStringField(value: self.flatpakID, fieldNumber: 12)
+    }
+    if !self.launchID.isEmpty {
+      try visitor.visitSingularStringField(value: self.launchID, fieldNumber: 13)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -823,6 +836,8 @@ nonisolated extension Crosswind_Display_WindowOpened: SwiftProtobuf.Message, Swi
     if lhs.minHeight != rhs.minHeight {return false}
     if lhs.maxWidth != rhs.maxWidth {return false}
     if lhs.maxHeight != rhs.maxHeight {return false}
+    if lhs.flatpakID != rhs.flatpakID {return false}
+    if lhs.launchID != rhs.launchID {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

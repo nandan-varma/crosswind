@@ -37,6 +37,9 @@ message WindowOpened {
   uint32 min_height = 9;
   uint32 max_width = 10;   // 0 = unbounded
   uint32 max_height = 11;
+  // Flatpak app that owns the window, from the guest process tree; empty if the client was not started by us.
+  string flatpak_id = 12;
+  string launch_id = 13;
 }
 
 message WindowChanged {

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import AppKit
 
-/// Terminates the display channel: turns guest window messages into native windows.
+/// Turns guest window messages into native windows. One instance per app stub (it only sees its own windows).
 @MainActor
 public final class DisplayServer {
-    private let connection: DisplayConnection
+    private let send: (ToGuest) -> Void
     private var windows: [UInt32: GuestWindow] = [:]
     private var titles: [UInt32: String] = [:]
 
@@ -12,11 +12,9 @@ public final class DisplayServer {
     public var onFrame: ((_ window: UInt32, _ seq: UInt64, _ bytes: Int) -> Void)?
     public var windowIDs: [UInt32] { windows.keys.sorted() }
 
-    public init(connection: DisplayConnection) {
-        self.connection = connection
-        sendOutput()
+    public init(messages: AsyncStream<ToHost>, send: @escaping (ToGuest) -> Void) {
+        self.send = send
         Task { [weak self] in
-            guard let messages = self?.connection.messages else { return }
             for await message in messages { self?.handle(message) }
             self?.closeAll()
         }
@@ -24,7 +22,7 @@ public final class DisplayServer {
 
     /// Injects input as if it came from the window's view (tests and the control interface).
     public func inject(window: UInt32, _ event: Crosswind_Display_Input.OneOf_Event) {
-        connection.send(
+        send(
             .with {
                 $0.input = .with {
                     $0.window = window
@@ -33,25 +31,11 @@ public final class DisplayServer {
             })
     }
 
-    private func sendOutput() {
-        let screen = NSScreen.main
-        let size = screen?.visibleFrame.size ?? CGSize(width: 1440, height: 900)
-        connection.send(
-            .with {
-                $0.output = .with {
-                    $0.width = UInt32(size.width)
-                    $0.height = UInt32(size.height)
-                    $0.scale120 = UInt32(((screen?.backingScaleFactor ?? 2) * 120).rounded())
-                    $0.refreshMhz = UInt32((screen?.maximumFramesPerSecond ?? 60) * 1000)
-                }
-            })
-    }
-
     private func handle(_ message: ToHost) {
         switch message.msg {
         case .opened(let opened):
             let window = GuestWindow(opened: opened, parent: windows[opened.parent])
-            window.send = { [connection] msg in connection.send(.with { $0.msg = msg }) }
+            window.send = { [send] msg in send(.with { $0.msg = msg }) }
             windows[opened.id] = window
             titles[opened.id] = opened.title
         case .changed(let changed):
