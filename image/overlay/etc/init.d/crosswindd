@@ -3,7 +3,10 @@
 description="Crosswind guest daemon"
 command=/usr/bin/crosswindd
 command_background=true
+export XDG_RUNTIME_DIR=/run/crosswind
+export CROSSWIND_SPIKE_EXEC="${CROSSWIND_SPIKE_EXEC:-foot}"
 pidfile=/run/crosswindd.pid
 output_log=/var/log/crosswindd.log
 error_log=/var/log/crosswindd.log
 depend() { need dbus crosswind-data; }
+start_pre() { mkdir -p /run/crosswind && chmod 700 /run/crosswind; }

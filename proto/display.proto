@@ -135,8 +135,6 @@ message Input {
     PointerAxis axis = 4;
     PointerLeave leave = 5;
     Key key = 6;
-    Modifiers modifiers = 7;
-    string text = 8;  // composed text (IME commit)
   }
 }
 
@@ -165,11 +163,4 @@ message Key {
   uint32 keycode = 1;  // Linux evdev code
   bool pressed = 2;
   uint32 time_ms = 3;
-}
-
-message Modifiers {
-  uint32 depressed = 1;
-  uint32 latched = 2;
-  uint32 locked = 3;
-  uint32 group = 4;
 }

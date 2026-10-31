@@ -5,9 +5,9 @@
 *.asif
 *.iso
 /build/
-/.build/
-/DerivedData/
-/target/
+.build/
+DerivedData/
+target/
 /spikes/**/work/
 *.p12
 *.cer

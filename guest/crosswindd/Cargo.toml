@@ -1,0 +1,24 @@
+[package]
+name = "crosswindd"
+description = "Crosswind guest daemon: Wayland compositor that streams windows to the macOS host"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+build = "build.rs"
+
+[dependencies]
+lz4_flex = { version = "0.11", default-features = false, features = ["safe-encode", "safe-decode"] }
+prost = "0.13"
+pixman = "0.2.1"
+vsock = "0.5"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[dependencies.smithay]
+git = "https://github.com/Smithay/smithay"
+rev = "f581531d479cf2e3307bafb913c5d2bb12860bb3"
+default-features = false
+features = ["wayland_frontend", "desktop", "renderer_pixman"]
+
+[build-dependencies]
+prost-build = "0.13"
