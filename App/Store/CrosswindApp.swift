@@ -6,13 +6,14 @@ import SwiftUI
 @main
 struct CrosswindApp: App {
     @State private var model = Self.makeModel()
+    @State private var registration = HostRegistration()
     @State private var diagnostics = DiagnosticsModel()
 
     var body: some Scene {
         WindowGroup {
-            StoreRoot(model: model)
+            StoreRoot(model: model, registration: registration)
                 .task {
-                    HostRegistration.register()
+                    await registration.ensureEnabled()
                     await model.start()
                     await diagnostics.connect()
                 }

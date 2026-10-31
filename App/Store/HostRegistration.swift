@@ -3,27 +3,44 @@ import AppKit
 import OSLog
 import ServiceManagement
 
-/// Registers the background host agent (launchd, Mach service dev.crosswind.host) with the system.
+/// Registers the background host agent (launchd, Mach service dev.crosswind.host) with the system and waits for the
+/// user's approval in Login Items, which macOS requires the first time.
 @MainActor
-enum HostRegistration {
+@Observable
+final class HostRegistration {
     private static let logger = Logger(subsystem: "dev.crosswind", category: "registration")
 
-    static func register() {
+    private(set) var needsApproval = false
+    private var openedSettings = false
+
+    /// Returns once the agent is enabled (or registration failed for a reason the user cannot fix by approving).
+    func ensureEnabled() async {
         let agent = SMAppService.agent(plistName: "dev.crosswind.host.plist")
-        switch agent.status {
-        case .enabled:
-            return
-        case .notRegistered, .notFound:
-            do {
-                try agent.register()
-            } catch {
-                logger.error("Host agent registration failed: \(error.localizedDescription, privacy: .public)")
+        while true {
+            if agent.status == .notRegistered || agent.status == .notFound {
+                do {
+                    try agent.register()
+                } catch {
+                    Self.logger.error("Host agent registration failed: \(error.localizedDescription, privacy: .public)")
+                }
             }
-            if agent.status == .requiresApproval { SMAppService.openSystemSettingsLoginItems() }
-        case .requiresApproval:
-            SMAppService.openSystemSettingsLoginItems()
-        @unknown default:
-            logger.error("Host agent has an unknown status")
+            switch agent.status {
+            case .enabled:
+                needsApproval = false
+                return
+            case .requiresApproval:
+                needsApproval = true
+                if !openedSettings {
+                    openedSettings = true
+                    SMAppService.openSystemSettingsLoginItems()
+                }
+            default:
+                needsApproval = false
+                return
+            }
+            try? await Task.sleep(for: .seconds(1))
         }
     }
+
+    func openSettings() { SMAppService.openSystemSettingsLoginItems() }
 }
