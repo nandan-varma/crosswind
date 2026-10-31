@@ -112,6 +112,7 @@ targets:
     sources:
       - path: tools/crosswindctl
     dependencies:
+      - package: CrosswindKit
       - package: ArgumentParser
         product: ArgumentParser
   CrosswindTests:

@@ -57,3 +57,7 @@ image: guest ## Build the guest image in the Lima VM and copy it to ~/.cache/cro
 	limactl shell $(LIMA_VM) sh -c 'cd "$(CURDIR)" && sudo CROSSWINDD=$(CW_TARGET)/release/crosswindd OUT=$(IMG_OUT) sh image/build.sh'
 	mkdir -p "$(IMG_CACHE)"
 	for f in $(IMG_FILES); do limactl copy $(LIMA_VM):$(IMG_OUT)/$$f "$(IMG_CACHE)/"; done
+
+dev-image: ## Install the image from ~/.cache/crosswind-img into the app's support directory
+	sh scripts/image-manifest.sh "$(IMG_CACHE)" dev "file://$(IMG_CACHE)" > /tmp/GuestImage.json
+	"$$(xcodebuild -project Crosswind.xcodeproj -scheme $(SCHEME) -showBuildSettings 2>/dev/null | awk '/ BUILT_PRODUCTS_DIR/ {print $$3; exit}')/crosswindctl" image install /tmp/GuestImage.json
