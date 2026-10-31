@@ -47,7 +47,8 @@ public final class GuestVM: NSObject {
         self.machine = machine
 
         console.fileHandleForReading.readabilityHandler = { handle in
-            for line in String(data: handle.availableData, encoding: .utf8) ?? "".split(whereSeparator: \.isNewline) {
+            let text = String(bytes: handle.availableData, encoding: .utf8) ?? ""
+            for line in text.split(whereSeparator: \.isNewline) {
                 Log.vm.info("guest: \(line, privacy: .public)")
             }
         }

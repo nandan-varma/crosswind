@@ -61,4 +61,5 @@ let app = NSApplication.shared
 let delegate = Delegate()
 app.delegate = delegate
 app.setActivationPolicy(.regular)
+app.activate()
 app.run()
