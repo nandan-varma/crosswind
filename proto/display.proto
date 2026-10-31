@@ -1,0 +1,175 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Display channel between the guest compositor (crosswindd) and the host app.
+// Transport: one AF_VSOCK stream, host listens, guest connects. Every message is
+// framed as a little-endian u32 length followed by one serialized `ToHost`/`ToGuest`.
+syntax = "proto3";
+
+package crosswind.display;
+
+// ---- guest -> host ----
+
+message ToHost {
+  oneof msg {
+    WindowOpened opened = 1;
+    WindowChanged changed = 2;
+    WindowClosed closed = 3;
+    Frame frame = 4;
+    Cursor cursor = 5;
+  }
+}
+
+enum WindowKind {
+  TOPLEVEL = 0;
+  POPUP = 1;
+}
+
+message WindowOpened {
+  uint32 id = 1;
+  WindowKind kind = 2;
+  // POPUP: parent window id and the popup origin in the parent's logical points.
+  uint32 parent = 3;
+  sint32 x = 4;
+  sint32 y = 5;
+  string title = 6;
+  string app_id = 7;
+  uint32 min_width = 8;
+  uint32 min_height = 9;
+  uint32 max_width = 10;   // 0 = unbounded
+  uint32 max_height = 11;
+}
+
+message WindowChanged {
+  uint32 id = 1;
+  optional string title = 2;
+  optional string app_id = 3;
+  optional uint32 min_width = 4;
+  optional uint32 min_height = 5;
+  optional uint32 max_width = 6;
+  optional uint32 max_height = 7;
+  optional bool fullscreen = 8;
+  optional bool maximized = 9;
+  optional bool minimized = 10;
+}
+
+message WindowClosed {
+  uint32 id = 1;
+}
+
+message Rect {
+  uint32 x = 1;
+  uint32 y = 2;
+  uint32 width = 3;
+  uint32 height = 4;
+  // Premultiplied BGRA8 (little-endian ARGB32), tightly packed rows, LZ4 block-compressed.
+  bytes pixels = 5;
+}
+
+message Frame {
+  uint32 window = 1;
+  uint64 seq = 2;
+  // Size of the whole surface in physical pixels. A change implies the host must realloc.
+  uint32 width = 3;
+  uint32 height = 4;
+  // Buffer scale as numerator over 120 (wp-fractional-scale convention): 240 = 2x.
+  uint32 scale_120 = 5;
+  repeated Rect damage = 6;
+}
+
+message Cursor {
+  uint32 window = 1;
+  // Named xcursor shape or custom image; empty name + empty image hides the cursor.
+  string name = 2;
+  uint32 width = 3;
+  uint32 height = 4;
+  sint32 hotspot_x = 5;
+  sint32 hotspot_y = 6;
+  bytes pixels = 7;  // premultiplied BGRA8, uncompressed; small
+}
+
+// ---- host -> guest ----
+
+message ToGuest {
+  oneof msg {
+    Configure configure = 1;
+    Ack ack = 2;
+    Input input = 3;
+    CloseRequest close = 4;
+    Output output = 5;
+  }
+}
+
+// Describes the host display the guest should present itself on.
+message Output {
+  uint32 width = 1;      // logical points
+  uint32 height = 2;
+  uint32 scale_120 = 3;
+  uint32 refresh_mhz = 4;
+}
+
+message Configure {
+  uint32 window = 1;
+  uint32 width = 2;      // logical points; 0 = client's choice
+  uint32 height = 3;
+  uint32 scale_120 = 4;
+  bool activated = 5;
+  bool fullscreen = 6;
+  bool maximized = 7;
+}
+
+// Sent when the host has presented `seq` for `window`; paces wl_surface.frame callbacks.
+message Ack {
+  uint32 window = 1;
+  uint64 seq = 2;
+}
+
+message CloseRequest {
+  uint32 window = 1;
+}
+
+message Input {
+  uint32 window = 1;
+  oneof event {
+    PointerMotion motion = 2;
+    PointerButton button = 3;
+    PointerAxis axis = 4;
+    PointerLeave leave = 5;
+    Key key = 6;
+    Modifiers modifiers = 7;
+    string text = 8;  // composed text (IME commit)
+  }
+}
+
+message PointerMotion {
+  double x = 1;  // logical points, window-local
+  double y = 2;
+  uint32 time_ms = 3;
+}
+
+message PointerButton {
+  uint32 button = 1;  // Linux evdev code (BTN_LEFT = 0x110)
+  bool pressed = 2;
+  uint32 time_ms = 3;
+}
+
+message PointerAxis {
+  double dx = 1;  // logical points of scroll
+  double dy = 2;
+  bool finished = 3;
+  uint32 time_ms = 4;
+}
+
+message PointerLeave {}
+
+message Key {
+  uint32 keycode = 1;  // Linux evdev code
+  bool pressed = 2;
+  uint32 time_ms = 3;
+}
+
+message Modifiers {
+  uint32 depressed = 1;
+  uint32 latched = 2;
+  uint32 locked = 3;
+  uint32 group = 4;
+}

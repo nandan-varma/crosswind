@@ -1,0 +1,9 @@
+#!/sbin/openrc-run
+# SPDX-License-Identifier: AGPL-3.0-or-later
+description="Crosswind guest daemon"
+command=/usr/bin/crosswindd
+command_background=true
+pidfile=/run/crosswindd.pid
+output_log=/var/log/crosswindd.log
+error_log=/var/log/crosswindd.log
+depend() { need dbus crosswind-data; }
