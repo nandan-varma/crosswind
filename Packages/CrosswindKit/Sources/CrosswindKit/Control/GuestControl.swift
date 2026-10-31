@@ -38,8 +38,10 @@ public actor GuestControl {
         send: @escaping @Sendable (Crosswind_Control_Request) -> Void
     ) {
         sendRequest = send
-        (events, eventContinuation) = AsyncStream.makeStream(of: Event.self, bufferingPolicy: .unbounded)
-        (calls, callContinuation) = AsyncStream.makeStream(of: Crosswind_Control_Call.self, bufferingPolicy: .unbounded)
+        // Guest events and calls are bounded: a flooding guest loses its oldest unread items, never the agent's memory.
+        (events, eventContinuation) = AsyncStream.makeStream(of: Event.self, bufferingPolicy: .bufferingNewest(4096))
+        (calls, callContinuation) = AsyncStream.makeStream(
+            of: Crosswind_Control_Call.self, bufferingPolicy: .bufferingNewest(256))
         Task { [weak self] in
             for await message in messages {
                 guard let self else { return }

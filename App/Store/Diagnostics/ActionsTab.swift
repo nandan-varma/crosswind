@@ -24,11 +24,13 @@ struct ActionsTab: View {
                     .disabled(exporting)
                 if let exported {
                     LabeledContent("Saved to") {
-                        Button(exported.lastPathComponent) { NSWorkspace.shared.activateFileViewerSelecting([exported]) }
+                        Button(exported.lastPathComponent) {
+                            NSWorkspace.shared.activateFileViewerSelecting([exported])
+                        }
                     }
                 }
                 if let exportError {
-                    Text(exportError).foregroundStyle(.red).textSelection(.enabled)
+                    Text(verbatim: exportError).foregroundStyle(.red).textSelection(.enabled)
                 }
             }
         }
@@ -48,7 +50,7 @@ struct ActionsTab: View {
             exported = url
             exportError = nil
         } catch {
-            exportError = "Export failed: \(error)"
+            exportError = String(localized: "Export failed: \(String(describing: error))")
         }
     }
 

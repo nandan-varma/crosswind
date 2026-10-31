@@ -121,6 +121,25 @@ struct ImageStoreTests {
         #expect(try fixture.installedContents("a.bin") == "old")
     }
 
+    @Test("a failed download keeps the old image installed")
+    func failedDownloadKeepsOldImage() async throws {
+        let fixture = try ImageFixture()
+        defer { fixture.remove() }
+        let store = ImageStore(paths: fixture.paths)
+        try await store.install(GuestImageManifest(version: "1", files: [try fixture.file("a.bin", "old")]))
+
+        // The new release's file is missing on the server: the download itself fails.
+        let unreachable = GuestImageManifest.File(
+            name: "a.bin", size: 3, sha256: "unused", url: fixture.source.appending(path: "gone.bin"))
+        await #expect(throws: (any Error).self) {
+            try await store.install(GuestImageManifest(version: "2", files: [unreachable]))
+        }
+
+        #expect(await store.installedVersion() == "1")
+        #expect(try fixture.installedContents("a.bin") == "old")
+        #expect(!FileManager.default.fileExists(atPath: fixture.paths.supportDirectory.appending(path: "Image.previous").path))
+    }
+
     @Test("recovers on the next install after a failed attempt")
     func recoversAfterFailure() async throws {
         let fixture = try ImageFixture()

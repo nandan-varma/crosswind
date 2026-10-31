@@ -20,10 +20,10 @@ struct LogsTab: View {
         var id: Int { rawValue }
         var label: String {
             switch self {
-            case .error: "Error"
-            case .warning: "Warning and up"
-            case .info: "Info and up"
-            case .debug: "All levels"
+            case .error: String(localized: "Error")
+            case .warning: String(localized: "Warning and up")
+            case .info: String(localized: "Info and up")
+            case .debug: String(localized: "All levels")
             }
         }
     }
@@ -55,7 +55,7 @@ struct LogsTab: View {
                     .textFieldStyle(.roundedBorder)
                     .frame(maxWidth: 260)
                 Picker("Source", selection: $source) {
-                    ForEach(sources, id: \.self) { Text($0).tag($0) }
+                    ForEach(sources, id: \.self) { Text(verbatim: optionLabel($0)).tag($0) }
                 }
                 .frame(maxWidth: 200)
                 Picker("Level", selection: $minimumLevel) {
@@ -63,31 +63,35 @@ struct LogsTab: View {
                 }
                 .frame(maxWidth: 170)
                 Picker("Launch", selection: $launchID) {
-                    ForEach(launches, id: \.self) { Text($0).tag($0) }
+                    ForEach(launches, id: \.self) { Text(verbatim: optionLabel($0)).tag($0) }
                 }
                 .frame(maxWidth: 170)
                 Spacer()
                 Toggle("Auto-scroll", isOn: $autoScroll)
+                    .help(String(localized: "Keep the newest log line selected while new lines arrive"))
                 Toggle("Pause", isOn: $paused)
+                    .help(String(localized: "Stop the list from updating"))
                     .onChange(of: paused) { _, isPaused in
                         if isPaused { frozen = live }
                     }
                 Button("Copy") { copyVisible() }
+                    .help(String(localized: "Copy the visible log lines"))
                     .disabled(filtered.isEmpty)
                 Button("Load Host Logs") { Task { await model.loadHostLogs() } }
+                    .help(String(localized: "Load the host agent's log lines"))
             }
             Table(filtered, selection: $selection) {
                 TableColumn("Time") { entry in
                     Text(entry.time, format: .dateTime.hour().minute().second())
                 }
                 .width(min: 70, ideal: 80, max: 90)
-                TableColumn("Source") { Text($0.source) }
+                TableColumn("Source") { Text(verbatim: $0.source) }
                     .width(min: 90, ideal: 130)
-                TableColumn("Level") { Text($0.levelName) }
+                TableColumn("Level") { Text(verbatim: $0.levelName) }
                     .width(min: 60, ideal: 70, max: 80)
-                TableColumn("Launch") { Text($0.launchID) }
+                TableColumn("Launch") { Text(verbatim: $0.launchID) }
                     .width(min: 60, ideal: 80)
-                TableColumn("Message") { Text($0.text).textSelection(.enabled) }
+                TableColumn("Message") { Text(verbatim: $0.text).textSelection(.enabled) }
             }
             .font(.system(.body, design: .monospaced))
             .onChange(of: filtered.count) { _, _ in
@@ -97,6 +101,11 @@ struct LogsTab: View {
         }
         .padding()
         .onAppear { if paused { frozen = live } }
+    }
+
+    /// The "All" sentinel is shown localized; every other option is data and shown as is.
+    private func optionLabel(_ value: String) -> String {
+        value == "All" ? String(localized: "All") : value
     }
 
     private func copyVisible() {

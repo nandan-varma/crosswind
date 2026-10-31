@@ -60,8 +60,18 @@ public actor ImageStore {
         }
         try manifest.version.write(to: staging.appending(path: "VERSION"), atomically: true, encoding: .utf8)
 
-        try? FileManager.default.removeItem(at: paths.imageDirectory)
-        try FileManager.default.moveItem(at: staging, to: paths.imageDirectory)
+        // Swap by rename: the old image is set aside until the new one is in place, so a failed swap restores it.
+        let previous = paths.supportDirectory.appending(path: "Image.previous", directoryHint: .isDirectory)
+        try? FileManager.default.removeItem(at: previous)
+        let hadImage = FileManager.default.fileExists(atPath: paths.imageDirectory.path)
+        if hadImage { try FileManager.default.moveItem(at: paths.imageDirectory, to: previous) }
+        do {
+            try FileManager.default.moveItem(at: staging, to: paths.imageDirectory)
+        } catch {
+            if hadImage { try? FileManager.default.moveItem(at: previous, to: paths.imageDirectory) }
+            throw error
+        }
+        try? FileManager.default.removeItem(at: previous)
         progress(1)
     }
 

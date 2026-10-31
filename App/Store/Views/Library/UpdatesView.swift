@@ -41,7 +41,8 @@ struct UpdatesView: View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Updates Available").font(.headline)
-                Text("\(count) \(count == 1 ? "app" : "apps") can be updated.")
+                // Plural variations for "1 app" and "N apps" live in Localizable.xcstrings.
+                Text("\(count) apps can be updated.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -77,11 +78,11 @@ struct UpdatesView: View {
                 ActionButton(appID: app.id, model: model)
             }
             if let failure = model.operations[app.id]?.failure {
-                Text(failure).font(.caption).foregroundStyle(.red)
+                Text(verbatim: failure).font(.caption).foregroundStyle(.red)
             }
             if let notes = latest?.description, !notes.isEmpty {
                 DisclosureGroup("Release Notes") {
-                    Text(notes)
+                    Text(verbatim: notes)
                         .font(.callout)
                         .foregroundStyle(.secondary)
                         .textSelection(.enabled)

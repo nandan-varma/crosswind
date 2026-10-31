@@ -8,6 +8,7 @@ struct CrosswindApp: App {
     @State private var model = Self.makeModel()
     @State private var registration = HostRegistration()
     @State private var diagnostics = DiagnosticsModel()
+    @State private var updater = AppUpdater()
 
     var body: some Scene {
         WindowGroup {
@@ -19,7 +20,14 @@ struct CrosswindApp: App {
                 }
         }
         .defaultSize(width: 1080, height: 720)
-        .commands { DiagnosticsCommands() }
+        .commands {
+            CommandGroup(after: .appInfo) {
+                Button("Check for Updates…") { updater.checkForUpdates() }
+                    .disabled(!updater.canCheckForUpdates)
+            }
+            StoreCommands()
+            DiagnosticsCommands()
+        }
 
         Window("Diagnostics", id: "diagnostics") {
             DiagnosticsView(model: diagnostics)

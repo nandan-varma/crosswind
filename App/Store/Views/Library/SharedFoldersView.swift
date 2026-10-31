@@ -33,12 +33,13 @@ struct SharedFoldersSettings: View {
                                 Image(systemName: "minus.circle")
                             }
                             .buttonStyle(.borderless)
-                            .help("Stop sharing this folder")
+                            .help(String(localized: "Stop sharing this folder"))
+                            .accessibilityLabel(Text("Stop sharing \(folder.name)"))
                         }
                     } label: {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(folder.name)
-                            Text(folder.path)
+                            Text(verbatim: folder.name)
+                            Text(verbatim: folder.path)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
@@ -54,7 +55,7 @@ struct SharedFoldersSettings: View {
                     .foregroundStyle(.secondary)
             }
             if let failure {
-                Text(failure).font(.caption).foregroundStyle(.red)
+                Text(verbatim: failure).font(.caption).foregroundStyle(.red)
             }
         }
         .formStyle(.grouped)
@@ -74,8 +75,8 @@ struct SharedFoldersSettings: View {
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
-        panel.prompt = "Share"
-        panel.message = "Choose a folder to share with Linux apps."
+        panel.prompt = String(localized: "Share")
+        panel.message = String(localized: "Choose a folder to share with Linux apps.")
         guard panel.runModal() == .OK, let url = panel.url else { return }
         folders.add(path: url.path)
         save()
@@ -92,7 +93,7 @@ struct SharedFoldersSettings: View {
             failure = nil
             Task { await model.sharedFoldersChanged() }
         } catch {
-            failure = "Could not save the shared folders: \(error.localizedDescription)"
+            failure = String(localized: "Could not save the shared folders: \(error.localizedDescription)")
         }
     }
 }

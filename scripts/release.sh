@@ -3,6 +3,12 @@
 # then notarizes and staples the app and builds a notarized DMG. Output: build/release/.
 # usage: scripts/release.sh            (full release)
 #        NOTARIZE=0 scripts/release.sh (signed app only, no notarization, no DMG)
+#
+# Guest image: set IMAGE_DIR (a directory built by image/build.sh, with SHA256SUMS) and IMAGE_BASE_URL (where
+# the files will be served) to embed GuestImage.json in the app. Without both, the app is built with no manifest
+# and the store app installs no guest image; the release says so.
+#   IMAGE_DIR=~/.cache/crosswind-img IMAGE_BASE_URL=https://example.com/crosswind/image scripts/release.sh
+# IMAGE_VERSION overrides the manifest version (default: first 12 hex digits of SHA256 over SHA256SUMS).
 set -eu
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
@@ -17,6 +23,7 @@ ARCHIVE="$OUT/Crosswind.xcarchive"
 EXPORT="$OUT/export"
 APP="$EXPORT/Crosswind.app"
 VERSION=$(awk -F'"' '/MARKETING_VERSION:/ { print $2; exit }' project.yml)
+MANIFEST="$ROOT/build/GuestImage.json"
 
 step() { printf '\n==> %s\n' "$*"; }
 die() { echo "error: $*" >&2; exit 1; }
@@ -35,6 +42,18 @@ check_binary() {
     if echo "$ents" | grep -q 'get-task-allow'; then die "$path has the get-task-allow entitlement"; fi
     echo "ok  $path"
 }
+
+# A stale manifest from an earlier run must not end up in this build.
+rm -f "$MANIFEST"
+if [ -n "${IMAGE_DIR:-}" ] || [ -n "${IMAGE_BASE_URL:-}" ]; then
+    [ -n "${IMAGE_DIR:-}" ] && [ -n "${IMAGE_BASE_URL:-}" ] || die "set both IMAGE_DIR and IMAGE_BASE_URL"
+    [ -f "$IMAGE_DIR/SHA256SUMS" ] || die "no SHA256SUMS in $IMAGE_DIR (run make image first)"
+    IMAGE_VERSION=${IMAGE_VERSION:-$(shasum -a 256 "$IMAGE_DIR/SHA256SUMS" | cut -c1-12)}
+    step "Writing GuestImage.json ($IMAGE_VERSION) for $IMAGE_BASE_URL"
+    sh "$ROOT/scripts/image-manifest.sh" "$IMAGE_DIR" "$IMAGE_VERSION" "$IMAGE_BASE_URL" > "$MANIFEST"
+else
+    step "No IMAGE_DIR/IMAGE_BASE_URL: building without a guest image manifest"
+fi
 
 step "Generating Xcode project"
 xcodegen generate
@@ -55,6 +74,8 @@ xcodebuild archive \
     "OTHER_CODE_SIGN_FLAGS=--timestamp" \
     ONLY_ACTIVE_ARCH=NO
 
+rm -f "$MANIFEST"
+
 step "Exporting (developer-id)"
 xcodebuild -exportArchive \
     -archivePath "$ARCHIVE" \
@@ -68,7 +89,24 @@ check_binary "$APP/Contents/Library/Helpers/CrosswindHost.app"
 check_binary "$APP/Contents/Library/Helpers/CrosswindHost.app/Contents/MacOS/CrosswindHost"
 check_binary "$APP/Contents/Resources/CrosswindAppStub.app"
 check_binary "$APP/Contents/MacOS/crosswindctl"
+# Sparkle's nested code (XPC services, Autoupdate, Updater.app) must be Developer ID signed with the hardened
+# runtime and a timestamp too. Xcode signs these only when the export does; the check fails the release otherwise.
+SPARKLE="$APP/Contents/Frameworks/Sparkle.framework/Versions/B"
+[ -d "$SPARKLE" ] || die "Sparkle.framework is not embedded in $APP"
+check_binary "$SPARKLE/Sparkle"
+check_binary "$SPARKLE/Autoupdate"
+check_binary "$SPARKLE/Updater.app/Contents/MacOS/Updater"
+check_binary "$SPARKLE/XPCServices/Installer.xpc/Contents/MacOS/Installer"
+check_binary "$SPARKLE/XPCServices/Downloader.xpc/Contents/MacOS/Downloader"
 codesign --verify --deep --strict "$APP" || die "deep signature check failed"
+codesign --verify --strict "$SPARKLE" || die "Sparkle.framework signature check failed"
+
+step "Checking the guest image manifest"
+if [ -f "$APP/Contents/Resources/GuestImage.json" ]; then
+    echo "ok  GuestImage.json embedded ($(awk -F'"' '/"version"/ { print $4; exit }' "$APP/Contents/Resources/GuestImage.json"))"
+else
+    echo "note: no GuestImage.json in the app (built without IMAGE_DIR/IMAGE_BASE_URL)"
+fi
 
 step "Verifying entitlements"
 host_ents=$(codesign -d --entitlements :- "$APP/Contents/Library/Helpers/CrosswindHost.app" 2>/dev/null || true)

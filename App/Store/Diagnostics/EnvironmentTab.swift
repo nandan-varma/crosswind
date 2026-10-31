@@ -27,21 +27,24 @@ struct EnvironmentTab: View {
                 if model.runningApps.isEmpty {
                     Text("None").foregroundStyle(.secondary)
                 } else {
-                    ForEach(model.runningApps, id: \.self) { Text($0) }
+                    ForEach(model.runningApps, id: \.self) { Text(verbatim: $0) }
                 }
             }
             Section("Host agent") {
                 if let process = model.agentProcess {
                     LabeledContent("Resident memory", value: Self.bytes(process.residentBytes))
-                    LabeledContent("CPU", value: process.cpuPercent.map { String(format: "%.1f%%", $0) } ?? "measuring")
+                    let cpu = process.cpuPercent.map { String(format: "%.1f%%", $0) }
+                    LabeledContent("CPU", value: cpu ?? String(localized: "measuring"))
                 } else {
                     Text("CrosswindHost is not running").foregroundStyle(.secondary)
                 }
-                LabeledContent("Connection", value: model.isConnected ? "connected" : "not connected")
+                LabeledContent(
+                    "Connection",
+                    value: model.isConnected ? String(localized: "connected") : String(localized: "not connected"))
             }
             if let error = model.lastError {
                 Section("Last error") {
-                    Text(error).foregroundStyle(.red).textSelection(.enabled)
+                    Text(verbatim: error).foregroundStyle(.red).textSelection(.enabled)
                 }
             }
         }
@@ -51,12 +54,12 @@ struct EnvironmentTab: View {
 
     private var phaseName: String {
         switch model.phase {
-        case .stopped: "stopped"
-        case .starting: "starting"
-        case .running: "running"
-        case .stopping: "stopping"
-        case .failed: "failed"
-        case .UNRECOGNIZED: "unknown"
+        case .stopped: String(localized: "stopped")
+        case .starting: String(localized: "starting")
+        case .running: String(localized: "running")
+        case .stopping: String(localized: "stopping")
+        case .failed: String(localized: "failed")
+        case .UNRECOGNIZED: String(localized: "unknown")
         }
     }
 

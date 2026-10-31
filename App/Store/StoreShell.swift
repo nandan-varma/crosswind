@@ -25,6 +25,7 @@ struct StoreShell: View {
     @State private var query = ""
     /// The query after the debounce; results follow this rather than every keystroke.
     @State private var activeQuery = ""
+    @FocusState private var searchFocused: Bool
 
     private var isSearching: Bool {
         !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -41,10 +42,14 @@ struct StoreShell: View {
                     }
             }
         }
-        .searchable(text: $query, placement: .toolbar, prompt: "Search apps")
+        .searchable(text: $query, placement: .toolbar, prompt: Text("Search apps"))
+        .searchFocused($searchFocused)
         .task(id: query) { await debounce(query) }
         .onChange(of: section) { _, _ in path = NavigationPath() }
         .onChange(of: isSearching) { _, _ in path = NavigationPath() }
+        // Menu commands (Cmd-F, Cmd-1/2/3) reach the window through these scene values.
+        .focusedSceneValue(\.storeSection, Binding(get: { section ?? .discover }, set: { section = $0 }))
+        .focusedSceneValue(\.storeSearchFocus, Binding(get: { searchFocused }, set: { searchFocused = $0 }))
     }
 
     private var sidebar: some View {
@@ -65,6 +70,7 @@ struct StoreShell: View {
                     .tag(StoreSection.installed)
                 Label("Updates", systemImage: "arrow.triangle.2.circlepath")
                     .badge(model.updatableApps.count)
+                    .accessibilityValue(Text("\(model.updatableApps.count) updates available"))
                     .tag(StoreSection.updates)
             }
         }

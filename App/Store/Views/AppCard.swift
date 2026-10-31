@@ -20,14 +20,16 @@ struct DeveloperLabel: View {
     var body: some View {
         if let developer = app.developerName, !developer.isEmpty {
             HStack(spacing: 4) {
-                Text(developer)
+                Text(verbatim: developer)
                 if app.isVerified {
                     Image(systemName: "checkmark.seal.fill")
                         .foregroundStyle(.tint)
-                        .accessibilityLabel("Verified publisher")
-                        .help("Verified publisher")
+                        .accessibilityLabel(Text("Verified developer"))
+                        .help(String(localized: "Verified developer"))
                 }
             }
+            // One element, so VoiceOver reads "<developer>, Verified developer".
+            .accessibilityElement(children: .combine)
             .font(.subheadline)
             .foregroundStyle(.secondary)
         }
@@ -46,10 +48,10 @@ struct AppCard: View {
                 VStack(alignment: .leading, spacing: 10) {
                     AppIconView(app: app, size: 64)
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(app.name)
+                        Text(verbatim: app.name)
                             .font(.headline)
                             .lineLimit(1)
-                        Text(app.summary)
+                        Text(verbatim: app.summary)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .lineLimit(2, reservesSpace: true)
@@ -57,6 +59,8 @@ struct AppCard: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
+                // The card's link reads as one element: name, then summary.
+                .accessibilityElement(children: .combine)
             }
             .buttonStyle(.plain)
             if showsAction {
@@ -80,10 +84,10 @@ struct AppRow: View {
                 HStack(spacing: 12) {
                     AppIconView(app: app, size: 48)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(app.name)
+                        Text(verbatim: app.name)
                             .font(.headline)
                             .lineLimit(1)
-                        Text(app.summary)
+                        Text(verbatim: app.summary)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .lineLimit(2)
@@ -92,6 +96,7 @@ struct AppRow: View {
                     Spacer(minLength: 0)
                 }
                 .contentShape(Rectangle())
+                .accessibilityElement(children: .combine)
             }
             .buttonStyle(.plain)
             ActionButton(appID: app.id, model: model)

@@ -147,15 +147,19 @@ final class FileChooserHandler {
 
     private func ask(folder: URL, fileCount: Int, offerFilesOnly: Bool) -> OutsideChoice {
         let alert = NSAlert()
-        alert.messageText = "Share \(folder.lastPathComponent) with Linux apps?"
-        alert.informativeText =
-            "Linux apps can read and write everything in shared folders, including subfolders of "
-            + "\(folder.path). You can remove the share in Crosswind Settings."
-        alert.addButton(withTitle: "Share Folder")
+        alert.messageText = String(localized: "Share \(folder.lastPathComponent) with Linux apps?")
+        alert.informativeText = String(
+            localized: """
+                Linux apps can read and write everything in shared folders, including subfolders of \(folder.path). \
+                You can remove the share in Crosswind Settings.
+                """)
+        alert.addButton(withTitle: String(localized: "Share Folder"))
         if offerFilesOnly {
-            alert.addButton(withTitle: fileCount == 1 ? "Share Only This File" : "Share Only These Files")
+            alert.addButton(
+                withTitle: fileCount == 1
+                    ? String(localized: "Share Only This File") : String(localized: "Share Only These Files"))
         }
-        alert.addButton(withTitle: "Cancel")
+        alert.addButton(withTitle: String(localized: "Cancel"))
         switch alert.runModal() {
         case .alertFirstButtonReturn:
             return .shareFolder

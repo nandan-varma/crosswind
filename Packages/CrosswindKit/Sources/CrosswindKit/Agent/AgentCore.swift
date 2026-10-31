@@ -43,6 +43,7 @@ public final class AgentCore {
         var frames: UInt64 = 0
         var lastInput: ContinuousClock.Instant?
         var lastLatencyMs = 0.0
+        var popupDepth = 0
     }
 
     private var windows: [UInt32: WindowRecord] = [:] {
@@ -56,6 +57,10 @@ public final class AgentCore {
     private var nextGuestRequestID: UInt64 = 0
     /// Guest log lines for `GetLogs`; filled from guest events.
     private var guestLogs = GuestLogStore()
+    /// Caps the guest's log rate: lines past it are dropped rather than stored, broadcast or shown.
+    private let logLimiter = RateLimiter(perSecond: 200, burst: 500)
+    /// Admission for guest calls (notifications, file dialogs, links, clipboard reads).
+    private let gate = GuestCallGate()
 
     /// Describes the host display to the guest (main screen size, scale, refresh rate).
     private let output: () -> Crosswind_Display_Output
@@ -104,6 +109,7 @@ public final class AgentCore {
             run(command, for: client)
         case .display(let input)?:
             guard client.role == .stub, owns(client, window: windowID(of: input)) else { return }
+            guard validInput(input) else { return }
             send(input)
         case nil:
             break
@@ -114,6 +120,7 @@ public final class AgentCore {
         clients.removeValue(forKey: ObjectIdentifier(client))
         guard client.role == .stub, stubs[client.appID] === client else { return }
         stubs.removeValue(forKey: client.appID)
+        gate.forget(app: client.appID)
         // A closed stub is a quit: stop the app it represented.
         Task { _ = try? await request(.stop(.with { $0.appID = client.appID })) }
     }
@@ -135,7 +142,8 @@ public final class AgentCore {
 
     /// Forwards a client's request. The VM boots first if it is stopped (never started, or idled out).
     private func forward(_ request: Crosswind_Control_Request, from client: Client) {
-        if case .callReply? = request.body {  // answers a guest call; the guest does not respond to it
+        if case .callReply(let reply)? = request.body {  // answers a guest call; the guest does not respond to it
+            gate.finished(call: reply.id)
             controlToGuest?.send(request)
             return
         }
@@ -199,39 +207,53 @@ public final class AgentCore {
             client.connection.send(.with { $0.guest = .with { $0.response = response } })
         case .event(let event)?:
             if case .clipboardChanged(let changed)? = event.body { return clipboard.guestCopied(changed.items) }
-            if case .log(let line)? = event.body { guestLogs.append(line) }
+            if case .log(let line)? = event.body {
+                guard logLimiter.allow() else { return }
+                guestLogs.append(line)
+            }
             session.apply(event)
             broadcast(.with { $0.guest = message })
         case .call(let call)?:
-            route(call: call, message: message)
+            route(call: call)
         case nil:
             break
         }
     }
 
-    /// Calls go to the stub of the app that triggered them; links open straight away.
-    private func route(call: Crosswind_Control_Call, message: Crosswind_Control_Message) {
+    /// Calls go to the stub of the app that triggered them; links open straight away. Every call first passes the
+    /// gate, which enforces the per-app limits and trims fields.
+    private func route(call received: Crosswind_Control_Call) {
+        let call: Crosswind_Control_Call
+        switch gate.admit(received) {
+        case .reject(let reason):
+            return replyToCall(received.id, error: reason)
+        case .admit(let admitted):
+            call = admitted
+        }
         if case .clipboardRead(let read)? = call.body { return clipboard.read(callID: call.id, mime: read.mime) }
         if case .openURL(let open)? = call.body {
             let ok = URL(string: open.url).map(openURL) ?? false
-            controlToGuest?.send(
-                .with {
-                    $0.callReply = .with {
-                        $0.id = call.id
-                        if ok { $0.ok = .init() } else { $0.error = .with { $0.message = "cannot open \(open.url)" } }
-                    }
-                })
+            if ok {
+                controlToGuest?.send(.with { $0.callReply = .with { $0.id = call.id; $0.ok = .init() } })
+            } else {
+                replyToCall(call.id, error: "cannot open this link")
+            }
         } else if let stub = stubs[call.appID] {
-            stub.connection.send(.with { $0.guest = message })
+            stub.connection.send(.with { $0.guest = .with { $0.call = call } })
         } else {
-            controlToGuest?.send(
-                .with {
-                    $0.callReply = .with {
-                        $0.id = call.id
-                        $0.error = .with { $0.message = "\(call.appID) has no open window to ask" }
-                    }
-                })
+            gate.finished(call: call.id)
+            replyToCall(call.id, error: "\(call.appID) has no open window to ask")
         }
+    }
+
+    private func replyToCall(_ id: UInt64, error: String) {
+        controlToGuest?.send(
+            .with {
+                $0.callReply = .with {
+                    $0.id = id
+                    $0.error = .with { $0.message = error }
+                }
+            })
     }
 
     // MARK: Commands
@@ -316,24 +338,68 @@ public final class AgentCore {
         }
     }
 
+    /// Guest display messages: checked against `DisplayLimits` and cleaned (titles, identifiers) before they reach a
+    /// stub. A refused message is logged (rate limited) and dropped; nothing is forwarded for it.
     private func route(display message: ToHost) {
         switch message.msg {
-        case .opened(let opened)?:
+        case .opened(var opened)?:
+            opened.title = DisplayLimits.sanitize(opened.title, maxBytes: DisplayLimits.maxTitleBytes)
+            opened.appID = DisplayLimits.sanitize(opened.appID, maxBytes: DisplayLimits.maxIdentifierBytes)
+            opened.flatpakID = DisplayLimits.sanitize(opened.flatpakID, maxBytes: DisplayLimits.maxIdentifierBytes)
+            opened.launchID = DisplayLimits.sanitize(opened.launchID, maxBytes: DisplayLimits.maxIdentifierBytes)
             let app = opened.flatpakID.isEmpty ? opened.appID : opened.flatpakID
-            windows[opened.id] = WindowRecord(app: app, title: opened.title)
-            send(message, toStubOf: app)
-        case .changed(let changed)?:
-            if changed.hasTitle { windows[changed.id]?.title = changed.title }
-            send(message, toStubOfWindow: changed.id)
+            let accounts = windows.mapValues { DisplayLimits.WindowAccount(app: $0.app, popupDepth: $0.popupDepth) }
+            do {
+                let depth = try DisplayLimits.admitOpen(
+                    id: opened.id, isPopup: opened.kind == .popup, parent: opened.parent, app: app, existing: accounts)
+                windows[opened.id] = WindowRecord(app: app, title: opened.title, popupDepth: depth)
+                send(.with { $0.msg = .opened(opened) }, toStubOf: app)
+            } catch {
+                refuse(error, "window \(opened.id)")
+            }
+        case .changed(var changed)?:
+            guard windows[changed.id] != nil else { return }
+            if changed.hasTitle {
+                changed.title = DisplayLimits.sanitize(changed.title, maxBytes: DisplayLimits.maxTitleBytes)
+                windows[changed.id]?.title = changed.title
+            }
+            send(.with { $0.msg = .changed(changed) }, toStubOfWindow: changed.id)
         case .closed(let closed)?:
             send(message, toStubOfWindow: closed.id)
             windows.removeValue(forKey: closed.id)
         case .frame(let frame)?:
+            guard windows[frame.window] != nil else { return }
+            do {
+                try DisplayLimits.checkFrame(frame)
+            } catch {
+                return refuse(error, "frame for window \(frame.window)")
+            }
             record(frame)
             send(message, toStubOfWindow: frame.window)
-        case .cursor(let cursor)?: send(message, toStubOfWindow: cursor.window)
-        case nil: break
+        case .cursor(let cursor)?:
+            guard windows[cursor.window] != nil else { return }
+            do {
+                try DisplayLimits.checkCursor(cursor)
+            } catch {
+                return refuse(error, "cursor for window \(cursor.window)")
+            }
+            send(message, toStubOfWindow: cursor.window)
+        case nil:
+            break
         }
+    }
+
+    /// Input and acknowledgements are host messages; this only keeps them well-formed for the guest.
+    private func validInput(_ input: ToGuest) -> Bool {
+        if case .input(let value)? = input.msg, case .motion(let motion)? = value.event {
+            return motion.x.isFinite && motion.y.isFinite
+        }
+        return true
+    }
+
+    private func refuse(_ error: Error, _ what: String) {
+        guard DisplayLimits.violationLog.allow() else { return }
+        Log.display.warning("guest \(what, privacy: .public) refused: \(String(describing: error), privacy: .public)")
     }
 
     private func send(_ message: ToHost, toStubOfWindow window: UInt32) {

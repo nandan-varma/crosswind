@@ -49,7 +49,7 @@ struct InstalledView: View {
         return HStack(spacing: 12) {
             LibraryAppIcon(app: app, size: 40)
             VStack(alignment: .leading, spacing: 2) {
-                Text(app.name).font(.headline)
+                Text(verbatim: app.name).font(.headline)
                 HStack(spacing: 6) {
                     Text("Version \(record.version)")
                     if model.isRunning(app.id) {
@@ -63,6 +63,7 @@ struct InstalledView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             }
+            .accessibilityElement(children: .combine)
             Spacer()
             ActionButton(appID: app.id, model: model)
         }
@@ -70,6 +71,7 @@ struct InstalledView: View {
         .contextMenu {
             Button("Open") { Task { await model.open(app.id) } }
             Button("Show in Finder") { revealStub(for: app) }
+                .help(String(localized: "Show the app's bundle in Finder"))
             Divider()
             Button("Uninstall…", role: .destructive) { uninstalling = app }
         }

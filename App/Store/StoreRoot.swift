@@ -13,7 +13,8 @@ struct StoreRoot: View {
                 Label("Allow Crosswind in the background", systemImage: "checkmark.shield")
             } description: {
                 Text(
-                    "Crosswind runs Linux apps through a small background service. Turn on Crosswind in System Settings › General › Login Items & Extensions."
+                    "Crosswind runs Linux apps through a small background service. "
+                        + "Turn on Crosswind in System Settings › General › Login Items & Extensions."
                 )
             } actions: {
                 Button("Open Login Items Settings") { registration.openSettings() }
@@ -52,7 +53,8 @@ private struct SetupView: View {
                 .font(.system(size: 44, weight: .light))
                 .foregroundStyle(.secondary)
             Text(title).font(.title2.weight(.semibold))
-            if case .installingImage(let fraction) = phase {
+                .accessibilityAddTraits(.updatesFrequently)
+            if let fraction = imageFraction {
                 ProgressView(value: fraction).frame(width: 240)
             } else {
                 ProgressView().controlSize(.small)
@@ -63,15 +65,23 @@ private struct SetupView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    private var imageFraction: Double? {
+        switch phase {
+        case .installingImage(let fraction), .updatingImage(let fraction): fraction
+        default: nil
+        }
+    }
+
     private var isFirstRunStep: Bool {
         if case .installingImage = phase { true } else { false }
     }
 
     private var title: String {
         switch phase {
-        case .connecting: "Connecting…"
-        case .installingImage: "Setting up Linux apps"
-        case .loadingCatalog: "Loading apps"
+        case .connecting: String(localized: "Connecting…")
+        case .installingImage: String(localized: "Setting up Linux apps")
+        case .updatingImage: String(localized: "Updating Linux environment…")
+        case .loadingCatalog: String(localized: "Loading apps")
         case .ready, .failed: ""
         }
     }

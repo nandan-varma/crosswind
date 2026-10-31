@@ -11,26 +11,32 @@ struct ActionButton: View {
 
     var body: some View {
         if let operation = model.operations[appID], operation.failure == nil {
-            ProgressRing(fraction: operation.fraction).help(operation.detail)
+            ProgressRing(name: name, fraction: operation.fraction)
+                .help(operation.detail)
         } else if let installed = model.installed[appID] {
             if installed.updateAvailable {
                 Button("Update") { Task { await model.update(appID) } }
                     .buttonStyle(.borderedProminent)
-                    .accessibilityLabel("Update \(name)")
+                    .help(String(localized: "Update \(name)"))
+                    .accessibilityLabel(Text("Update \(name)"))
             } else {
                 Button("Open") { Task { await model.open(appID) } }
                     .buttonStyle(.borderedProminent)
-                    .accessibilityLabel("Open \(name)")
+                    .help(String(localized: "Open \(name)"))
+                    .accessibilityLabel(Text("Open \(name)"))
             }
         } else {
             Button("Get") { Task { await model.install(appID) } }
                 .buttonStyle(.borderedProminent)
-                .accessibilityLabel("Get \(name)")
+                .help(String(localized: "Get \(name)"))
+                .accessibilityLabel(Text("Get \(name)"))
         }
     }
 }
 
+/// Shown while an operation runs. Reads as "Installing <name>, <percent>".
 private struct ProgressRing: View {
+    let name: String
     let fraction: Double
 
     var body: some View {
@@ -38,5 +44,7 @@ private struct ProgressRing: View {
             .progressViewStyle(.circular)
             .controlSize(.small)
             .frame(width: 28, height: 28)
+            .accessibilityLabel(Text("Working on \(name)"))
+            .accessibilityValue(Text("\(Int((fraction * 100).rounded())) percent"))
     }
 }

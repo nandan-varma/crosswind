@@ -13,7 +13,15 @@ public struct GuestLogStore: Sendable {
         self.capacity = capacity
     }
 
+    /// Longest text kept per line; longer lines from a guest app are cut.
+    public static let maxTextBytes = 4096
+    public static let maxFieldBytes = 256
+
     public mutating func append(_ line: Crosswind_Control_LogLine) {
+        var line = line
+        line.text = DisplayLimits.sanitize(line.text, maxBytes: Self.maxTextBytes)
+        line.source = DisplayLimits.sanitize(line.source, maxBytes: Self.maxFieldBytes)
+        line.launchID = DisplayLimits.sanitize(line.launchID, maxBytes: Self.maxFieldBytes)
         storage.append(line)
         if storage.count > capacity * 2 {
             storage.removeFirst(storage.count - capacity)

@@ -37,7 +37,7 @@ private struct GeneralSettings: View {
         Form {
             Toggle("Launch at login", isOn: Binding(get: { launchAtLogin }, set: setLaunchAtLogin))
             if let loginError {
-                Text(loginError).font(.caption).foregroundStyle(.red)
+                Text(verbatim: loginError).font(.caption).foregroundStyle(.red)
             }
             Toggle("Command key acts as Control", isOn: $commandActsAsControl)
                 .help("Use the Command key for shortcuts that Linux apps expect on Control.")
@@ -81,7 +81,7 @@ private struct EnvironmentSettings: View {
         Form {
             Section {
                 Stepper(value: $cpuCount, in: Preferences.cpuRange) {
-                    LabeledContent("Virtual CPUs", value: "\(cpuCount)")
+                    LabeledContent("Virtual CPUs") { Text("\(cpuCount)").monospacedDigit() }
                 }
                 LabeledContent("Memory") {
                     HStack {
@@ -91,7 +91,9 @@ private struct EnvironmentSettings: View {
                             step: 1
                         )
                         .frame(width: 180)
+                        .accessibilityValue(Text("\(memoryGiB) GiB"))
                         Text("\(memoryGiB) GiB").monospacedDigit().frame(width: 60, alignment: .trailing)
+                            .accessibilityHidden(true)
                     }
                 }
                 Stepper(value: $idleMinutes, in: Preferences.idleTimeoutRange) {
@@ -112,7 +114,7 @@ private struct EnvironmentSettings: View {
                     .disabled(working)
             }
             if let failure {
-                Text(failure).font(.caption).foregroundStyle(.red)
+                Text(verbatim: failure).font(.caption).foregroundStyle(.red)
             }
         }
         .formStyle(.grouped)
@@ -161,7 +163,7 @@ private struct StorageSettings: View {
                     .foregroundStyle(.secondary)
             }
             LabeledContent("Location") {
-                Text(directory.path(percentEncoded: false))
+                Text(verbatim: directory.path(percentEncoded: false))
                     .foregroundStyle(.secondary)
                     .textSelection(.enabled)
             }
@@ -205,7 +207,7 @@ private struct AboutSettings: View {
 
     var body: some View {
         Form {
-            LabeledContent("Version", value: "\(version) (\(build))")
+            LabeledContent("Version") { Text(verbatim: "\(version) (\(build))").textSelection(.enabled) }
             if let license = Self.license {
                 Link("AGPL-3.0 License", destination: license)
             }

@@ -91,6 +91,7 @@ struct DiscoverView: View {
         }
     }
 
+    /// Placeholder content while popularity loads. Hidden from VoiceOver: there is nothing to read yet.
     private var skeleton: some View {
         VStack(alignment: .leading, spacing: 36) {
             HeroCard(app: .placeholder(0), model: model)
@@ -111,6 +112,7 @@ struct DiscoverView: View {
                 .allowsHitTesting(false)
             }
         }
+        .accessibilityHidden(true)
     }
 
     private func hero(_ apps: [CatalogApp]) -> some View {
@@ -163,10 +165,10 @@ private struct HeroCard: View {
                             .font(.caption.bold())
                             .textCase(.uppercase)
                             .foregroundStyle(.secondary)
-                        Text(app.name)
+                        Text(verbatim: app.name)
                             .font(.largeTitle.bold())
                             .lineLimit(2)
-                        Text(app.summary)
+                        Text(verbatim: app.summary)
                             .font(.title3)
                             .foregroundStyle(.secondary)
                             .lineLimit(2)
@@ -174,6 +176,7 @@ private struct HeroCard: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
+                .accessibilityElement(children: .combine)
             }
             .buttonStyle(.plain)
             ActionButton(appID: app.id, model: model)

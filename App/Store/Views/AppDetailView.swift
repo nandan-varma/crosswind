@@ -11,6 +11,7 @@ struct AppDetailView: View {
     @State private var screenshot: ScreenshotSelection?
     @State private var showsCompatibility = false
     @State private var confirmsUninstall = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         if let app = model.app(appID) {
@@ -51,21 +52,25 @@ struct AppDetailView: View {
         HStack(alignment: .top, spacing: 20) {
             AppIconView(app: app, size: 96)
             VStack(alignment: .leading, spacing: 6) {
-                Text(app.name)
+                Text(verbatim: app.name)
                     .font(.title.bold())
                     .lineLimit(2)
-                Text(app.summary)
+                    .accessibilityAddTraits(.isHeader)
+                Text(verbatim: app.summary)
                     .font(.title3)
                     .foregroundStyle(.secondary)
                 DeveloperLabel(app: app)
                 HStack(spacing: 12) {
                     ActionButton(appID: app.id, model: model)
                         .controlSize(.large)
+                        // Return activates the primary action on this page.
+                        .keyboardShortcut(.defaultAction)
                     if model.installed[app.id] != nil {
                         if model.isRunning(app.id) {
                             Label("Running", systemImage: "circle.fill")
                                 .font(.callout)
                                 .foregroundStyle(.green)
+                                .accessibilityLabel(Text("Running"))
                         }
                         Menu("More", systemImage: "ellipsis.circle") {
                             Button("Uninstall", systemImage: "trash", role: .destructive) {
@@ -74,7 +79,8 @@ struct AppDetailView: View {
                         }
                         .menuIndicator(.hidden)
                         .fixedSize()
-                        .accessibilityLabel("More actions")
+                        .help(String(localized: "More actions"))
+                        .accessibilityLabel(Text("More actions"))
                     }
                 }
                 .padding(.top, 8)
@@ -92,7 +98,7 @@ struct AppDetailView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("The last action didn't finish")
                         .font(.headline)
-                    Text(failure)
+                    Text(verbatim: failure)
                         .font(.callout)
                         .foregroundStyle(.secondary)
                         .textSelection(.enabled)
@@ -142,7 +148,7 @@ struct AppDetailView: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 ScreenshotThumbnail(screenshot: shot)
                                 if !shot.caption.isEmpty {
-                                    Text(shot.caption)
+                                    Text(verbatim: shot.caption)
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                         .lineLimit(2)
@@ -151,8 +157,9 @@ struct AppDetailView: View {
                             }
                         }
                         .buttonStyle(.plain)
+                        .help(String(localized: "Show a larger view of this screenshot"))
                         .accessibilityLabel(Text("Screenshot \(index + 1) of \(app.screenshots.count)"))
-                        .accessibilityHint("Opens a larger view")
+                        .accessibilityHint(Text("Opens a larger view"))
                     }
                 }
             }
@@ -173,12 +180,17 @@ struct AppDetailView: View {
                 .font(.title2.bold())
                 .accessibilityAddTraits(.isHeader)
             ForEach(Array(visible.enumerated()), id: \.offset) { _, paragraph in
-                Text(paragraph)
+                Text(verbatim: paragraph)
                     .textSelection(.enabled)
             }
             if paragraphs.count > collapsedCount {
                 Button(showsFullDescription ? "Show Less" : "Show More") {
-                    withAnimation(.snappy) { showsFullDescription.toggle() }
+                    // Reduce Motion: change the text without the animated height change.
+                    if reduceMotion {
+                        showsFullDescription.toggle()
+                    } else {
+                        withAnimation(.snappy) { showsFullDescription.toggle() }
+                    }
                 }
                 .buttonStyle(.link)
             }
@@ -203,7 +215,7 @@ struct AppDetailView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 if let notes = release.description, !notes.isEmpty {
-                    Text(notes)
+                    Text(verbatim: notes)
                         .textSelection(.enabled)
                 }
             }
@@ -224,10 +236,10 @@ extension AppDetailView {
                 .font(.title2.bold())
                 .accessibilityAddTraits(.isHeader)
             Grid(alignment: .leading, horizontalSpacing: 32, verticalSpacing: 14) {
-                infoRow("License") { Text(app.projectLicense ?? String(localized: "Not specified")) }
-                infoRow("Developer") { Text(app.developerName ?? String(localized: "Unknown")) }
+                infoRow("License") { Text(verbatim: app.projectLicense ?? String(localized: "Not specified")) }
+                infoRow("Developer") { Text(verbatim: app.developerName ?? String(localized: "Unknown")) }
                 infoRow("Version") {
-                    Text(installed?.version ?? app.releases.first?.version ?? String(localized: "Unknown"))
+                    Text(verbatim: installed?.version ?? app.releases.first?.version ?? String(localized: "Unknown"))
                 }
                 if let installed {
                     infoRow("Size") {
@@ -244,6 +256,7 @@ extension AppDetailView {
                         HStack(spacing: 16) {
                             ForEach(links, id: \.url) { link in
                                 Link(link.title, destination: link.url)
+                                    .help(link.url.absoluteString)
                             }
                         }
                     }
@@ -258,13 +271,15 @@ extension AppDetailView {
         return HStack(spacing: 6) {
             Label(status.title, systemImage: status.symbol)
                 .foregroundStyle(status.tint)
+                .accessibilityLabel(Text("Compatibility: \(status.title)"))
             Button("About Compatibility", systemImage: "info.circle") {
                 showsCompatibility = true
             }
             .labelStyle(.iconOnly)
             .buttonStyle(.plain)
+            .help(String(localized: "About Compatibility"))
             .popover(isPresented: $showsCompatibility, arrowEdge: .bottom) {
-                Text(compatibilityExplanation(rating))
+                Text(verbatim: compatibilityExplanation(rating))
                     .font(.callout)
                     .padding(16)
                     .frame(width: 300, alignment: .leading)
@@ -274,14 +289,19 @@ extension AppDetailView {
 
     private func compatibilityExplanation(_ rating: CompatRating?) -> String {
         guard let rating else {
-            return "This app has not been tested on Crosswind yet. Its window, rendering, input and exit"
-                + " were not checked."
+            return String(
+                localized: """
+                    This app has not been tested on Crosswind yet. Its window, rendering, input and exit were \
+                    not checked.
+                    """)
         }
         let date = rating.testedAt.formatted(date: .abbreviated, time: .omitted)
-        var text =
-            "Tested \(date) on guest image \(rating.guestImageVersion). Each app is launched in the"
-            + " Linux guest and checked for a window, rendered frames, input and a clean exit. The guest renders"
-            + " on the CPU, so GPU-accelerated drawing is not covered."
+        var text = String(
+            localized: """
+                Tested \(date) on guest image \(rating.guestImageVersion). Each app is launched in the Linux \
+                guest and checked for a window, rendered frames, input and a clean exit. The guest renders on \
+                the CPU, so GPU-accelerated drawing is not covered.
+                """)
         if !rating.note.isEmpty { text += "\n\n" + rating.note }
         return text
     }
@@ -308,79 +328,5 @@ extension AppDetailView {
             app.bugtracker.map { WebsiteLink(title: String(localized: "Report a Problem"), url: $0) },
             app.donation.map { WebsiteLink(title: String(localized: "Donate"), url: $0) },
         ].compactMap { $0 }
-    }
-}
-
-/// A screenshot chosen for the enlarged sheet.
-private struct ScreenshotSelection: Identifiable {
-    let id: Int
-    let screenshot: CatalogScreenshot
-}
-
-extension CatalogScreenshot {
-    fileprivate var thumbnailURL: URL? {
-        images.first { $0.kind == .thumbnail }?.url ?? images.first?.url
-    }
-
-    fileprivate var sourceURL: URL? {
-        images.first { $0.kind == .source }?.url ?? images.first?.url
-    }
-}
-
-/// A fixed 16:10 frame so the carousel keeps its height while images load.
-private struct ScreenshotThumbnail: View {
-    let screenshot: CatalogScreenshot
-
-    var body: some View {
-        let shape = RoundedRectangle(cornerRadius: 20, style: .continuous)
-        AsyncImage(url: screenshot.thumbnailURL) { phase in
-            switch phase {
-            case .success(let image):
-                image.resizable().scaledToFit()
-            case .failure:
-                Image(systemName: "photo")
-                    .font(.largeTitle)
-                    .foregroundStyle(.secondary)
-            default:
-                ProgressView()
-            }
-        }
-        .frame(width: 480, height: 300)
-        .background(.quaternary, in: shape)
-        .clipShape(shape)
-    }
-}
-
-/// The full-size screenshot, dismissed with Done.
-private struct ScreenshotSheet: View {
-    let screenshot: CatalogScreenshot
-
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        VStack(spacing: 16) {
-            AsyncImage(url: screenshot.sourceURL) { phase in
-                switch phase {
-                case .success(let image):
-                    image.resizable().scaledToFit()
-                case .failure:
-                    Image(systemName: "photo")
-                        .font(.largeTitle)
-                        .foregroundStyle(.secondary)
-                default:
-                    ProgressView()
-                }
-            }
-            .frame(minWidth: 720, minHeight: 450)
-            if !screenshot.caption.isEmpty {
-                Text(screenshot.caption)
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-            Button("Done") { dismiss() }
-                .keyboardShortcut(.defaultAction)
-        }
-        .padding(24)
     }
 }

@@ -5,7 +5,8 @@ import SwiftProtobuf
 public typealias ToHost = Crosswind_Display_ToHost
 public typealias ToGuest = Crosswind_Display_ToGuest
 
-private let maxFrame = 64 << 20
+/// Largest message body accepted from the peer; a longer length prefix ends the connection.
+public let defaultMaxFrameBytes = 64 << 20
 
 public typealias DisplayConnection = FramedConnection<ToHost, ToGuest>
 
@@ -22,14 +23,17 @@ public final class FramedConnection<Incoming: SwiftProtobuf.Message & Sendable, 
     private let continuation: AsyncStream<Incoming>.Continuation
 
     /// `closesDescriptor`: the connection owns `fd` (a socketpair end) and closes it when the stream ends.
-    public init(fd: Int32, owner: AnyObject? = nil, closesDescriptor: Bool = false) {
+    public init(
+        fd: Int32, owner: AnyObject? = nil, closesDescriptor: Bool = false, maxFrameBytes: Int = defaultMaxFrameBytes
+    ) {
         self.fd = fd
         self.owner = owner
         (messages, continuation) = AsyncStream.makeStream(of: Incoming.self, bufferingPolicy: .unbounded)
         let fd = fd
         let continuation = continuation
+        let maxFrame = maxFrameBytes
         Thread.detachNewThread {
-            Self.readLoop(fd: fd, continuation: continuation)
+            Self.readLoop(fd: fd, maxFrame: maxFrame, continuation: continuation)
             if closesDescriptor { close(fd) }
         }
     }
@@ -58,7 +62,7 @@ public final class FramedConnection<Incoming: SwiftProtobuf.Message & Sendable, 
         }
     }
 
-    private static func readLoop(fd: Int32, continuation: AsyncStream<Incoming>.Continuation) {
+    private static func readLoop(fd: Int32, maxFrame: Int, continuation: AsyncStream<Incoming>.Continuation) {
         defer { continuation.finish() }
         var header = [UInt8](repeating: 0, count: 4)
         while readExactly(fd, &header, 4) {

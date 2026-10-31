@@ -8,6 +8,7 @@ import IOSurface
 final class GuestWindow: NSObject, NSWindowDelegate {
     typealias Opened = Crosswind_Display_WindowOpened
     typealias Frame = Crosswind_Display_Frame
+    typealias DamageRect = Crosswind_Display_Rect
 
     let id: UInt32
     let kind: Crosswind_Display_WindowKind
@@ -49,6 +50,13 @@ final class GuestWindow: NSObject, NSWindowDelegate {
     // MARK: Frames
 
     func apply(_ frame: Frame, title: String) {
+        // The guest is untrusted: refuse anything outside the limits before touching a surface.
+        do {
+            try DisplayLimits.checkFrame(frame)
+        } catch {
+            if DisplayLimits.violationLog.allow() { Log.display.warning("window \(self.id): frame refused: \(error)") }
+            return
+        }
         let scale = CGFloat(frame.scale120) / 120
         let width = Int(frame.width)
         let height = Int(frame.height)
@@ -76,10 +84,13 @@ final class GuestWindow: NSObject, NSWindowDelegate {
                 memcpy(back.baseAddress + offset, front.baseAddress + offset, Int(rect.width) * 4)
             }
         }
-        for rect in frame.damage { Self.decode(rect, into: back.baseAddress, stride: stride) }
+        var applied: [(x: UInt32, y: UInt32, width: UInt32, height: UInt32)] = []
+        for rect in frame.damage where Self.decode(rect, into: back.baseAddress, stride: stride) {
+            applied.append((x: rect.x, y: rect.y, width: rect.width, height: rect.height))
+        }
         back.unlock(options: [], seed: nil)
         front.unlock(options: .readOnly, seed: nil)
-        previousDamage = frame.damage.map { (x: $0.x, y: $0.y, width: $0.width, height: $0.height) }
+        previousDamage = applied
         frontIndex = 1 - frontIndex
         let surface = buffers[frontIndex]
 
@@ -97,19 +108,21 @@ final class GuestWindow: NSObject, NSWindowDelegate {
         startDisplayLink()
     }
 
-    private static func decode(_ rect: Crosswind_Display_Rect, into base: UnsafeMutableRawPointer, stride: Int) {
+    /// Copies one damage rect into the surface. Returns false (and draws nothing) if its pixels do not decode to
+    /// exactly the rect's size.
+    @discardableResult
+    private static func decode(_ rect: DamageRect, into base: UnsafeMutableRawPointer, stride: Int) -> Bool {
+        guard let packed = RectCodec.unpack(width: rect.width, height: rect.height, pixels: rect.pixels) else {
+            if DisplayLimits.violationLog.allow() { Log.display.warning("damage rect refused: payload does not decode") }
+            return false
+        }
         let w = Int(rect.width)
-        let h = Int(rect.height)
-        let packed = UnsafeMutablePointer<UInt8>.allocate(capacity: w * h * 4)
-        defer { packed.deallocate() }
-        let n = rect.pixels.withUnsafeBytes {
-            compression_decode_buffer(
-                packed, w * h * 4, $0.bindMemory(to: UInt8.self).baseAddress!, $0.count, nil, COMPRESSION_LZ4_RAW)
+        packed.withUnsafeBytes { src in
+            for row in 0..<Int(rect.height) {
+                memcpy(base + (Int(rect.y) + row) * stride + Int(rect.x) * 4, src.baseAddress! + row * w * 4, w * 4)
+            }
         }
-        guard n == w * h * 4 else { return }
-        for row in 0..<h {
-            memcpy(base + (Int(rect.y) + row) * stride + Int(rect.x) * 4, packed + row * w * 4, w * 4)
-        }
+        return true
     }
 
     /// The guest is told a frame was presented on the next display refresh, which paces its rendering to the screen.

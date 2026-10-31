@@ -88,7 +88,8 @@ final class StubDelegate: NSObject, NSApplicationDelegate {
 
     private func present(_ error: Error) {
         let alert = NSAlert()
-        alert.messageText = "Couldn't start \(Bundle.main.object(forInfoDictionaryKey: "CFBundleName") ?? appID)"
+        let name = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? appID
+        alert.messageText = String(localized: "Couldn't start \(name)")
         alert.informativeText = error.localizedDescription
         alert.runModal()
         NSApp.terminate(nil)

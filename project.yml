@@ -15,12 +15,17 @@ settings:
     # Ad-hoc signing by default (CI, local builds); release builds set RELEASE_SIGN to a Developer ID identity.
     CODE_SIGN_IDENTITY: "$(RELEASE_SIGN:default=-)"
     ENABLE_HARDENED_RUNTIME: YES
+    # Xcode extracts UI strings into the String Catalogs (App/*/Localizable.xcstrings) at build time.
+    SWIFT_EMIT_LOC_STRINGS: YES
 packages:
   CrosswindKit:
     path: Packages/CrosswindKit
   ArgumentParser:
     url: https://github.com/apple/swift-argument-parser
     exactVersion: 1.8.2
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    exactVersion: 2.10.1
 targets:
   # Store app: UI only. Embeds the host agent (launchd helper) and the per-app stub template.
   Crosswind:
@@ -36,6 +41,10 @@ targets:
           - Resources
       - path: App/Store/Resources/CompatRatings.json
         buildPhase: resources
+      - path: App/Store/Resources/Localizable.xcstrings
+        buildPhase: resources
+      - path: App/Store/Resources/Sparkle-LICENSE.txt
+        buildPhase: resources
       - path: App/Store/Resources/dev.crosswind.host.plist
         buildPhase:
           copyFiles:
@@ -43,6 +52,8 @@ targets:
             subpath: Contents/Library/LaunchAgents
     dependencies:
       - package: CrosswindKit
+      - package: Sparkle
+        product: Sparkle
       - target: CrosswindHost
         embed: true
         copy:
@@ -55,6 +66,13 @@ targets:
       - target: crosswindctl
         copy:
           destination: executables
+    # The guest image manifest is written by scripts/release.sh (IMAGE_DIR and IMAGE_BASE_URL). Dev builds have none.
+    postBuildScripts:
+      - name: Embed guest image manifest
+        script: |
+          if [ -f "$SRCROOT/build/GuestImage.json" ]; then
+              cp "$SRCROOT/build/GuestImage.json" "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/GuestImage.json"
+          fi
     info:
       path: build/Info.plist
       properties:
@@ -69,6 +87,12 @@ targets:
         LSApplicationCategoryType: public.app-category.developer-tools
         NSHumanReadableCopyright: "AGPL-3.0-or-later"
         NSPrincipalClass: NSApplication
+        # Sparkle 2 app updates. The appcast is published by scripts/appcast.sh; the EdDSA private key lives in the
+        # login keychain (Sparkle's generate_keys), never in the repo.
+        SUFeedURL: https://github.com/nandan-varma/crosswind/releases/latest/download/appcast.xml
+        SUPublicEDKey: b7fNjRO+y81OOiZ2UgNHVOTYDwAWmcJWUxkgUjDcoFA=
+        SUEnableAutomaticChecks: YES
+        SUEnableSystemProfiling: NO
   # Background agent: owns the VM. Started on demand by launchd through the Mach service dev.crosswind.host.
   CrosswindHost:
     type: application

@@ -18,6 +18,8 @@ public final class StoreModel {
     public enum Phase: Equatable {
         case connecting
         case installingImage(Double)
+        /// A newer guest image is replacing the installed one.
+        case updatingImage(Double)
         case loadingCatalog
         case ready
         case failed(String)
@@ -71,12 +73,18 @@ public final class StoreModel {
         }
     }
 
+    /// Installs the bundled guest image when its version differs from the installed one. An update stops the VM
+    /// first, since the image it boots from is about to be replaced. `ImageStore` never touches the data disk and
+    /// keeps the old image until the new one is fully downloaded and verified.
     private func ensureImage() async throws {
         guard let manifest else { return }
-        if await imageStore.installedVersion() == manifest.version { return }
-        phase = .installingImage(0)
+        let installed = await imageStore.installedVersion()
+        if installed == manifest.version { return }
+        let updating = installed != nil
+        if updating, let agent { _ = try await agent.command(.stopVm(.init())) }
+        phase = updating ? .updatingImage(0) : .installingImage(0)
         try await imageStore.install(manifest) { [weak self] fraction in
-            Task { @MainActor in self?.phase = .installingImage(fraction) }
+            Task { @MainActor in self?.phase = updating ? .updatingImage(fraction) : .installingImage(fraction) }
         }
     }
 

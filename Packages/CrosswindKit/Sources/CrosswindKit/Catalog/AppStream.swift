@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
+import Compression
 import Foundation
 
 /// A desktop application from the Flathub AppStream catalog.
@@ -113,9 +114,12 @@ public struct AppStreamParser {
         return delegate.apps
     }
 
-    /// Strips the gzip container (RFC 1952) and inflates the raw DEFLATE payload.
+    /// Largest decompressed catalog accepted. The Flathub catalog is tens of MiB; anything past this is a bomb.
+    static let maxInflatedBytes = 256 << 20
+
+    /// Strips the gzip container (RFC 1952) and inflates the raw DEFLATE payload, refusing output above `limit`.
     /// The gzip trailer (CRC and size) is not verified.
-    static func inflateGzip(_ data: Data) throws -> Data {
+    static func inflateGzip(_ data: Data, limit: Int = maxInflatedBytes) throws -> Data {
         let bytes = [UInt8](data)
         guard bytes.count > 18, bytes[0] == 0x1f, bytes[1] == 0x8b, bytes[2] == 8 else {
             throw AppStreamError.notGzip
@@ -123,6 +127,7 @@ public struct AppStreamParser {
         let flags = bytes[3]
         var offset = 10
         if flags & 0x04 != 0 {  // FEXTRA
+            guard offset + 2 <= bytes.count else { throw AppStreamError.notGzip }
             offset += 2 + Int(bytes[offset]) + Int(bytes[offset + 1]) << 8
         }
         if flags & 0x08 != 0 {  // FNAME
@@ -135,11 +140,46 @@ public struct AppStreamParser {
             offset += 2
         }
         guard offset < bytes.count - 8 else { throw AppStreamError.notGzip }
-        let payload = Data(bytes[offset..<(bytes.count - 8)])
-        guard let inflated = try? (payload as NSData).decompressed(using: .zlib) as Data else {
+        return try inflateDeflate(Array(bytes[offset..<(bytes.count - 8)]), limit: limit)
+    }
+
+    /// Streams raw DEFLATE (Compression's COMPRESSION_ZLIB is headerless) and stops once the output passes `limit`.
+    static func inflateDeflate(_ input: [UInt8], limit: Int) throws -> Data {
+        guard !input.isEmpty else { throw AppStreamError.decompressionFailed }
+        let chunk = 64 << 10
+        let dst = UnsafeMutablePointer<UInt8>.allocate(capacity: chunk)
+        defer { dst.deallocate() }
+        var stream = compression_stream(dst_ptr: dst, dst_size: 0, src_ptr: dst, src_size: 0, state: nil)
+        guard compression_stream_init(&stream, COMPRESSION_STREAM_DECODE, COMPRESSION_ZLIB) == COMPRESSION_STATUS_OK
+        else {
             throw AppStreamError.decompressionFailed
         }
-        return inflated
+        defer { compression_stream_destroy(&stream) }
+        var out = Data()
+        try input.withUnsafeBufferPointer { src in
+            stream.src_ptr = src.baseAddress!
+            stream.src_size = src.count
+            while true {
+                stream.dst_ptr = dst
+                stream.dst_size = chunk
+                let flags = stream.src_size == 0 ? Int32(COMPRESSION_STREAM_FINALIZE.rawValue) : 0
+                let status = compression_stream_process(&stream, flags)
+                let produced = chunk - stream.dst_size
+                out.append(dst, count: produced)
+                guard out.count <= limit else { throw AppStreamError.decompressionFailed }
+                switch status {
+                case COMPRESSION_STATUS_END:
+                    return
+                case COMPRESSION_STATUS_OK where produced == 0 && stream.src_size == 0:
+                    throw AppStreamError.decompressionFailed  // truncated input
+                case COMPRESSION_STATUS_OK:
+                    continue
+                default:
+                    throw AppStreamError.decompressionFailed
+                }
+            }
+        }
+        return out
     }
 
     private static func skipZeroTerminated(_ bytes: [UInt8], from start: Int) -> Int {
