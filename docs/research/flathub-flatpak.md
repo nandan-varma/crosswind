@@ -134,3 +134,11 @@ Research date: 2026-10-31. All sources were accessed 2026-10-31 unless noted. Se
 - WebSearch: "Flathub API stats popularity endpoint ..." — stats field names (secondary).
 
 Not fetched (time budget): Flathub API source repo (`github.com/flathub-infra/website`), OSTree man pages, Flatseal source, Virtualization.framework Rosetta notes, Snap/AppImage comparisons.
+
+## Measured correction (2026-10-31, by the lead, reproducible)
+
+The earlier "0 aarch64 refs" reading in guest-stack.md is wrong: Flathub's main `summary` holds x86_64 only; per-arch refs live in sub-summaries listed by `summary.idx`.
+- `curl https://dl.flathub.org/repo/summary.idx`: GVariant map `arch name -> (32-byte sha256, ...)`; the aarch64 checksum is the 32 bytes after `aarch64\0`.
+- `curl https://dl.flathub.org/repo/summaries/<hex>.gz`, then `strings | grep '^app/.*/aarch64/'`.
+- Result: **3538 distinct apps with an aarch64 ref vs 4128 with x86_64 (about 86% coverage)** in that snapshot (counts include non-stable branches). Supersedes the "1.3% of downloads" framing for catalog purposes; arm64 coverage is not a blocker.
+- Flathub repo GPG key fingerprint (from guest-stack agent): 6E5C 05D9 79C7 6DAF 93C0 8135 4184 DD4D 907A 7CAE (to be re-verified against the .flatpakrepo key in Phase 1).
