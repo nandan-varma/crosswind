@@ -1,0 +1,15 @@
+.DS_Store
+*.img
+*.qcow2
+*.raw
+*.asif
+*.iso
+/build/
+/.build/
+/DerivedData/
+/target/
+/spikes/**/work/
+*.p12
+*.cer
+*.mobileprovision
+.env
