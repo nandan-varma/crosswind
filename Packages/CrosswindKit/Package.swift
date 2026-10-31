@@ -13,6 +13,10 @@ let package = Package(
             name: "CrosswindKit",
             dependencies: [.product(name: "SwiftProtobuf", package: "swift-protobuf")]
         ),
-        .testTarget(name: "CrosswindKitTests", dependencies: ["CrosswindKit"]),
+        .testTarget(
+            name: "CrosswindKitTests",
+            dependencies: ["CrosswindKit"],
+            resources: [.copy("Fixtures")]
+        ),
     ]
 )

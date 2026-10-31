@@ -1,0 +1,75 @@
+{
+  "query": "",
+  "processingTimeMs": 9,
+  "hitsPerPage": 250,
+  "page": 1,
+  "totalPages": 1,
+  "totalHits": 3,
+  "facetDistribution": null,
+  "facetStats": null,
+  "hits": [
+    {
+      "app_id": "org.darktable.Darktable",
+      "name": "darktable",
+      "summary": "Organize and develop images from digital cameras",
+      "installs_last_month": 244938,
+      "trending": -9.190708219037257,
+      "favorites_count": 106,
+      "developer_name": "darktable developers",
+      "keywords": [
+        "graphics",
+        "raw"
+      ],
+      "main_categories": "graphics",
+      "sub_categories": [
+        "Photography"
+      ],
+      "project_license": "GPL-3.0+",
+      "runtime": "org.gnome.Platform/x86_64/51",
+      "type": "desktop-application"
+    },
+    {
+      "app_id": "org.vinegarhq.Sober",
+      "name": "Sober",
+      "summary": "Play, chat & explore on Roblox",
+      "installs_last_month": 202248,
+      "trending": -0.12573320999334864,
+      "favorites_count": 381,
+      "developer_name": "VinegarHQ & Sober contributors",
+      "keywords": [
+        "roblox",
+        "vinegar",
+        "launcher"
+      ],
+      "main_categories": "game",
+      "sub_categories": [
+        "GNOME",
+        "GTK"
+      ],
+      "project_license": "LicenseRef-proprietary=https://sober.vinegarhq.org/notice.txt",
+      "runtime": "org.gnome.Platform/x86_64/51",
+      "type": "desktop-application"
+    },
+    {
+      "app_id": "org.mozilla.firefox",
+      "name": "Firefox",
+      "summary": "Fast, Private & Safe Web Browser",
+      "installs_last_month": 201051,
+      "trending": 0.09286176843633022,
+      "favorites_count": 517,
+      "developer_name": "Mozilla",
+      "keywords": [
+        "Browser",
+        "Explorer",
+        "Internet"
+      ],
+      "main_categories": "network",
+      "sub_categories": [
+        "WebBrowser"
+      ],
+      "project_license": "MPL-2.0",
+      "runtime": "org.freedesktop.Platform/x86_64/25.08",
+      "type": "desktop-application"
+    }
+  ]
+}

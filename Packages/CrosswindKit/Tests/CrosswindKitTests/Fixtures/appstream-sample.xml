@@ -1,0 +1,478 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<components version="0.8" origin="flatpak">
+  <component type="desktop-application">
+    <id>ai.jan.Jan</id>
+    <name>Jan</name>
+    <summary>Private offline AI assistant</summary>
+    <summary xml:lang="pl">Prywatny asystent SI działający bez dostępu do sieci</summary>
+    <project_license>Apache-2.0</project_license>
+    <description>
+      <p>
+      Jan is an open source alternative to ChatGPT that runs 100% offline on your computer.
+    </p>
+      <p>Features</p>
+      <ul>
+        <li>Local AI models: Run LLMs such as Llama, Gemma, Qwen and others on your device</li>
+        <li>Optional cloud access: Connect to services like OpenAI, Anthropic, Gemini and Groq when internet-based models are required</li>
+        <li>Custom assistants: Create tailored assistants for writing, coding, summarizing and more</li>
+        <li>OpenAI-compatible API: Includes a local API server at localhost:1337 for tools expecting the OpenAI format</li>
+        <li>MCP support: Integrates the Model Context Protocol for enhanced workflows and tooling</li>
+        <li>Privacy-aware design: Jan works offline by default. Cloud access is optional and user-controlled</li>
+      </ul>
+      <p>
+      Jan is actively maintained by Menlo Research.  
+      Feedback, bug reports and feature requests are welcomed through GitHub.
+    </p>
+    </description>
+    <developer>
+      <name>Menlo Research Pte. Ltd.</name>
+    </developer>
+    <developer_name>Menlo Research Pte. Ltd.</developer_name>
+    <launchable type="desktop-id">ai.jan.Jan.desktop</launchable>
+    <icon height="48" type="cached" width="48">ai.jan.Jan.png</icon>
+    <icon height="64" type="cached" width="64">ai.jan.Jan.png</icon>
+    <icon height="64" scale="2" type="cached" width="64">ai.jan.Jan.png</icon>
+    <icon height="128" type="cached" width="128">ai.jan.Jan.png</icon>
+    <icon height="128" scale="2" type="cached" width="128">ai.jan.Jan.png</icon>
+    <icon type="stock">ai.jan.Jan</icon>
+    <icon height="128" type="remote" width="128">https://dl.flathub.org/media/ai/jan/Jan/f92cccd45dcfb12937a7e37a07d143e7/icons/128x128/ai.jan.Jan.png</icon>
+    <icon height="128" scale="2" type="remote" width="128">https://dl.flathub.org/media/ai/jan/Jan/f92cccd45dcfb12937a7e37a07d143e7/icons/128x128@2/ai.jan.Jan.png</icon>
+    <url type="homepage">https://jan.ai/</url>
+    <url type="bugtracker">https://github.com/janhq/jan/issues</url>
+    <url type="vcs-browser">https://github.com/janhq/jan</url>
+    <categories>
+      <category>Utility</category>
+      <category>Education</category>
+      <category>Chat</category>
+      <category>Dictionary</category>
+    </categories>
+    <screenshots>
+      <screenshot>
+        <caption>Blank Jan page with 0 threads</caption>
+        <caption xml:lang="pl">Pusta strona Jan bez żadnych wątków</caption>
+        <image height="743" type="source" width="960">https://dl.flathub.org/media/ai/jan/Jan/f92cccd45dcfb12937a7e37a07d143e7/screenshots/image-1_orig.png</image>
+        <image height="582" type="thumbnail" width="752">https://dl.flathub.org/media/ai/jan/Jan/f92cccd45dcfb12937a7e37a07d143e7/screenshots/image-1_752x582@1.png</image>
+        <image height="482" type="thumbnail" width="624">https://dl.flathub.org/media/ai/jan/Jan/f92cccd45dcfb12937a7e37a07d143e7/screenshots/image-1_624x482@1.png</image>
+        <image height="173" type="thumbnail" width="224">https://dl.flathub.org/media/ai/jan/Jan/f92cccd45dcfb12937a7e37a07d143e7/screenshots/image-1_224x173@1.png</image>
+      </screenshot>
+      <screenshot type="default">
+        <caption>Jan using a search MCP to gather information</caption>
+        <caption xml:lang="pl">Aplikacja Jan używająca wyszukiwania MCP celem zgromadzenia informacji</caption>
+        <image height="737" type="source" width="960">https://dl.flathub.org/media/ai/jan/Jan/f92cccd45dcfb12937a7e37a07d143e7/screenshots/image-2_orig.png</image>
+        <image height="577" type="thumbnail" width="752">https://dl.flathub.org/media/ai/jan/Jan/f92cccd45dcfb12937a7e37a07d143e7/screenshots/image-2_752x577@1.png</image>
+        <image height="479" type="thumbnail" width="624">https://dl.flathub.org/media/ai/jan/Jan/f92cccd45dcfb12937a7e37a07d143e7/screenshots/image-2_624x479@1.png</image>
+        <image height="171" type="thumbnail" width="224">https://dl.flathub.org/media/ai/jan/Jan/f92cccd45dcfb12937a7e37a07d143e7/screenshots/image-2_224x171@1.png</image>
+      </screenshot>
+    </screenshots>
+    <keywords>
+      <keyword>chatbot</keyword>
+      <keyword>ai assistant</keyword>
+      <keyword>offline ai</keyword>
+    </keywords>
+    <releases>
+      <release timestamp="1792454400" type="stable" version="0.8.7">
+        <description>
+          <p>Adds a Shell switch to turn the shell tool off in chat, a separate image size limit, and built-in subagents for the Jan agent; keeps project threads in their project when a document is attached, sends pasted @decorators as typed, makes Stop end the whole turn, and stops local chat failing behind a proxy</p>
+        </description>
+      </release>
+      <release timestamp="1791504000" type="stable" version="0.8.6">
+        <description>
+          <p>A hotfix for 0.8.5: NVIDIA Turing GPUs (GTX 16xx, RTX 20xx) run the CUDA engine again on older drivers, Qwen3.8 with MTP is fast again when Parallel Sequences is auto, and images returned by MCP tools reach the model as images</p>
+        </description>
+      </release>
+      <release timestamp="1791417600" type="stable" version="0.8.5">
+        <description>
+          <p>A fixes release: the llama.cpp engine (0.5.0) now ships inside the app and runs in its own worker process with CUDA and Vulkan, the jan command-line agent is no longer bundled, the Local API Server enforces Trusted Hosts when bound to 0.0.0.0, and a batch of llama.cpp, MCP, platform and agent fixes</p>
+        </description>
+      </release>
+    </releases>
+    <content_rating type="oars-1.1" />
+    <custom>
+      <value key="flathub::verification::verified">true</value>
+      <value key="flathub::verification::timestamp">1764081595</value>
+      <value key="flathub::verification::method">website</value>
+      <value key="flathub::verification::website">jan.ai</value>
+      <value key="flathub::verification::login_is_organization">false</value>
+      <value key="flathub::build::build_log_url">https://builds.flathub.org/api/pipelines/358a4dd1-6cc0-492b-8ebc-f1f8b146c7e0/log_url</value>
+    </custom>
+    <bundle type="flatpak" runtime="org.gnome.Platform/x86_64/51" sdk="org.gnome.Sdk/x86_64/51">app/ai.jan.Jan/x86_64/stable</bundle>
+  </component>
+  <component type="desktop-application">
+    <id>org.darktable.Darktable</id>
+    <name>darktable</name>
+    <summary>Organize and develop images from digital cameras</summary>
+    <project_license>GPL-3.0+</project_license>
+    <description>
+      <p>darktable manages your camera raw files and images in a database, lets you view them through lighttable mode and develop/enhance them in darkroom mode.</p>
+      <p>Other modes besides lighttable and darkroom are a map for geotagging, tethering, print and a slideshow.</p>
+      <p>darktable supports most modern cameras' raw formats, and does all of its processing at very high precision.</p>
+    </description>
+    <developer id="org.darktable">
+      <name>darktable developers</name>
+    </developer>
+    <developer_name>darktable developers</developer_name>
+    <launchable type="desktop-id">org.darktable.Darktable.desktop</launchable>
+    <icon height="48" type="cached" width="48">org.darktable.Darktable.png</icon>
+    <icon height="64" type="cached" width="64">org.darktable.Darktable.png</icon>
+    <icon height="64" scale="2" type="cached" width="64">org.darktable.Darktable.png</icon>
+    <icon height="128" type="cached" width="128">org.darktable.Darktable.png</icon>
+    <icon height="128" scale="2" type="cached" width="128">org.darktable.Darktable.png</icon>
+    <icon type="stock">org.darktable.Darktable</icon>
+    <icon height="128" type="remote" width="128">https://dl.flathub.org/media/org/darktable/Darktable/1b5cfd7af8bcd84fc939759726f1ba7d/icons/128x128/org.darktable.Darktable.png</icon>
+    <icon height="128" scale="2" type="remote" width="128">https://dl.flathub.org/media/org/darktable/Darktable/1b5cfd7af8bcd84fc939759726f1ba7d/icons/128x128@2/org.darktable.Darktable.png</icon>
+    <url type="homepage">https://www.darktable.org/</url>
+    <url type="bugtracker">https://github.com/flathub/org.darktable.Darktable/issues</url>
+    <url type="help">https://www.darktable.org/resources/</url>
+    <categories>
+      <category>Graphics</category>
+      <category>Photography</category>
+    </categories>
+    <screenshots>
+      <screenshot>
+        <caption>Virtual light table, showing a collection</caption>
+        <caption xml:lang="cs">Virtuální katalog zobrazující kolekci</caption>
+        <caption xml:lang="de">Der Leuchttisch zeigt eine Sammlung an</caption>
+        <caption xml:lang="en@truecase">Virtual light table, showing a collection</caption>
+        <caption xml:lang="es">Mesa de Luz virtual mostrando una colección</caption>
+        <caption xml:lang="fi">Virtuaalinen valopöytä, näyttää kuvakokoelman.</caption>
+        <caption xml:lang="fr">Table lumineuse, avec une collection affichée</caption>
+        <caption xml:lang="hu">Virtuális átvilágító, egy gyűjtemény megjelenítése</caption>
+        <caption xml:lang="ja">コレクションを表示するバーチャルライトテーブル</caption>
+        <caption xml:lang="ko_KR">가상 light table, 컬렉션 표시</caption>
+        <caption xml:lang="lo">ຫ້ອງແສງສະເໝືອນຈິງ, ສະແດງຊຸດຮູບພາບ</caption>
+        <caption xml:lang="nb">Virtuelt lysbord, viser en samling</caption>
+        <caption xml:lang="nl">Virtuele lichtbak, toont een collectie</caption>
+        <caption xml:lang="pl">Wirtualny stół podświetlany wyświetlający kolekcję</caption>
+        <caption xml:lang="pt_BR">Mesa de Luz, mostrando uma coleção</caption>
+        <caption xml:lang="ru">Виртуальный световой стол и коллекция снимков</caption>
+        <caption xml:lang="sl">Virtualna svetlobna podlaga prikazuje zbirko</caption>
+        <caption xml:lang="sq">Fototeka virtuale, duke shfaqur një koleksion</caption>
+        <caption xml:lang="sv">Virtuellt ljusbord, en bildsamling visas</caption>
+        <caption xml:lang="uk">Віртуальний світлий стіл, показ колекції</caption>
+        <caption xml:lang="zh_CN">虚拟光台，用于展示照片集</caption>
+        <caption xml:lang="zh_TW">虛擬燈箱，顯示相冊</caption>
+        <image height="1080" type="source" width="1920">https://dl.flathub.org/media/org/darktable/Darktable/1b5cfd7af8bcd84fc939759726f1ba7d/screenshots/image-1_orig.png</image>
+        <image height="702" type="thumbnail" width="1248">https://dl.flathub.org/media/org/darktable/Darktable/1b5cfd7af8bcd84fc939759726f1ba7d/screenshots/image-1_1248x702@1.png</image>
+        <image height="423" type="thumbnail" width="752">https://dl.flathub.org/media/org/darktable/Darktable/1b5cfd7af8bcd84fc939759726f1ba7d/screenshots/image-1_752x423@1.png</image>
+        <image height="351" type="thumbnail" width="624">https://dl.flathub.org/media/org/darktable/Darktable/1b5cfd7af8bcd84fc939759726f1ba7d/screenshots/image-1_624x351@1.png</image>
+        <image height="126" type="thumbnail" width="224">https://dl.flathub.org/media/org/darktable/Darktable/1b5cfd7af8bcd84fc939759726f1ba7d/screenshots/image-1_224x126@1.png</image>
+      </screenshot>
+      <screenshot type="default">
+        <caption>Virtual dark room with an opened image</caption>
+        <caption xml:lang="cs">Virtuální editor s otevřeným obrázkem</caption>
+        <caption xml:lang="de">Die Dunkelkammer mit einem geöffneten Bild</caption>
+        <caption xml:lang="en@truecase">Virtual dark room with an opened image</caption>
+        <caption xml:lang="es">Cuarto Oscuro virtual con una imagen abierta</caption>
+        <caption xml:lang="fi">Virtuaalinen pimiö näyttää avatun valokuvan.</caption>
+        <caption xml:lang="fr">Chambre noire avec une image ouverte</caption>
+        <caption xml:lang="hu">Virtuális sötétkamra egy megnyitott képpel</caption>
+        <caption xml:lang="ja">画像を開いて表示するバーチャルダークルーム</caption>
+        <caption xml:lang="ko_KR">가상 암실에서 이미지 열기</caption>
+        <caption xml:lang="lo">ຫ້ອງມືດສະເໝືອນຈິງພ້ອມຮູບທີ່ເປີດຢູ່</caption>
+        <caption xml:lang="nb">Virtuelt mørkerom med et åpnet bilde</caption>
+        <caption xml:lang="nl">Virtuele DoKa met een geopende afbeelding</caption>
+        <caption xml:lang="pl">Wirtualna ciemnia z otwartym obrazem</caption>
+        <caption xml:lang="pt_BR">Sala Escura com uma imagem aberta</caption>
+        <caption xml:lang="ru">Фоторедактор с открытым снимком</caption>
+        <caption xml:lang="sl">Virtualna temnica z odprto sliko</caption>
+        <caption xml:lang="sq">Dhoma e errët virtuale me një imazh të hapur</caption>
+        <caption xml:lang="sv">Virtuellt mörkerrum med en bild öppnad</caption>
+        <caption xml:lang="uk">Віртуальна темна кімната з відкритим зображенням</caption>
+        <caption xml:lang="zh_CN">虚拟暗房，打开单张图像</caption>
+        <caption xml:lang="zh_TW">虛擬暗房，含一開啟影像</caption>
+        <image height="1080" type="source" width="1920">https://dl.flathub.org/media/org/darktable/Darktable/1b5cfd7af8bcd84fc939759726f1ba7d/screenshots/image-2_orig.png</image>
+        <image height="702" type="thumbnail" width="1248">https://dl.flathub.org/media/org/darktable/Darktable/1b5cfd7af8bcd84fc939759726f1ba7d/screenshots/image-2_1248x702@1.png</image>
+        <image height="423" type="thumbnail" width="752">https://dl.flathub.org/media/org/darktable/Darktable/1b5cfd7af8bcd84fc939759726f1ba7d/screenshots/image-2_752x423@1.png</image>
+        <image height="351" type="thumbnail" width="624">https://dl.flathub.org/media/org/darktable/Darktable/1b5cfd7af8bcd84fc939759726f1ba7d/screenshots/image-2_624x351@1.png</image>
+        <image height="126" type="thumbnail" width="224">https://dl.flathub.org/media/org/darktable/Darktable/1b5cfd7af8bcd84fc939759726f1ba7d/screenshots/image-2_224x126@1.png</image>
+      </screenshot>
+    </screenshots>
+    <keywords>
+      <keyword>graphics</keyword>
+      <keyword>photography</keyword>
+      <keyword>raw</keyword>
+    </keywords>
+    <releases>
+      <release timestamp="1791072000" type="stable" version="5.6.2" />
+      <release timestamp="1787788800" type="stable" version="5.6.1" />
+      <release timestamp="1782000000" type="stable" version="5.6.0" />
+    </releases>
+    <content_rating type="oars-1.1" />
+    <custom>
+      <value key="flathub::build::build_log_url">https://builds.flathub.org/api/pipelines/442b4379-e30f-4ceb-97be-bba8e5b26962/log_url</value>
+    </custom>
+    <bundle type="flatpak" runtime="org.gnome.Platform/x86_64/51" sdk="org.gnome.Sdk/x86_64/51">app/org.darktable.Darktable/x86_64/stable</bundle>
+  </component>
+  <component type="desktop-application">
+    <id>br.com.eduk.school</id>
+    <name>eduK</name>
+    <summary>eduK is an educational web platform focused on assisting users in income generation</summary>
+    <project_license>GPL-3.0-only</project_license>
+    <description>
+      <p>
+      eduK is an educational web platform that focuses on aiding users in income generation. It provides a comprehensive catalog of courses aimed at enhancing skills for various careers, thereby facilitating opportunities for users to achieve financial growth and stability. Through tailored learning paths, eduK empowers individuals by offering practical knowledge and tools necessary for success in the modern job market.
+    </p>
+    </description>
+    <developer>
+      <name>eduK</name>
+    </developer>
+    <launchable type="desktop-id">br.com.eduk.school.desktop</launchable>
+    <icon height="64" type="cached" width="64">br.com.eduk.school.png</icon>
+    <icon height="128" type="remote" width="128">https://dl.flathub.org/media/br/com/eduk.school/5ddeff3a5c6ae810cc31f0625711aae8/icons/128x128/br.com.eduk.school.png</icon>
+    <icon height="128" type="cached" width="128">br.com.eduk.school.png</icon>
+    <icon type="stock">br.com.eduk.school</icon>
+    <url type="homepage">https://app.eduk.com.br</url>
+    <categories>
+      <category>Education</category>
+    </categories>
+    <screenshots>
+      <screenshot type="default">
+        <caption>Course Viewing Screen</caption>
+        <image height="700" type="source" width="1000">https://dl.flathub.org/media/br/com/eduk.school/5ddeff3a5c6ae810cc31f0625711aae8/screenshots/image-1_orig.png</image>
+        <image height="526" type="thumbnail" width="752">https://dl.flathub.org/media/br/com/eduk.school/5ddeff3a5c6ae810cc31f0625711aae8/screenshots/image-1_752x526@1.png</image>
+        <image height="436" type="thumbnail" width="624">https://dl.flathub.org/media/br/com/eduk.school/5ddeff3a5c6ae810cc31f0625711aae8/screenshots/image-1_624x436@1.png</image>
+        <image height="156" type="thumbnail" width="224">https://dl.flathub.org/media/br/com/eduk.school/5ddeff3a5c6ae810cc31f0625711aae8/screenshots/image-1_224x156@1.png</image>
+      </screenshot>
+      <screenshot>
+        <caption>Login Screen</caption>
+        <image height="700" type="source" width="1000">https://dl.flathub.org/media/br/com/eduk.school/5ddeff3a5c6ae810cc31f0625711aae8/screenshots/image-2_orig.png</image>
+        <image height="526" type="thumbnail" width="752">https://dl.flathub.org/media/br/com/eduk.school/5ddeff3a5c6ae810cc31f0625711aae8/screenshots/image-2_752x526@1.png</image>
+        <image height="436" type="thumbnail" width="624">https://dl.flathub.org/media/br/com/eduk.school/5ddeff3a5c6ae810cc31f0625711aae8/screenshots/image-2_624x436@1.png</image>
+        <image height="156" type="thumbnail" width="224">https://dl.flathub.org/media/br/com/eduk.school/5ddeff3a5c6ae810cc31f0625711aae8/screenshots/image-2_224x156@1.png</image>
+      </screenshot>
+    </screenshots>
+    <releases>
+      <release timestamp="1708041600" type="stable" version="0.0.1" />
+    </releases>
+    <content_rating type="oars-1.1" />
+    <custom>
+      <value key="flathub::build::build_log_url">https://buildbot.flathub.org/#/builders/6/builds/105156</value>
+    </custom>
+    <bundle type="flatpak" runtime="org.freedesktop.Platform/x86_64/23.08" sdk="org.freedesktop.Sdk/x86_64/23.08">app/br.com.eduk.school/x86_64/stable</bundle>
+  </component>
+  <component type="desktop-application">
+    <id>ai.lmstudio.lm-studio</id>
+    <name>LM Studio</name>
+    <summary>Run AI models, locally and privately</summary>
+    <project_license>LicenseRef-proprietary=https://lmstudio.ai/app-terms</project_license>
+    <description>
+      <p>LM Studio is a desktop app for running large language models (LLMs) locally on your own computer.</p>
+      <p>features</p>
+      <ul>
+        <li>Run Local LLMs Offline — Execute open-weight models entirely on your own device without cloud dependency.</li>
+        <li>Cross-Platform Support — Available on Windows, macOS, and Linux.</li>
+        <li>Model Discovery &amp; Download — Browse and download GGUF/MLX models directly from Hugging Face.</li>
+        <li>Built-in Chat Interface — Interact with local models through a clean ChatGPT-like UI.</li>
+        <li>OpenAI-Compatible API Server — Serve local models via OpenAI-style REST endpoints for app integration.</li>
+        <li>Document Chat (RAG) — Chat with local documents privately and offline.</li>
+        <li>Model Management — Organize models, prompts, presets, and configurations in one place.</li>
+        <li>Developer Tooling — Includes CLI, Python SDK, TypeScript SDK, and REST</li>
+        <li>Headless Mode — Run LM Studio without GUI for servers or CI environments.</li>
+        <li>MCP Integration — Connect MCP servers and external AI workflows.</li>
+        <li>Privacy-First Design — Prompts and conversations stay on the local machine.</li>
+        <li>Hardware-Aware Optimization — GPU offloading and memory controls for better performance on limited hardware.</li>
+        <li>Multi-Model Support — Supports Llama, Qwen, Mistral, Gemma, Phi, DeepSeek, and more.</li>
+        <li>Local Network Serving — Expose local models across devices on the same network.</li>
+      </ul>
+    </description>
+    <developer id="ai.lmstudio">
+      <name>Element Labs, Inc.</name>
+    </developer>
+    <developer_name>Element Labs, Inc.</developer_name>
+    <launchable type="desktop-id">ai.lmstudio.lm-studio.desktop</launchable>
+    <icon height="64" type="cached" width="64">ai.lmstudio.lm-studio.png</icon>
+    <icon height="128" type="cached" width="128">ai.lmstudio.lm-studio.png</icon>
+    <icon type="stock">ai.lmstudio.lm-studio</icon>
+    <icon height="128" type="remote" width="128">https://dl.flathub.org/media/ai/lmstudio/lm-studio/7e60646910129fa40fa38b691c4f0051/icons/128x128/ai.lmstudio.lm-studio.png</icon>
+    <icon height="128" scale="2" type="remote" width="128">https://dl.flathub.org/media/ai/lmstudio/lm-studio/7e60646910129fa40fa38b691c4f0051/icons/128x128@2/ai.lmstudio.lm-studio.png</icon>
+    <url type="homepage">https://lmstudio.ai</url>
+    <url type="help">https://lmstudio.ai/docs/app</url>
+    <categories>
+      <category>Utility</category>
+      <category>Development</category>
+      <category>Chat</category>
+    </categories>
+    <screenshots>
+      <screenshot type="default">
+        <caption>Main window</caption>
+        <image height="1790" type="source" width="2945">https://dl.flathub.org/media/ai/lmstudio/lm-studio/7e60646910129fa40fa38b691c4f0051/screenshots/image-1_orig.png</image>
+        <image height="758" type="thumbnail" width="1248">https://dl.flathub.org/media/ai/lmstudio/lm-studio/7e60646910129fa40fa38b691c4f0051/screenshots/image-1_1248x758@1.png</image>
+        <image height="457" type="thumbnail" width="752">https://dl.flathub.org/media/ai/lmstudio/lm-studio/7e60646910129fa40fa38b691c4f0051/screenshots/image-1_752x457@1.png</image>
+        <image height="379" type="thumbnail" width="624">https://dl.flathub.org/media/ai/lmstudio/lm-studio/7e60646910129fa40fa38b691c4f0051/screenshots/image-1_624x379@1.png</image>
+        <image height="136" type="thumbnail" width="224">https://dl.flathub.org/media/ai/lmstudio/lm-studio/7e60646910129fa40fa38b691c4f0051/screenshots/image-1_224x136@1.png</image>
+      </screenshot>
+    </screenshots>
+    <keywords>
+      <keyword>developer</keyword>
+      <keyword>llm</keyword>
+    </keywords>
+    <releases>
+      <release timestamp="1787875200" type="stable" version="0.4.23-1" />
+      <release timestamp="1782518400" type="stable" version="0.4.18-1" />
+      <release timestamp="1782432000" type="stable" version="0.4.17-4" />
+    </releases>
+    <content_rating type="oars-1.1" />
+    <custom>
+      <value key="flathub::build::build_log_url">https://builds.flathub.org/api/pipelines/3c15f167-a6e7-46fb-9f73-aa3afe002977/log_url</value>
+    </custom>
+    <url type="bugtracker">https://github.com/flathub/ai.lmstudio.lm-studio/issues</url>
+    <bundle type="flatpak" runtime="org.freedesktop.Platform/x86_64/25.08" sdk="org.freedesktop.Sdk/x86_64/25.08">app/ai.lmstudio.lm-studio/x86_64/stable</bundle>
+  </component>
+  <component type="runtime">
+    <id>io.qt.PySide.BaseApp</id>
+    <name>PySide6 BaseApp</name>
+    <summary>Flatpak BaseApp for applications that use PySide6</summary>
+    <project_license>LGPL-3.0-only</project_license>
+    <developer id="io.qt">
+      <name>The Qt Company</name>
+    </developer>
+    <developer_name>The Qt Company</developer_name>
+    <url type="homepage">https://doc.qt.io/qtforpython-6/</url>
+    <releases>
+      <release timestamp="1779494400" type="stable" version="6.10.3">
+        <url>https://code.qt.io/cgit/pyside/pyside-setup.git/tree/doc/changelogs/changes-6.10.3</url>
+      </release>
+    </releases>
+    <custom>
+      <value key="flathub::build::build_log_url">https://builds.flathub.org/api/pipelines/407bbc30-1659-42b9-af12-1aefe789ae3b/log_url</value>
+    </custom>
+    <url type="bugtracker">https://github.com/flathub/io.qt.PySide.BaseApp/issues</url>
+    <bundle type="flatpak" runtime="org.kde.Platform/x86_64/6.10" sdk="org.kde.Sdk/x86_64/6.10">app/io.qt.PySide.BaseApp/x86_64/6.10</bundle>
+  </component>
+  <component type="addon">
+    <id>org.gnome.NautilusPreviewer</id>
+    <name>Sushi</name>
+    <summary>Provide a facility for quickly viewing different kinds of files</summary>
+    <project_license>GPL-2.0+</project_license>
+    <description>
+      <p>
+      Sushi is a file previewer for the GNOME desktop environment. It is an independent component that
+      integrates with GNOME Files (Nautilus).
+    </p>
+    </description>
+    <extends>org.gnome.Nautilus.desktop</extends>
+    <url type="homepage">https://gitlab.gnome.org/GNOME/sushi</url>
+    <url type="bugtracker">https://github.com/flathub/org.gnome.NautilusPreviewer/issues</url>
+    <url type="translate">https://l10n.gnome.org/module/sushi/</url>
+    <url type="vcs-browser">https://gitlab.gnome.org/GNOME/sushi</url>
+    <keywords>
+      <keyword>nautilus</keyword>
+      <keyword>sushi</keyword>
+      <keyword>view</keyword>
+      <keyword>previewer</keyword>
+      <keyword>preview</keyword>
+    </keywords>
+    <releases>
+      <release timestamp="1791763200" type="stable" version="51.2">
+        <description>
+          <p>Minor system integration fixes</p>
+        </description>
+      </release>
+      <release timestamp="1789862400" type="stable" version="51.1" />
+      <release timestamp="1789084800" type="stable" version="51.0">
+        <description>
+          <ul>
+            <li>Complete graphical overhaul, including a modernized graphical backend (Ported to GTK4, libadwaita and glycin), dark mode support, a simplified headerbar layout, and adjusted layout for several previewers</li>
+            <li>Revamped plugin API for better plugin support</li>
+            <li>Smoother transitions between files, especially images</li>
+            <li>Protected HTML previews with optional web content loading</li>
+            <li>Reduced memory usage with fixed memory leaks</li>
+            <li>Supported F2 and Del shortcuts</li>
+            <li>Many additional bug fixes and added little niceties</li>
+          </ul>
+        </description>
+      </release>
+    </releases>
+    <custom>
+      <value key="flathub::build::build_log_url">https://builds.flathub.org/api/pipelines/5a8cddcf-e4e0-487a-ac40-b811e15e0477/log_url</value>
+    </custom>
+    <bundle type="flatpak" runtime="org.gnome.Platform/x86_64/51" sdk="org.gnome.Sdk/x86_64/51">app/org.gnome.NautilusPreviewer/x86_64/stable</bundle>
+  </component>
+  <component type="console-application">
+    <id>at.ssh_mitm.server</id>
+    <name>SSH-MITM</name>
+    <summary>SSH-MITM - ssh audits made simple</summary>
+    <project_license>GPL-3.0</project_license>
+    <description>
+      <p>SSH-MITM is a man in the middle SSH Server for security audits and malware analysis.</p>
+      <p>Password and publickey authentication are supported and SSH-MITM is able to detect, if a user is able to login with publickey authentication on the remote server. This allows SSH-MITM to accept the same key as the destination server. If publickey authentication is not possible, the authentication will fall back to password-authentication.</p>
+      <p>When publickey authentication is possible, a forwarded agent is needed to login to the remote server. In cases, when no agent was forwarded, SSH-MITM can rediredt the session to a honeypot.</p>
+      <p>Features</p>
+      <ul>
+        <li>publickey and password authentication</li>
+        <li>Phishing FIDO Tokens (Information from OpenSSH)</li>
+        <li>hijacking and logging of terminal sessions</li>
+        <li>store and replace files during SCP/SFTP file transferes</li>
+        <li>port porwarding with SOCKS 4/5 support</li>
+        <li>intercept MOSH connections</li>
+        <li>audit clients against known vulnerabilities</li>
+        <li>plugin support</li>
+      </ul>
+    </description>
+    <developer id="at.ssh_mitm">
+      <name>Manfred Kaiser</name>
+    </developer>
+    <developer_name>Manfred Kaiser</developer_name>
+    <url type="homepage">https://github.com/ssh-mitm/ssh-mitm</url>
+    <url type="bugtracker">https://github.com/ssh-mitm/ssh-mitm/issues</url>
+    <url type="help">https://docs.ssh-mitm.at/</url>
+    <screenshots>
+      <screenshot type="default">
+        <caption>SSH-MITM in action: A tool for intercepting and manipulating SSH connections.</caption>
+        <image height="571" type="source" width="1000">https://dl.flathub.org/media/at/ssh_mitm/server/8d67856cf2641e7d657050d18d4724e8/screenshots/image-1_orig.png</image>
+        <image height="429" type="thumbnail" width="752">https://dl.flathub.org/media/at/ssh_mitm/server/8d67856cf2641e7d657050d18d4724e8/screenshots/image-1_752x429@1.png</image>
+        <image height="356" type="thumbnail" width="624">https://dl.flathub.org/media/at/ssh_mitm/server/8d67856cf2641e7d657050d18d4724e8/screenshots/image-1_624x356@1.png</image>
+        <image height="127" type="thumbnail" width="224">https://dl.flathub.org/media/at/ssh_mitm/server/8d67856cf2641e7d657050d18d4724e8/screenshots/image-1_224x127@1.png</image>
+      </screenshot>
+      <screenshot>
+        <caption>SSH-MITM: Tool displaying intercepted SSH connection details and authentication information.</caption>
+        <image height="733" type="source" width="971">https://dl.flathub.org/media/at/ssh_mitm/server/8d67856cf2641e7d657050d18d4724e8/screenshots/image-2_orig.png</image>
+        <image height="567" type="thumbnail" width="752">https://dl.flathub.org/media/at/ssh_mitm/server/8d67856cf2641e7d657050d18d4724e8/screenshots/image-2_752x567@1.png</image>
+        <image height="471" type="thumbnail" width="624">https://dl.flathub.org/media/at/ssh_mitm/server/8d67856cf2641e7d657050d18d4724e8/screenshots/image-2_624x471@1.png</image>
+        <image height="169" type="thumbnail" width="224">https://dl.flathub.org/media/at/ssh_mitm/server/8d67856cf2641e7d657050d18d4724e8/screenshots/image-2_224x169@1.png</image>
+      </screenshot>
+    </screenshots>
+    <keywords>
+      <keyword>ssh</keyword>
+      <keyword>security</keyword>
+      <keyword>audit</keyword>
+      <keyword>mitm</keyword>
+      <keyword>proxy</keyword>
+    </keywords>
+    <releases>
+      <release timestamp="1791936000" type="stable" version="6.0.1">
+        <description>
+          <p>Added</p>
+          <ul>
+            <li>warn at startup when running as a Flatpak without home/host filesystem access</li>
+          </ul>
+          <p>Changed</p>
+          <ul>
+            <li>removed the python-json-logger, pytz, colored and psrpcore dependencies</li>
+          </ul>
+        </description>
+      </release>
+      <release timestamp="1720224000" type="stable" version="5.0.0">
+        <description>
+          <p>Changed</p>
+          <ul>
+            <li>easier plugin development</li>
+            <li>merged SOCKS4 and SOCKS5 module in a single module</li>
+            <li>prepend entry points with "sshmitm" to avoid name conflicts</li>
+            <li>updated vulnerability db</li>
+          </ul>
+        </description>
+      </release>
+    </releases>
+    <content_rating type="oars-1.0" />
+    <custom>
+      <value key="flathub::verification::verified">true</value>
+      <value key="flathub::verification::timestamp">1693747984</value>
+      <value key="flathub::verification::method">website</value>
+      <value key="flathub::verification::website">ssh-mitm.at</value>
+      <value key="flathub::verification::login_is_organization">false</value>
+      <value key="flathub::build::build_log_url">https://builds.flathub.org/api/pipelines/9e5038dc-86e0-4d67-8cde-c6cc1b7c6135/log_url</value>
+    </custom>
+    <bundle type="flatpak" runtime="org.freedesktop.Platform/x86_64/25.08" sdk="org.freedesktop.Sdk/x86_64/25.08">app/at.ssh_mitm.server/x86_64/stable</bundle>
+  </component>
+</components>

@@ -1,0 +1,74 @@
+{
+  "query": "",
+  "processingTimeMs": 9,
+  "hitsPerPage": 250,
+  "page": 1,
+  "totalPages": 1,
+  "totalHits": 3,
+  "facetDistribution": null,
+  "facetStats": null,
+  "hits": [
+    {
+      "app_id": "net.armatik.Kitsune",
+      "name": "Kitsune",
+      "summary": "Watch anime from AniLiberty",
+      "installs_last_month": 4126,
+      "trending": 19.99874569290927,
+      "favorites_count": 35,
+      "developer_name": "Semen (Armatik) Fomchenkov",
+      "keywords": [
+        "anime",
+        "russian",
+        "anilibria"
+      ],
+      "main_categories": "audiovideo",
+      "sub_categories": [
+        "Video",
+        "Player"
+      ],
+      "project_license": "GPL-3.0-or-later",
+      "runtime": "org.gnome.Platform/x86_64/50",
+      "type": "desktop-application"
+    },
+    {
+      "app_id": "io.github.gnacho.Scribe",
+      "name": "Scribe",
+      "summary": "Markdown editor with live rendering",
+      "installs_last_month": 391,
+      "trending": 19.998473633480923,
+      "favorites_count": 2,
+      "developer_name": "gnacho",
+      "keywords": [
+        "markdown",
+        "editor",
+        "notes"
+      ],
+      "main_categories": "office",
+      "sub_categories": [
+        "WordProcessor"
+      ],
+      "project_license": "AGPL-3.0-or-later",
+      "runtime": "org.gnome.Platform/x86_64/51",
+      "type": "desktop-application"
+    },
+    {
+      "app_id": "io.github.realgarit.PKHeX-Avalonia",
+      "name": "PKHeX-Avalonia",
+      "summary": "Edit Pokémon save files",
+      "installs_last_month": 233,
+      "trending": 19.424399048808898,
+      "favorites_count": 1,
+      "developer_name": "realgarit",
+      "keywords": [
+        "PKHeX",
+        "Pokémon",
+        "Pokemon"
+      ],
+      "main_categories": "utility",
+      "sub_categories": [],
+      "project_license": "GPL-3.0-only",
+      "runtime": "org.freedesktop.Platform/x86_64/26.08",
+      "type": "desktop-application"
+    }
+  ]
+}

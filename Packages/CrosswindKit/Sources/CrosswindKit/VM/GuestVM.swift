@@ -3,6 +3,7 @@ import Foundation
 import Virtualization
 
 public enum DisplayPort { public static let display: UInt32 = 5000 }
+public enum ControlPort { public static let control: UInt32 = 5001 }
 
 /// The hidden Linux VM. Boots the Crosswind guest image directly (no firmware) and exposes the display channel.
 @MainActor
@@ -18,11 +19,13 @@ public final class GuestVM: NSObject {
     public let dataDisk: URL
     private let resources: Resources
     private var machine: VZVirtualMachine?
-    private var listener: VZVirtioSocketListener?
+    private var listeners: [VZVirtioSocketListener] = []
     private let console = Pipe()
 
     /// Called on the main actor for every accepted display connection.
     public var onDisplayConnection: ((DisplayConnection) -> Void)?
+    /// Called on the main actor for every accepted control connection.
+    public var onControlConnection: ((ControlConnection) -> Void)?
 
     public init(imageDirectory: URL, dataDisk: URL, resources: Resources = .init()) {
         self.imageDirectory = imageDirectory
@@ -39,11 +42,13 @@ public final class GuestVM: NSObject {
         try config.validate()
         let machine = VZVirtualMachine(configuration: config)
 
-        let listener = VZVirtioSocketListener()
-        listener.delegate = self
-        machine.socketDevices.compactMap { $0 as? VZVirtioSocketDevice }.first?.setSocketListener(
-            listener, forPort: DisplayPort.display)
-        self.listener = listener
+        let socketDevice = machine.socketDevices.compactMap { $0 as? VZVirtioSocketDevice }.first
+        for port in [DisplayPort.display, ControlPort.control] {
+            let listener = VZVirtioSocketListener()
+            listener.delegate = self
+            socketDevice?.setSocketListener(listener, forPort: port)
+            listeners.append(listener)
+        }
         self.machine = machine
 
         console.fileHandleForReading.readabilityHandler = { handle in
@@ -110,8 +115,16 @@ extension GuestVM: VZVirtioSocketListenerDelegate {
         _ listener: VZVirtioSocketListener, shouldAcceptNewConnection connection: VZVirtioSocketConnection,
         from socketDevice: VZVirtioSocketDevice
     ) -> Bool {
-        let framed = DisplayConnection(fd: connection.fileDescriptor, owner: connection)
-        MainActor.assumeIsolated { onDisplayConnection?(framed) }
+        switch connection.destinationPort {
+        case DisplayPort.display:
+            let framed = DisplayConnection(fd: connection.fileDescriptor, owner: connection)
+            MainActor.assumeIsolated { onDisplayConnection?(framed) }
+        case ControlPort.control:
+            let framed = ControlConnection(fd: connection.fileDescriptor, owner: connection)
+            MainActor.assumeIsolated { onControlConnection?(framed) }
+        default:
+            return false
+        }
         return true
     }
 }
