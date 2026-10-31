@@ -66,3 +66,10 @@ Add the guest image and `GuestImage.json` as release assets too, once the image 
 - A CI workflow (`helpers sign guide ci` describes one).
 - Sparkle or any other in-app update path.
 - Release-time testing of the installed app. The checks above are signing and notarization checks only.
+
+## Archive gotcha: SKIP_INSTALL
+
+Xcode 27 refuses to export an archive with several installable products ("doesn't support distributing archive").
+`project.yml` therefore sets `SKIP_INSTALL: YES` on CrosswindHost, CrosswindAppStub and crosswindctl (they are embedded
+into Crosswind.app) and `SKIP_INSTALL: NO` with `INSTALL_PATH: /Applications` on Crosswind. Keep it that way for any new
+embedded target.

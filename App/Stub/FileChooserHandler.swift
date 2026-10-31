@@ -45,8 +45,9 @@ final class FileChooserHandler {
 
     // MARK: Open
 
-    private func open(_ request: Crosswind_Control_FileChooser, directory: Bool) async -> Crosswind_Control_CallReply.OneOf_Result
-    {
+    private func open(
+        _ request: Crosswind_Control_FileChooser, directory: Bool
+    ) async -> Crosswind_Control_CallReply.OneOf_Result {
         let panel = NSOpenPanel()
         configure(panel, request)
         panel.canChooseFiles = !directory

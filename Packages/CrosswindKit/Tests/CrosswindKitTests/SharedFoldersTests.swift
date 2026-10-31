@@ -102,13 +102,16 @@ private func tempDirectory() throws -> URL {
     #expect(StagingSync.needsCopy(staged: signature, copied: nil))
     #expect(!StagingSync.needsCopy(staged: signature, copied: signature))
     #expect(StagingSync.needsCopy(staged: FileSignature(size: 11, modified: now), copied: signature))
-    #expect(StagingSync.needsCopy(staged: FileSignature(size: 10, modified: now.addingTimeInterval(1)), copied: signature))
+    #expect(
+        StagingSync.needsCopy(staged: FileSignature(size: 10, modified: now.addingTimeInterval(1)), copied: signature))
 }
 
 @Test func stagingPathsAndCloneUseTheSession() throws {
     let root = try tempDirectory()
     let session = try Staging.makeSession(in: root)
-    #expect(Staging.guestPath(session: session, fileName: "a b.txt") == "/mnt/mac/staging/\(session.lastPathComponent)/a b.txt")
+    #expect(
+        Staging.guestPath(session: session, fileName: "a b.txt")
+            == "/mnt/mac/staging/\(session.lastPathComponent)/a b.txt")
 
     let source = try tempDirectory().appending(path: "source.txt")
     try Data("hello".utf8).write(to: source)
