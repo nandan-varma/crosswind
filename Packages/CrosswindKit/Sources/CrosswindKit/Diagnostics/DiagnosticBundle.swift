@@ -47,7 +47,8 @@ public struct DiagnosticSnapshot: Sendable {
     public var agentState: AgentStateRecord?
     public var windows: [WindowRecord]?
     public var installed: [InstalledRecord]?
-    public var guestLogs: [LogEntry]
+    /// Guest log lines kept by the agent, oldest first.
+    public var guestLogs: [Crosswind_Control_LogLine]
     public var hostLogs: [String]
     public var reports: [ReportExcerpt]
     public var supportDirectoryBytes: UInt64?
@@ -56,7 +57,6 @@ public struct DiagnosticSnapshot: Sendable {
 
 /// Builds the diagnostics bundle: a folder of JSON and text files, every line passed through `Redactor`, zipped with ditto.
 public enum DiagnosticBundle {
-    public static let guestLogLimit = 5_000
     public static let hostLogLimit = 500
     public static let reportLineLimit = 200
 
@@ -66,9 +66,15 @@ public enum DiagnosticBundle {
 
     /// Gathers the snapshot from the agent, the host log store, DiagnosticReports and the support directory.
     public static func collect(
-        agent: AgentClient, guestLogs: [LogEntry], paths: GuestPaths = .standard, now: Date = Date()
+        agent: AgentClient, paths: GuestPaths = .standard, now: Date = Date()
     ) async -> DiagnosticSnapshot {
         var problems: [String] = []
+        var guestLogs: [Crosswind_Control_LogLine] = []
+        do {
+            guestLogs = try await agent.command(.getLogs(.init())).logs
+        } catch {
+            problems.append("guest logs: \(error)")
+        }
         var state: AgentStateRecord?
         do {
             let result = try await agent.command(.getState(.init()))
@@ -96,7 +102,7 @@ public enum DiagnosticBundle {
             agentState: state,
             windows: windows,
             installed: installed,
-            guestLogs: Array(guestLogs.suffix(guestLogLimit)),
+            guestLogs: guestLogs,
             hostLogs: host.lines,
             reports: await Task.detached { crosswindReports() }.value,
             supportDirectoryBytes: directorySize(paths.supportDirectory),
@@ -122,8 +128,9 @@ public enum DiagnosticBundle {
         if let state = snapshot.agentState { files.append(("agent-state.json", try json(state))) }
         if let windows = snapshot.windows { files.append(("windows.json", try json(windows))) }
         if let installed = snapshot.installed { files.append(("installed-apps.json", try json(installed))) }
-        let guestLines = snapshot.guestLogs.map { entry in
-            "\(entry.time.formatted(.iso8601)) [\(entry.source)] \(entry.levelName) \(entry.launchID) \(entry.text)"
+        let guestLines = snapshot.guestLogs.map { line in
+            let time = Date(timeIntervalSince1970: Double(line.unixTimeMs) / 1000).formatted(.iso8601)
+            return "\(time) [\(line.source)] level \(line.level) \(line.launchID) \(line.text)"
         }
         files.append(("guest-logs.txt", text(guestLines)))
         files.append(("host-logs.txt", text(snapshot.hostLogs)))

@@ -111,7 +111,7 @@ public final class DiagnosticsModel {
     /// Writes a diagnostic bundle (zip) to `destination`.
     public func exportBundle(to destination: URL) async throws {
         guard let agent else { throw AgentCommandError.disconnected }
-        let snapshot = await DiagnosticBundle.collect(agent: agent, guestLogs: Array(logs.entries))
+        let snapshot = await DiagnosticBundle.collect(agent: agent)
         _ = try DiagnosticBundle.write(snapshot, to: destination)
     }
 

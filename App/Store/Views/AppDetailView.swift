@@ -253,20 +253,35 @@ extension AppDetailView {
     }
 
     fileprivate var compatibility: some View {
-        HStack(spacing: 6) {
-            Text("Not yet tested")
+        let rating = CompatRatings.rating(for: appID)
+        let status = rating?.status ?? .untested
+        return HStack(spacing: 6) {
+            Label(status.title, systemImage: status.symbol)
+                .foregroundStyle(status.tint)
             Button("About Compatibility", systemImage: "info.circle") {
                 showsCompatibility = true
             }
             .labelStyle(.iconOnly)
             .buttonStyle(.plain)
             .popover(isPresented: $showsCompatibility, arrowEdge: .bottom) {
-                Text("Compatibility results for Linux apps will appear here once testing is available.")
+                Text(compatibilityExplanation(rating))
                     .font(.callout)
                     .padding(16)
-                    .frame(width: 280, alignment: .leading)
+                    .frame(width: 300, alignment: .leading)
             }
         }
+    }
+
+    private func compatibilityExplanation(_ rating: CompatRating?) -> String {
+        guard let rating else {
+            return "This app has not been tested on Crosswind yet. Its window, rendering, input and exit were not checked."
+        }
+        let date = rating.testedAt.formatted(date: .abbreviated, time: .omitted)
+        var text = "Tested \(date) on guest image \(rating.guestImageVersion). Each app is launched in the Linux guest"
+            + " and checked for a window, rendered frames, input and a clean exit. The guest renders on the CPU, so"
+            + " GPU-accelerated drawing is not covered."
+        if !rating.note.isEmpty { text += "\n\n" + rating.note }
+        return text
     }
 
     fileprivate func infoRow<Value: View>(_ title: LocalizedStringKey, @ViewBuilder value: () -> Value) -> some View {
@@ -365,5 +380,26 @@ private struct ScreenshotSheet: View {
                 .keyboardShortcut(.defaultAction)
         }
         .padding(24)
+    }
+}
+
+private extension CompatStatus {
+    var symbol: String {
+        switch self {
+        case .works: "checkmark.seal.fill"
+        case .caveats: "exclamationmark.triangle.fill"
+        case .broken: "xmark.octagon.fill"
+        case .noArmBuild: "minus.circle"
+        case .untested: "questionmark.circle"
+        }
+    }
+
+    var tint: Color {
+        switch self {
+        case .works: .green
+        case .caveats: .orange
+        case .broken: .red
+        case .noArmBuild, .untested: .secondary
+        }
     }
 }

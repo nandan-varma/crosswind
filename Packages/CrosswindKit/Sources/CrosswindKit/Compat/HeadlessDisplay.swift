@@ -9,6 +9,7 @@ public actor HeadlessDisplay {
         public var title = ""
         public var canvas = Canvas()
         public var frames = 0
+        public var scale120: UInt32 = 120
         public var closed = false
     }
 
@@ -44,6 +45,7 @@ public actor HeadlessDisplay {
             guard var window = windows[frame.window] else { return nil }
             window.canvas.apply(frame)
             window.frames += 1
+            window.scale120 = frame.scale120
             windows[frame.window] = window
             frameCount += 1
             return .with {

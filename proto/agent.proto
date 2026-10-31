@@ -38,6 +38,7 @@ message Command {
     ListWindows list_windows = 7;
     RestartVm restart_vm = 8;
     ResetEnvironment reset_environment = 9;
+    GetLogs get_logs = 10;
   }
 }
 
@@ -47,6 +48,11 @@ message InjectInput {
 }
 
 message ListWindows {}
+
+// Guest log lines received since `since_ms` (Unix milliseconds; 0 = all). The agent keeps the newest 5,000.
+message GetLogs {
+  int64 since_ms = 1;
+}
 
 message StartVm {}
 message StopVm {}
@@ -78,6 +84,7 @@ message CommandResult {
   string error = 2;    // empty on success
   State state = 3;     // for GetState
   repeated WindowInfo windows = 4;  // for ListWindows
+  repeated crosswind.control.LogLine logs = 5;  // for GetLogs, oldest first
 }
 
 message WindowInfo {

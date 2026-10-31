@@ -231,6 +231,14 @@ public nonisolated struct Crosswind_Agent_Command: Sendable {
     set {body = .resetEnvironment(newValue)}
   }
 
+  public var getLogs: Crosswind_Agent_GetLogs {
+    get {
+      if case .getLogs(let v)? = body {return v}
+      return Crosswind_Agent_GetLogs()
+    }
+    set {body = .getLogs(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public nonisolated enum OneOf_Body: Equatable, Sendable {
@@ -242,6 +250,7 @@ public nonisolated struct Crosswind_Agent_Command: Sendable {
     case listWindows(Crosswind_Agent_ListWindows)
     case restartVm(Crosswind_Agent_RestartVm)
     case resetEnvironment(Crosswind_Agent_ResetEnvironment)
+    case getLogs(Crosswind_Agent_GetLogs)
 
   }
 
@@ -274,6 +283,19 @@ public nonisolated struct Crosswind_Agent_ListWindows: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+/// Guest log lines received since `since_ms` (Unix milliseconds; 0 = all). The agent keeps the newest 5,000.
+public nonisolated struct Crosswind_Agent_GetLogs: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var sinceMs: Int64 = 0
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -428,6 +450,9 @@ public nonisolated struct Crosswind_Agent_CommandResult: Sendable {
   /// for ListWindows
   public var windows: [Crosswind_Agent_WindowInfo] = []
 
+  /// for GetLogs, oldest first
+  public var logs: [Crosswind_Control_LogLine] = []
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -579,7 +604,7 @@ nonisolated extension Crosswind_Agent_ClientMessage: SwiftProtobuf.Message, Swif
 
 nonisolated extension Crosswind_Agent_Command: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Command"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{3}start_vm\0\u{3}stop_vm\0\u{3}get_state\0\u{3}launch_app\0\u{3}inject_input\0\u{3}list_windows\0\u{3}restart_vm\0\u{3}reset_environment\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{3}start_vm\0\u{3}stop_vm\0\u{3}get_state\0\u{3}launch_app\0\u{3}inject_input\0\u{3}list_windows\0\u{3}restart_vm\0\u{3}reset_environment\0\u{3}get_logs\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -692,6 +717,19 @@ nonisolated extension Crosswind_Agent_Command: SwiftProtobuf.Message, SwiftProto
           self.body = .resetEnvironment(v)
         }
       }()
+      case 10: try {
+        var v: Crosswind_Agent_GetLogs?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .getLogs(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .getLogs(v)
+        }
+      }()
       default: break
       }
     }
@@ -737,6 +775,10 @@ nonisolated extension Crosswind_Agent_Command: SwiftProtobuf.Message, SwiftProto
     case .resetEnvironment?: try {
       guard case .resetEnvironment(let v)? = self.body else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 9)
+    }()
+    case .getLogs?: try {
+      guard case .getLogs(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 10)
     }()
     case nil: break
     }
@@ -799,6 +841,36 @@ nonisolated extension Crosswind_Agent_ListWindows: SwiftProtobuf.Message, SwiftP
   }
 
   public static func ==(lhs: Crosswind_Agent_ListWindows, rhs: Crosswind_Agent_ListWindows) -> Bool {
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Crosswind_Agent_GetLogs: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".GetLogs"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}since_ms\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularInt64Field(value: &self.sinceMs) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.sinceMs != 0 {
+      try visitor.visitSingularInt64Field(value: self.sinceMs, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Crosswind_Agent_GetLogs, rhs: Crosswind_Agent_GetLogs) -> Bool {
+    if lhs.sinceMs != rhs.sinceMs {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -1037,7 +1109,7 @@ nonisolated extension Crosswind_Agent_AgentMessage: SwiftProtobuf.Message, Swift
 
 nonisolated extension Crosswind_Agent_CommandResult: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".CommandResult"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}error\0\u{1}state\0\u{1}windows\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}error\0\u{1}state\0\u{1}windows\0\u{1}logs\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1049,6 +1121,7 @@ nonisolated extension Crosswind_Agent_CommandResult: SwiftProtobuf.Message, Swif
       case 2: try { try decoder.decodeSingularStringField(value: &self.error) }()
       case 3: try { try decoder.decodeSingularMessageField(value: &self._state) }()
       case 4: try { try decoder.decodeRepeatedMessageField(value: &self.windows) }()
+      case 5: try { try decoder.decodeRepeatedMessageField(value: &self.logs) }()
       default: break
       }
     }
@@ -1071,6 +1144,9 @@ nonisolated extension Crosswind_Agent_CommandResult: SwiftProtobuf.Message, Swif
     if !self.windows.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.windows, fieldNumber: 4)
     }
+    if !self.logs.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.logs, fieldNumber: 5)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -1079,6 +1155,7 @@ nonisolated extension Crosswind_Agent_CommandResult: SwiftProtobuf.Message, Swif
     if lhs.error != rhs.error {return false}
     if lhs._state != rhs._state {return false}
     if lhs.windows != rhs.windows {return false}
+    if lhs.logs != rhs.logs {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

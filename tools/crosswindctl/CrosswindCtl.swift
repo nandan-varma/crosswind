@@ -11,7 +11,7 @@ struct CrosswindCtl: AsyncParsableCommand {
         subcommands: [
             Status.self, Start.self, Stop.self, Installed.self, Install.self, Uninstall.self, Update.self,
             Launch.self, Logs.self, CatalogCommand.self, StubCommand.self, ImageCommand.self,
-            Windows.self, TypeText.self, Click.self, Diagnose.self,
+            Windows.self, TypeText.self, Click.self, Diagnose.self, CompatCommand.self,
         ]
     )
 }
@@ -123,10 +123,21 @@ struct Launch: AsyncParsableCommand {
 }
 
 struct Logs: AsyncParsableCommand {
-    static let configuration = CommandConfiguration(abstract: "Stream guest and app log lines.")
+    static let configuration = CommandConfiguration(
+        abstract: "Stream guest and app log lines, or print the recent ones with --since.")
+    @Option(help: "Print the lines of this recent span and exit, e.g. 30s, 5m, 2h. The agent keeps the newest 5,000.")
+    var since: String?
 
     func run() async throws {
         let client = try await connect()
+        if let since {
+            let window = try Self.duration(since)
+            let cutoff = Date().addingTimeInterval(-window).timeIntervalSince1970 * 1000
+            for line in try await client.command(.getLogs(.with { $0.sinceMs = Int64(cutoff) })).logs {
+                print("[\(line.source)] \(line.text)")
+            }
+            return
+        }
         for await event in client.control.events {
             switch event {
             case .log(let line): print("[\(line.source)] \(line.text)")
@@ -134,6 +145,15 @@ struct Logs: AsyncParsableCommand {
             case .appExited(let exited): print("exited \(exited.appID) code \(exited.exitCode)")
             }
         }
+    }
+
+    /// `30s`, `5m`, `2h` (a bare number means seconds).
+    static func duration(_ text: String) throws -> TimeInterval {
+        let units: [Character: Double] = ["s": 1, "m": 60, "h": 3600]
+        let unit = text.last.flatMap { units[$0] }
+        let number = unit == nil ? text : String(text.dropLast())
+        guard let value = Double(number), value >= 0 else { throw ValidationError("invalid duration \(text)") }
+        return value * (unit ?? 1)
     }
 }
 
@@ -293,11 +313,57 @@ struct Diagnose: AsyncParsableCommand {
 
     func run() async throws {
         let client = try await connect()
-        let snapshot = await DiagnosticBundle.collect(agent: client, guestLogs: [])
+        let snapshot = await DiagnosticBundle.collect(agent: client)
         let stamp = Date().formatted(.iso8601.year().month().day().time(includingFractionalSeconds: false))
             .replacingOccurrences(of: ":", with: "-")
         let destination = URL(fileURLWithPath: output ?? "crosswind-diagnostics-\(stamp).zip")
         print(try DiagnosticBundle.write(snapshot, to: destination).path)
         for problem in snapshot.problems { FileHandle.standardError.write(Data("warning: \(problem)\n".utf8)) }
+    }
+}
+
+struct CompatCommand: AsyncParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "compat", abstract: "Test Flathub apps and record their compatibility.", subcommands: [Run.self])
+
+    struct Run: AsyncParsableCommand {
+        static let configuration = CommandConfiguration(
+            abstract: "Install, launch and check apps; writes results.json, matrix.md and screenshots.")
+        @Option(help: "Comma-separated Flatpak app ids.") var ids: String?
+        @Option(help: "A named set of apps: curated.") var set: String?
+        @Option(help: "Seconds to wait for a window, a first frame, and an exit.") var timeout = 90
+        @Flag(help: "Keep the apps installed afterwards.") var keep = false
+        @Option(help: "Directory for results.json, matrix.md and screenshots/.") var dir = "docs/compat"
+        @Option(help: "Also write the bundled ratings file to this path.") var ratings: String?
+
+        func run() async throws {
+            let appIDs: [String]
+            if let ids {
+                appIDs = ids.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
+            } else if set == "curated" {
+                appIDs = CompatHarness.curatedSet
+            } else if let set {
+                throw HarnessError.unknownSet(set)
+            } else {
+                throw ValidationError("pass --ids or --set curated")
+            }
+            let client = try await connect()
+            _ = try await client.command(.startVm(.init()))
+
+            let directory = URL(fileURLWithPath: dir, isDirectory: true)
+            let screenshots = directory.appending(path: "screenshots", directoryHint: .isDirectory)
+            try FileManager.default.createDirectory(at: screenshots, withIntermediateDirectories: true)
+            var options = CompatHarness.Options(screenshotDirectory: screenshots)
+            options.timeout = .seconds(timeout)
+            options.keepInstalled = keep
+            options.imageVersion = ImageStore(paths: .standard).installedVersion() ?? "dev"
+
+            let records = try await CompatHarness.run(ids: appIDs, control: client, options: options) {
+                FileHandle.standardError.write(Data(($0 + "\n").utf8))
+            }
+            try CompatReport.write(
+                records, directory: directory, ratingsFile: ratings.map { URL(fileURLWithPath: $0) })
+            print(records.map { "\($0.status.rawValue)\t\($0.appID)" }.joined(separator: "\n"))
+        }
     }
 }

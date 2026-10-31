@@ -50,9 +50,12 @@ struct DiagnosticsBufferTests {
                 id: 3, appID: "org.gnome.Calculator", title: "Calculator for nandanvarma.me@gmail.com",
                 width: 800, height: 600, scale120: 240, frames: 1234, lastInputToFrameMs: 12.5)],
             installed: nil,
-            guestLogs: [LogEntry(
-                id: 1, time: Date(timeIntervalSince1970: 0), source: "crosswindd", level: 6, launchID: "L1",
-                text: "mount /Users/nandan/vm from 10.1.2.3")],
+            guestLogs: [Crosswind_Control_LogLine.with {
+                $0.source = "crosswindd"
+                $0.level = 6
+                $0.launchID = "L1"
+                $0.text = "mount /Users/nandan/vm from 10.1.2.3"
+            }],
             hostLogs: [],
             reports: [ReportExcerpt(name: "CrosswindHost.ips", lines: ["Path: /Users/nandan/Crosswind"])],
             supportDirectoryBytes: 4096,

@@ -18,7 +18,7 @@ A malicious Linux app (or a Flatpak escape) controls the guest. What it can do t
 - Send arbitrary display and control protocol messages. The host decoder must treat every field as hostile: bounds-check sizes, damage rectangles and compressed lengths (implemented: frames are decoded into fixed-size IOSurfaces after size checks; message size is capped at 64 MiB). **Open work:** fuzz the Swift decoder and the Rust request parser.
 - Spawn many windows or huge frames (resource exhaustion). **Open work:** caps on window count and surface size per app.
 - Spoof window titles/icons to imitate macOS dialogs. Mitigation: guest windows are visibly app windows with the stub's Dock identity; no guest-controlled windows may use system-level window levels except popups attached to a parent.
-- Read/write the data disk and anything the user later shares. Shared folders (planned) are per-folder grants, read-only by default.
+- Read/write the data disk and anything the user later shares. Shared folders are per-folder grants made in Settings; none exist by default, and a grant can be read-only. Linux apps can read and write everything in a read-write grant. The file chooser shares a single file outside the grants through a staging directory (`Application Support/Crosswind/Staging`), and the host copies changes back to the chosen destination.
 - Reach the user's LAN through the NAT. This is the same as any VM; documented as a limitation. (A per-app network toggle is planned via Flatpak permissions.)
 
 ## Host-side privileges

@@ -54,6 +54,8 @@ public final class AgentCore {
         didSet { session.requestsInFlight = inflight.count }
     }
     private var nextGuestRequestID: UInt64 = 0
+    /// Guest log lines for `GetLogs`; filled from guest events.
+    private var guestLogs = GuestLogStore()
 
     /// Describes the host display to the guest (main screen size, scale, refresh rate).
     private let output: () -> Crosswind_Display_Output
@@ -199,6 +201,7 @@ public final class AgentCore {
             client.connection.send(.with { $0.guest = .with { $0.response = response } })
         case .event(let event)?:
             if case .clipboardChanged(let changed)? = event.body { return clipboard.guestCopied(changed.items) }
+            if case .log(let line)? = event.body { guestLogs.append(line) }
             session.apply(event)
             broadcast(.with { $0.guest = message })
         case .call(let call)?:
@@ -244,6 +247,9 @@ public final class AgentCore {
                         $0.error = error
                         $0.state = self.session.state
                         $0.windows = self.info()
+                        if case .getLogs(let get)? = command.body {
+                            $0.logs = self.guestLogs.lines(sinceMs: get.sinceMs)
+                        }
                     }
                 })
         }
@@ -254,7 +260,7 @@ public final class AgentCore {
                 case .stopVm?: await session.stop()
                 case .restartVm?: try await session.restart()
                 case .resetEnvironment?: try await session.resetDataDisk()
-                case .getState?, .listWindows?: break
+                case .getState?, .listWindows?, .getLogs?: break
                 case .injectInput(let inject)?:
                     guard client.role == .ctl else { throw GuestSessionError.guest("not permitted") }
                     send(.with { $0.input = inject.input })

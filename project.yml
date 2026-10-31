@@ -34,6 +34,8 @@ targets:
       - path: App/Store
         excludes:
           - Resources
+      - path: App/Store/Resources/CompatRatings.json
+        buildPhase: resources
       - path: App/Store/Resources/dev.crosswind.host.plist
         buildPhase:
           copyFiles:
