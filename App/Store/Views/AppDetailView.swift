@@ -1,0 +1,369 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+import CrosswindKit
+import SwiftUI
+
+/// One app's page: header, screenshots, description, latest release and facts.
+struct AppDetailView: View {
+    let appID: String
+    let model: StoreModel
+
+    @State private var showsFullDescription = false
+    @State private var screenshot: ScreenshotSelection?
+    @State private var showsCompatibility = false
+    @State private var confirmsUninstall = false
+
+    var body: some View {
+        if let app = model.app(appID) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 32) {
+                    header(app)
+                    failureBanner(app)
+                    screenshots(app)
+                    about(app)
+                    whatsNew(app)
+                    information(app)
+                }
+                .padding(28)
+                .frame(maxWidth: 860, alignment: .leading)
+                .frame(maxWidth: .infinity)
+            }
+            .navigationTitle(app.name)
+            .sheet(item: $screenshot) { selection in
+                ScreenshotSheet(screenshot: selection.screenshot)
+            }
+            .confirmationDialog(
+                "Uninstall \(app.name)?", isPresented: $confirmsUninstall, titleVisibility: .visible
+            ) {
+                Button("Uninstall", role: .destructive) {
+                    Task { await model.uninstall(app.id) }
+                }
+            } message: {
+                Text("Your data in this app is kept.")
+            }
+        } else {
+            ContentUnavailableView("App Not Found", systemImage: "questionmark.app")
+        }
+    }
+
+    // MARK: Header
+
+    private func header(_ app: CatalogApp) -> some View {
+        HStack(alignment: .top, spacing: 20) {
+            AppIconView(app: app, size: 96)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(app.name)
+                    .font(.title.bold())
+                    .lineLimit(2)
+                Text(app.summary)
+                    .font(.title3)
+                    .foregroundStyle(.secondary)
+                DeveloperLabel(app: app)
+                HStack(spacing: 12) {
+                    ActionButton(appID: app.id, model: model)
+                        .controlSize(.large)
+                    if model.installed[app.id] != nil {
+                        if model.isRunning(app.id) {
+                            Label("Running", systemImage: "circle.fill")
+                                .font(.callout)
+                                .foregroundStyle(.green)
+                        }
+                        Menu("More", systemImage: "ellipsis.circle") {
+                            Button("Uninstall", systemImage: "trash", role: .destructive) {
+                                confirmsUninstall = true
+                            }
+                        }
+                        .menuIndicator(.hidden)
+                        .fixedSize()
+                        .accessibilityLabel("More actions")
+                    }
+                }
+                .padding(.top, 8)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func failureBanner(_ app: CatalogApp) -> some View {
+        if let operation = model.operations[app.id], let failure = operation.failure {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.orange)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("The last action didn't finish")
+                        .font(.headline)
+                    Text(failure)
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .textSelection(.enabled)
+                }
+                Spacer(minLength: 12)
+                Button("Retry") {
+                    Task { await retry(app.id, operation) }
+                }
+                .buttonStyle(.borderedProminent)
+                Button("Dismiss") {
+                    model.clearFailure(app.id)
+                }
+            }
+            .padding(16)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .accessibilityElement(children: .contain)
+        }
+    }
+
+    private func retry(_ appID: String, _ operation: AppOperation) async {
+        model.clearFailure(appID)
+        switch operation.kind {
+        case .install:
+            if model.installed[appID] != nil {
+                await model.open(appID)
+            } else {
+                await model.install(appID)
+            }
+        case .update:
+            await model.update(appID)
+        case .uninstall:
+            await model.uninstall(appID)
+        }
+    }
+
+    // MARK: Screenshots
+
+    @ViewBuilder
+    private func screenshots(_ app: CatalogApp) -> some View {
+        if !app.screenshots.isEmpty {
+            ScrollView(.horizontal) {
+                LazyHStack(alignment: .top, spacing: 16) {
+                    ForEach(Array(app.screenshots.enumerated()), id: \.offset) { index, shot in
+                        Button {
+                            screenshot = ScreenshotSelection(id: index, screenshot: shot)
+                        } label: {
+                            VStack(alignment: .leading, spacing: 8) {
+                                ScreenshotThumbnail(screenshot: shot)
+                                if !shot.caption.isEmpty {
+                                    Text(shot.caption)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(2)
+                                        .frame(width: 480, alignment: .leading)
+                                }
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(Text("Screenshot \(index + 1) of \(app.screenshots.count)"))
+                        .accessibilityHint("Opens a larger view")
+                    }
+                }
+            }
+            .scrollIndicators(.hidden)
+        }
+    }
+
+    // MARK: About
+
+    private func about(_ app: CatalogApp) -> some View {
+        let paragraphs = app.description
+            .components(separatedBy: "\n\n")
+            .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        let collapsedCount = 2
+        let visible = showsFullDescription ? paragraphs : Array(paragraphs.prefix(collapsedCount))
+        return VStack(alignment: .leading, spacing: 12) {
+            Text("About")
+                .font(.title2.bold())
+                .accessibilityAddTraits(.isHeader)
+            ForEach(Array(visible.enumerated()), id: \.offset) { _, paragraph in
+                Text(paragraph)
+                    .textSelection(.enabled)
+            }
+            if paragraphs.count > collapsedCount {
+                Button(showsFullDescription ? "Show Less" : "Show More") {
+                    withAnimation(.snappy) { showsFullDescription.toggle() }
+                }
+                .buttonStyle(.link)
+            }
+        }
+    }
+
+    // MARK: What's New
+
+    @ViewBuilder
+    private func whatsNew(_ app: CatalogApp) -> some View {
+        if let release = app.releases.first {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("What's New")
+                    .font(.title2.bold())
+                    .accessibilityAddTraits(.isHeader)
+                HStack(spacing: 8) {
+                    Text("Version \(release.version)")
+                    if let date = release.date {
+                        Text(date, style: .date)
+                    }
+                }
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                if let notes = release.description, !notes.isEmpty {
+                    Text(notes)
+                        .textSelection(.enabled)
+                }
+            }
+        }
+    }
+}
+
+extension AppDetailView {
+    // MARK: Information
+
+    fileprivate func information(_ app: CatalogApp) -> some View {
+        let installed = model.installed[app.id]
+        let categories = app.categories
+            .compactMap { CatalogCategory(rawValue: $0)?.title }
+            .joined(separator: ", ")
+        return VStack(alignment: .leading, spacing: 12) {
+            Text("Information")
+                .font(.title2.bold())
+                .accessibilityAddTraits(.isHeader)
+            Grid(alignment: .leading, horizontalSpacing: 32, verticalSpacing: 14) {
+                infoRow("License") { Text(app.projectLicense ?? String(localized: "Not specified")) }
+                infoRow("Developer") { Text(app.developerName ?? String(localized: "Unknown")) }
+                infoRow("Version") {
+                    Text(installed?.version ?? app.releases.first?.version ?? String(localized: "Unknown"))
+                }
+                if let installed {
+                    infoRow("Size") {
+                        Text(Int64(clamping: installed.installedSize).formatted(.byteCount(style: .file)))
+                    }
+                }
+                if !categories.isEmpty {
+                    infoRow("Categories") { Text(categories) }
+                }
+                infoRow("Compatibility") { compatibility }
+                let links = websiteLinks(app)
+                if !links.isEmpty {
+                    infoRow("Links") {
+                        HStack(spacing: 16) {
+                            ForEach(links, id: \.url) { link in
+                                Link(link.title, destination: link.url)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    fileprivate var compatibility: some View {
+        HStack(spacing: 6) {
+            Text("Not yet tested")
+            Button("About Compatibility", systemImage: "info.circle") {
+                showsCompatibility = true
+            }
+            .labelStyle(.iconOnly)
+            .buttonStyle(.plain)
+            .popover(isPresented: $showsCompatibility, arrowEdge: .bottom) {
+                Text("Compatibility results for Linux apps will appear here once testing is available.")
+                    .font(.callout)
+                    .padding(16)
+                    .frame(width: 280, alignment: .leading)
+            }
+        }
+    }
+
+    fileprivate func infoRow<Value: View>(_ title: LocalizedStringKey, @ViewBuilder value: () -> Value) -> some View {
+        GridRow(alignment: .firstTextBaseline) {
+            Text(title)
+                .foregroundStyle(.secondary)
+                .gridColumnAlignment(.leading)
+            value()
+                .textSelection(.enabled)
+        }
+    }
+
+    fileprivate struct WebsiteLink: Hashable {
+        let title: String
+        let url: URL
+    }
+
+    fileprivate func websiteLinks(_ app: CatalogApp) -> [WebsiteLink] {
+        [
+            app.homepage.map { WebsiteLink(title: String(localized: "Website"), url: $0) },
+            app.help.map { WebsiteLink(title: String(localized: "Help"), url: $0) },
+            app.bugtracker.map { WebsiteLink(title: String(localized: "Report a Problem"), url: $0) },
+            app.donation.map { WebsiteLink(title: String(localized: "Donate"), url: $0) },
+        ].compactMap { $0 }
+    }
+}
+
+/// A screenshot chosen for the enlarged sheet.
+private struct ScreenshotSelection: Identifiable {
+    let id: Int
+    let screenshot: CatalogScreenshot
+}
+
+extension CatalogScreenshot {
+    fileprivate var thumbnailURL: URL? {
+        images.first { $0.kind == .thumbnail }?.url ?? images.first?.url
+    }
+
+    fileprivate var sourceURL: URL? {
+        images.first { $0.kind == .source }?.url ?? images.first?.url
+    }
+}
+
+/// A fixed 16:10 frame so the carousel keeps its height while images load.
+private struct ScreenshotThumbnail: View {
+    let screenshot: CatalogScreenshot
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: 20, style: .continuous)
+        AsyncImage(url: screenshot.thumbnailURL) { phase in
+            switch phase {
+            case .success(let image):
+                image.resizable().scaledToFit()
+            case .failure:
+                Image(systemName: "photo")
+                    .font(.largeTitle)
+                    .foregroundStyle(.secondary)
+            default:
+                ProgressView()
+            }
+        }
+        .frame(width: 480, height: 300)
+        .background(.quaternary, in: shape)
+        .clipShape(shape)
+    }
+}
+
+/// The full-size screenshot, dismissed with Done.
+private struct ScreenshotSheet: View {
+    let screenshot: CatalogScreenshot
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(spacing: 16) {
+            AsyncImage(url: screenshot.sourceURL) { phase in
+                switch phase {
+                case .success(let image):
+                    image.resizable().scaledToFit()
+                case .failure:
+                    Image(systemName: "photo")
+                        .font(.largeTitle)
+                        .foregroundStyle(.secondary)
+                default:
+                    ProgressView()
+                }
+            }
+            .frame(minWidth: 720, minHeight: 450)
+            if !screenshot.caption.isEmpty {
+                Text(screenshot.caption)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            Button("Done") { dismiss() }
+                .keyboardShortcut(.defaultAction)
+        }
+        .padding(24)
+    }
+}

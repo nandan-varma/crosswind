@@ -46,6 +46,9 @@ targets:
         embed: true
         copy:
           destination: resources
+      - target: crosswindctl
+        copy:
+          destination: executables
     info:
       path: build/Info.plist
       properties:
@@ -68,6 +71,9 @@ targets:
       - path: App/Host
     dependencies:
       - package: CrosswindKit
+    settings:
+      base:
+        SKIP_INSTALL: YES
     info:
       path: build/CrosswindHost-Info.plist
       properties:
@@ -93,6 +99,9 @@ targets:
       - path: App/Stub
     dependencies:
       - package: CrosswindKit
+    settings:
+      base:
+        SKIP_INSTALL: YES
     info:
       path: build/CrosswindAppStub-Info.plist
       properties:

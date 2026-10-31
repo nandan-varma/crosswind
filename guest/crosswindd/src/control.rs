@@ -76,6 +76,8 @@ pub struct Control {
     ops: HashMap<u64, SendCancel>,
     next_op: u64,
     procs: HashMap<String, Proc>,
+    /// Settings/Notification backends; told about every appearance change.
+    pub portal: Option<crate::portal::Portal>,
 }
 
 impl Control {
@@ -95,6 +97,7 @@ impl Control {
             ops: HashMap::new(),
             next_op: 1,
             procs: HashMap::new(),
+            portal: None,
         }
     }
 
@@ -107,6 +110,13 @@ impl Control {
         let call = pb::Call { id, app_id: app_id.to_owned(), body: Some(body) };
         self.link.send(&pb::Message { body: Some(message::Body::Call(call)) });
         rx
+    }
+
+    /// Pushes dark_mode/accent_rgb to the Settings portal; it emits SettingChanged for changes.
+    fn publish_appearance(&self) {
+        if let Some(portal) = &self.portal {
+            portal.set_appearance(crate::portal::settings::Appearance { dark_mode: self.dark_mode, accent_rgb: self.accent_rgb });
+        }
     }
 
     fn reply(&mut self, id: u64, result: response::Result) {
@@ -141,11 +151,13 @@ impl Control {
                 self.tz = (!h.time_zone.is_empty()).then_some(h.time_zone);
                 self.locale = (!h.locale.is_empty()).then_some(h.locale);
                 self.dark_mode = h.dark_mode;
+                self.publish_appearance();
                 self.reply(id, response::Result::Ok(pb::Ok {}));
             }
             request::Body::SetAppearance(a) => {
                 self.dark_mode = a.dark_mode;
                 self.accent_rgb = a.accent_rgb;
+                self.publish_appearance();
                 self.reply(id, response::Result::Ok(pb::Ok {}));
             }
             request::Body::CallReply(reply) => {

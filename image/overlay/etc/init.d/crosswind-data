@@ -13,6 +13,8 @@ start() {
     mount --bind /data/home /home
     # The daemon runs as crosswind (uid 1000): its home persists on the data disk, its runtime dir is tmpfs.
     install -d -o 1000 -g 1000 -m 700 /data/home/crosswind /run/crosswind
+    # X11 socket directory for xwayland-satellite (root-owned and sticky, as X servers require); Flatpak binds it into X11 apps.
+    install -d -o root -g root -m 1777 /tmp/.X11-unix
     # GTK settings and the Flatpak permission that lets sandboxed apps read them (read-only image files).
     home=/home/crosswind
     mkdir -p $home/.config/gtk-3.0 $home/.config/gtk-4.0 $home/.local/share/flatpak/overrides

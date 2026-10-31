@@ -24,10 +24,12 @@ public struct StubInstaller: Sendable {
         URL.homeDirectory.appending(path: "Applications/Crosswind", directoryHint: .isDirectory)
     }
 
-    /// Creates or refreshes the stub for `appID` and returns its bundle URL.
+    /// Creates or refreshes the stub for `appID` and returns its bundle URL. `iconPNG` is any image; it is
+    /// converted to an .icns before the template is copied, so a bad image fails without leaving a stub behind.
     @discardableResult
-    public func install(appID: String, name: String, version: String, iconSet: URL? = nil) throws -> URL {
+    public func install(appID: String, name: String, version: String, iconPNG: Data? = nil) throws -> URL {
         let fileManager = FileManager.default
+        let icns = try iconPNG.map(makeICNS)
         try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
         let bundle = existingStub(for: appID) ?? directory.appending(path: "\(uniqueName(name, appID: appID)).app")
         try? fileManager.removeItem(at: bundle)
@@ -42,8 +44,10 @@ public struct StubInstaller: Sendable {
         plist["CFBundleIdentifier"] = "dev.crosswind.app." + appID.lowercased()
         plist["CFBundleShortVersionString"] = version
         plist[Self.idKey] = appID
-        if let iconSet {
-            try installIcon(iconSet, into: bundle)
+        if let icns {
+            let resources = bundle.appending(path: "Contents/Resources", directoryHint: .isDirectory)
+            try fileManager.createDirectory(at: resources, withIntermediateDirectories: true)
+            try icns.write(to: resources.appending(path: "AppIcon.icns"))
             plist["CFBundleIconFile"] = "AppIcon"
         }
         try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0).write(to: plistURL)
@@ -84,10 +88,14 @@ public struct StubInstaller: Sendable {
         return taken ? "\(safe) (\(appID))" : safe
     }
 
-    private func installIcon(_ iconSet: URL, into bundle: URL) throws {
-        let resources = bundle.appending(path: "Contents/Resources", directoryHint: .isDirectory)
-        try FileManager.default.createDirectory(at: resources, withIntermediateDirectories: true)
-        try run("/usr/bin/iconutil", ["-c", "icns", "-o", resources.appending(path: "AppIcon.icns").path, iconSet.path])
+    /// Renders the PNG to an .iconset and compiles it to .icns. The scratch directory is always removed.
+    private func makeICNS(from png: Data) throws -> Data {
+        let iconSet = try IconRenderer.iconSet(from: png)
+        let scratch = iconSet.deletingLastPathComponent()
+        defer { try? FileManager.default.removeItem(at: scratch) }
+        let icns = scratch.appending(path: "AppIcon.icns")
+        try run("/usr/bin/iconutil", ["-c", "icns", "-o", icns.path, iconSet.path])
+        return try Data(contentsOf: icns)
     }
 
     private func sign(_ bundle: URL) throws {

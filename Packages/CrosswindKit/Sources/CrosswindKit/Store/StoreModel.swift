@@ -127,6 +127,17 @@ public final class StoreModel {
         trending = await hot ?? [:]
     }
 
+    /// Test seam: sets state without an agent connection or network.
+    func seed(
+        catalog: CatalogIndex? = nil, popularity: [String: Double]? = nil, trending: [String: Double]? = nil,
+        installed: [String: Crosswind_Control_InstalledApp]? = nil
+    ) {
+        if let catalog { self.catalog = catalog }
+        if let popularity { self.popularity = popularity }
+        if let trending { self.trending = trending }
+        if let installed { self.installed = installed }
+    }
+
     // MARK: Queries
 
     public func app(_ id: String) -> CatalogApp? { catalog.app(id: id) }
@@ -173,9 +184,24 @@ public final class StoreModel {
     public func open(_ appID: String) async {
         let name = app(appID)?.name ?? installed[appID]?.name ?? appID
         do {
-            let bundle =
-                try stubs.bundleURL(for: appID)
-                ?? stubs.install(appID: appID, name: name, version: installed[appID]?.version ?? "1")
+            let version = installed[appID]?.version ?? "1"
+            let bundle: URL
+            if let existing = stubs.bundleURL(for: appID) {
+                bundle = existing
+            } else {
+                // The icon is optional: a failed download or undecodable image installs the stub without one.
+                var iconPNG: Data?
+                if let icon = app(appID)?.icons.max(by: { $0.width * $0.height < $1.width * $1.height }) {
+                    var request = URLRequest(url: icon.url)
+                    request.timeoutInterval = 10
+                    iconPNG = try? await URLSession.shared.data(for: request).0
+                }
+                do {
+                    bundle = try stubs.install(appID: appID, name: name, version: version, iconPNG: iconPNG)
+                } catch where iconPNG != nil {
+                    bundle = try stubs.install(appID: appID, name: name, version: version, iconPNG: nil)
+                }
+            }
             try await opener(bundle)
         } catch {
             operations[appID] = AppOperation(kind: .install, fraction: 0, detail: "", failure: error.localizedDescription)

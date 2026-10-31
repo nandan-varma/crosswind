@@ -22,18 +22,24 @@ apk --root "$ROOT" --initdb --update-cache --no-cache add $(grep -v '^#' "$HERE/
 
 cp -a "$HERE/overlay/." "$ROOT/"
 [ -x "${CROSSWINDD:-}" ] && install -Dm755 "$CROSSWINDD" "$ROOT/usr/bin/crosswindd"
+# crosswind-open: the URL client that xdg-open execs (built beside crosswindd).
+[ -x "${CROSSWINDD:-}" ] && [ -x "${CROSSWINDD%/*}/crosswind-open" ] && install -Dm755 "${CROSSWINDD%/*}/crosswind-open" "$ROOT/usr/bin/crosswind-open"
+# xwayland-satellite (built from a pinned tag by image/build-xwayland-satellite.sh); crosswindd runs it as /usr/bin/xwayland-satellite.
+[ -x "${XWAYLAND_SATELLITE:-}" ] && install -Dm755 "$XWAYLAND_SATELLITE" "$ROOT/usr/bin/xwayland-satellite"
 
 # Unprivileged account for the daemon (uid 1000). Appended, not overlaid, so the base databases stay intact.
 grep -q '^crosswind:' "$ROOT/etc/group" || echo 'crosswind:x:1000:' >> "$ROOT/etc/group"
 grep -q '^crosswind:' "$ROOT/etc/passwd" || echo 'crosswind:x:1000:1000:Crosswind:/home/crosswind:/sbin/nologin' >> "$ROOT/etc/passwd"
 grep -q '^crosswind:' "$ROOT/etc/shadow" || echo 'crosswind:!:19000:0:99999:7:::' >> "$ROOT/etc/shadow"
 
-# Every library crosswindd needs must be in the image.
-if [ -x "$ROOT/usr/bin/crosswindd" ] && chroot "$ROOT" ldd /usr/bin/crosswindd | grep -q 'not found'; then
-    chroot "$ROOT" ldd /usr/bin/crosswindd | grep 'not found' >&2
-    echo "crosswindd has unresolved libraries; add their packages to image/packages" >&2
-    exit 1
-fi
+# Every library crosswindd and xwayland-satellite need must be in the image.
+for bin in /usr/bin/crosswindd /usr/bin/xwayland-satellite; do
+    if [ -x "$ROOT$bin" ] && chroot "$ROOT" ldd "$bin" | grep -q 'not found'; then
+        chroot "$ROOT" ldd "$bin" | grep 'not found' >&2
+        echo "$bin has unresolved libraries; add their packages to image/packages" >&2
+        exit 1
+    fi
+done
 
 # OpenRC runlevels: only what a headless Wayland host needs.
 link() { mkdir -p "$ROOT/etc/runlevels/$1"; ln -sf "/etc/init.d/$2" "$ROOT/etc/runlevels/$1/$2"; }

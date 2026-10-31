@@ -6,7 +6,9 @@ mod flatpak;
 mod handlers;
 mod host;
 mod link;
+mod portal;
 mod render;
+mod satellite;
 mod state;
 
 pub mod pb {
@@ -34,6 +36,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let session_bus = control::session_bus()?;
     let mut state = state::State::new(&mut event_loop, display, link, control_link, session_bus);
     tracing::info!(socket = ?state.socket_name, "compositor ready");
+    let runtime_dir = std::env::var("XDG_RUNTIME_DIR").expect("XDG_RUNTIME_DIR");
+    satellite::supervise(state.socket_name.to_string_lossy().into_owned(), runtime_dir);
 
     event_loop.run(None, &mut state, |state| state.flush())?;
     Ok(())

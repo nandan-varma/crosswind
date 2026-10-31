@@ -6,6 +6,7 @@
 # Lima VM with the Alpine aarch64 build environment (see image/build.sh).
 LIMA_VM ?= cwbuild
 CW_TARGET ?= /tmp/cw-target
+CW_XWS_TARGET ?= /tmp/cw-xws
 IMG_OUT ?= /tmp/cw-image
 IMG_CACHE ?= $(HOME)/.cache/crosswind-img
 IMG_FILES := Image initramfs system.erofs SHA256SUMS
@@ -50,14 +51,23 @@ dev-agent: build ## Build, then register the CrosswindHost agent from the Debug 
 dev-agent-stop: ## Unregister the development CrosswindHost agent
 	sh scripts/dev-agent.sh uninstall
 
-guest: ## Build crosswindd (release) inside the Lima VM
+guest: ## Build crosswindd and xwayland-satellite (release) inside the Lima VM
 	limactl shell $(LIMA_VM) sh -c 'cd "$(CURDIR)/guest" && CARGO_TARGET_DIR=$(CW_TARGET) cargo build --release'
+	limactl shell $(LIMA_VM) sh -c 'cd "$(CURDIR)" && OUT=$(CW_TARGET)/xwayland-satellite CARGO_TARGET_DIR=$(CW_XWS_TARGET) sh image/build-xwayland-satellite.sh'
 
-image: guest ## Build the guest image in the Lima VM and copy it to ~/.cache/crosswind-img
-	limactl shell $(LIMA_VM) sh -c 'cd "$(CURDIR)" && sudo CROSSWINDD=$(CW_TARGET)/release/crosswindd OUT=$(IMG_OUT) sh image/build.sh'
+image: guest ## Build the guest image (crosswindd, xwayland-satellite) in the Lima VM and copy it to ~/.cache/crosswind-img
+	limactl shell $(LIMA_VM) sh -c 'cd "$(CURDIR)" && sudo CROSSWINDD=$(CW_TARGET)/release/crosswindd XWAYLAND_SATELLITE=$(CW_TARGET)/xwayland-satellite OUT=$(IMG_OUT) sh image/build.sh'
 	mkdir -p "$(IMG_CACHE)"
 	for f in $(IMG_FILES); do limactl copy $(LIMA_VM):$(IMG_OUT)/$$f "$(IMG_CACHE)/"; done
 
 dev-image: ## Install the image from ~/.cache/crosswind-img into the app's support directory
 	sh scripts/image-manifest.sh "$(IMG_CACHE)" dev-$$(date +%s) "file://$(IMG_CACHE)" > /tmp/GuestImage.json
 	"$$(xcodebuild -project Crosswind.xcodeproj -scheme $(SCHEME) -showBuildSettings 2>/dev/null | awk '/ BUILT_PRODUCTS_DIR/ {print $$3; exit}')/crosswindctl" image install /tmp/GuestImage.json
+
+.PHONY: release install-local
+
+release: ## Archive, Developer ID export, notarize and package build/release/ (NOTARIZE=0: signed app only)
+	sh scripts/release.sh
+
+install-local: ## Install a signed, un-notarized build into /Applications with the guest image, then open it
+	sh scripts/install-local.sh

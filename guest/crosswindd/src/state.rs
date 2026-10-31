@@ -30,6 +30,7 @@ use crate::{
     control::{self, Control},
     link::{Link, arm_write},
     pb,
+    portal,
 };
 
 pub enum Role {
@@ -167,8 +168,32 @@ impl State {
         let env = vec![
             ("WAYLAND_DISPLAY".to_owned(), socket_name.to_string_lossy().into_owned()),
             ("XDG_RUNTIME_DIR".to_owned(), runtime_dir),
-            ("DBUS_SESSION_BUS_ADDRESS".to_owned(), session_bus),
+            ("DBUS_SESSION_BUS_ADDRESS".to_owned(), session_bus.clone()),
+            ("DISPLAY".to_owned(), crate::satellite::DISPLAY.to_owned()),
+            ("XDG_CURRENT_DESKTOP".to_owned(), "crosswind".to_owned()),
         ];
+        // Portal backends: guest-initiated host calls go through `calls_rx` on this loop.
+        let (calls_tx, calls_rx) = channel::channel::<portal::CallRequest>();
+        loop_handle
+            .insert_source(calls_rx, |event, _, state| {
+                if let channel::Event::Msg(req) = event {
+                    let waiting = state.control.call(&req.app_id, req.body);
+                    let _ = req.reply.send(waiting);
+                }
+            })
+            .expect("portal calls");
+        let bridge = portal::Bridge::new(calls_tx);
+        let mut control = Control::new(control_link, notes_tx, env);
+        match portal::Portal::start(&session_bus, bridge.clone(), Default::default()) {
+            Ok(p) => {
+                control.portal = Some(p);
+                portal::spawn_frontend(&session_bus);
+            }
+            Err(e) => tracing::warn!("portal backends not started: {e}"),
+        }
+        if let Err(e) = portal::open_url::listen(&loop_handle, bridge) {
+            tracing::warn!("open-url socket not started: {e}");
+        }
 
         Self {
             start_time: Instant::now(),
@@ -191,7 +216,7 @@ impl State {
             next_id: 1,
             scale_120: 120,
             link,
-            control: Control::new(control_link, notes_tx, env),
+            control,
             pointer_window: None,
             write_token: None,
             display_handle: dh,

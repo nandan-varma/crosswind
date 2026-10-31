@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# crosswindd's portal backends (guest/crosswindd/src/portal). Served on the session bus.
+[portal]
+DBusName=org.freedesktop.impl.portal.desktop.crosswind
+Interfaces=org.freedesktop.impl.portal.Settings;org.freedesktop.impl.portal.Notification;
+UseIn=crosswind

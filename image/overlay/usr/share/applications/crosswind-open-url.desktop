@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Registers the guest's URL handler. Flatpak's OpenURI portal (xdg-desktop-portal) launches the
+# default handler for a URI with GIO, which resolves through this entry and mimeapps.list below,
+# so the link opens on the macOS host instead of inside the guest.
+[Desktop Entry]
+Type=Application
+Name=Crosswind URL Handler
+NoDisplay=true
+Exec=xdg-open %u
+MimeType=x-scheme-handler/http;x-scheme-handler/https;x-scheme-handler/mailto;

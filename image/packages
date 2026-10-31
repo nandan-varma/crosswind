@@ -32,3 +32,4 @@ hicolor-icon-theme
 foot
 weston-clients
 flatpak-libs
+xcb-util-cursor

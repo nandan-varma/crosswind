@@ -8,7 +8,6 @@ typealias InputEvent = Crosswind_Display_Input.OneOf_Event
 @MainActor
 final class SurfaceView: NSView {
     var onInput: ((InputEvent) -> Void)?
-    var commandActsAsControl = true
     private(set) var cursor: NSCursor? = .arrow
 
     override var isFlipped: Bool { true }
@@ -123,7 +122,7 @@ final class SurfaceView: NSView {
 
     private func key(_ macCode: UInt16, pressed: Bool, time: UInt32) {
         var evdev = KeyMap.evdev(forMacKeyCode: macCode)
-        if commandActsAsControl {
+        if Preferences.commandActsAsControl {
             if macCode == 55 { evdev = UInt32(KeyMap.leftControl) }
             if macCode == 54 { evdev = UInt32(KeyMap.rightControl) }
         }

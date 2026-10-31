@@ -194,24 +194,26 @@ Column notes: "Last push" is GitHub `pushed_at`. "Open issues" is GitHub `open_i
 
 ### Xwayland (guest package, `xwayland`)
 
-- **Used by:** the guest, for X11 apps. The `xwayland` Alpine package is in `image/packages`. It is the current running X server path until xwayland-satellite replaces it (see the planned section).
+- **Used by:** the guest, for X11 apps. The `xwayland` Alpine package is in `image/packages`. It is the X server that xwayland-satellite runs (see its entry below).
 - **Version pinned:** not pinned. The upstream X server (`xorg/xserver`) is on freedesktop GitLab. Its metadata was reached through the GitLab API and showed recent activity on 2026-10-31. The Alpine package version was not captured in this audit.
 - **License:** MIT (Alpine `community`, aarch64). Compatible.
 - **macOS 27 / Apple silicon:** runs in the guest only.
 - **Alternatives rejected:** a host-side XQuartz (not chosen; see `docs/research/mac-compositors.md`).
-- **Replacement plan / cost:** Replace with xwayland-satellite (planned, below).
+- **Replacement plan / cost:** Done: xwayland-satellite now runs the X clients (below). Xwayland remains a runtime dependency of satellite.
+
+### xwayland-satellite (Rust, `xwayland-satellite`, built from source)
+
+- **Used by:** the guest, as `/usr/bin/xwayland-satellite`. `crosswindd` supervises it on display `:0` against the compositor socket (`guest/crosswindd/src/satellite.rs`). Built by `image/build-xwayland-satellite.sh` (`make guest`) and installed by `image/build.sh` when `XWAYLAND_SATELLITE` is set.
+- **Version pinned:** tag **v0.8.3** (`XWS_TAG` in `image/build-xwayland-satellite.sh`), built with `cargo build --release --locked`. Released 2026-09-24 (GitHub latest).
+- **License:** MPL-2.0 (`Cargo.toml` and GitHub). Compatible with AGPL-3.0-or-later as a Larger Work (MPL-2.0 Section 3.3 lists AGPL-3.0 as a Secondary License). MPL-2.0 is file-level copyleft: changes to its files must stay MPL.
+- **Runtime libraries:** `xwayland` and `xcb-util-cursor` (`image/packages`). Build packages: `libxcb-dev`, `xcb-util-cursor-dev`, `pkgconf`, `git`, `cargo`.
+- **Compositor requirements:** xdg_shell and wp_viewporter (both implemented). Optional: fractional scale, which crosswindd advertises.
+- **macOS 27 / Apple silicon:** the guest is aarch64 Linux. Not relevant to the macOS side.
+- **Not packaged** in Alpine 3.23 or edge (`apk search xwayland-satellite` is empty), hence the source build.
+- **Alternatives rejected:** in-process X11 window manager (`X11Wm` in Smithay), kept as a fallback only if clipboard or drag-and-drop control needs it (`docs/research/guest-integration.md`).
+- **Replacement plan / cost:** Bump `XWS_TAG` deliberately and re-verify. Fractional-scale rounding in xwayland-satellite needs a host-side workaround (`docs/research/integration-areas.md`).
 
 ## Planned
-
-### xwayland-satellite (planned)
-
-- **Why:** run X11 apps as ordinary Wayland toplevels without an in-process X server (`docs/research/guest-integration.md`, section on Xwayland).
-- **Version pinned:** not in the repo yet. Latest release is **v0.8.3** (GitHub, 2026-09-24).
-- **License:** MPL-2.0. Compatible with AGPL-3.0-or-later as a Larger Work (MPL-2.0 Section 3.3 lists AGPL-3.0 as a Secondary License). Note that MPL-2.0 is file-level copyleft: changes to its files must stay MPL.
-- **Last push:** 2026-10-28. **Open issues:** 144. **Recent contributors:** 25 (all-time 34).
-- **macOS 27 / Apple silicon:** the guest is aarch64 Linux. Not relevant to the macOS side.
-- **Alternatives rejected:** in-process X11 window manager (`X11Wm` in Smithay), kept as a fallback only if clipboard or drag-and-drop control needs it (`docs/research/guest-integration.md`).
-- **Replacement plan / cost:** Add as a guest package and an OpenRC service. Cost: low to medium. Fractional-scale rounding in xwayland-satellite needs a host-side workaround (`docs/research/integration-areas.md`).
 
 ### Sparkle (planned)
 

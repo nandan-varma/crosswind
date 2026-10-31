@@ -1,0 +1,7 @@
+#!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Guest URL handler. Opens http(s)/mailto links on the macOS host: crosswind-open sends the
+# URL to crosswindd over /run/crosswind/open-url.sock, which issues Call::OpenUrl to the host.
+# Busybox nc has no unix-socket mode, so the socket client is a small binary.
+[ $# -ge 1 ] || { echo "usage: xdg-open URL" >&2; exit 2; }
+exec /usr/bin/crosswind-open "$1"

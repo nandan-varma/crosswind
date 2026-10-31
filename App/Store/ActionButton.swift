@@ -7,17 +7,25 @@ struct ActionButton: View {
     let appID: String
     let model: StoreModel
 
+    private var name: String { model.app(appID)?.name ?? appID }
+
     var body: some View {
         if let operation = model.operations[appID], operation.failure == nil {
             ProgressRing(fraction: operation.fraction).help(operation.detail)
         } else if let installed = model.installed[appID] {
             if installed.updateAvailable {
-                Button("Update") { Task { await model.update(appID) } }.buttonStyle(.borderedProminent)
+                Button("Update") { Task { await model.update(appID) } }
+                    .buttonStyle(.borderedProminent)
+                    .accessibilityLabel("Update \(name)")
             } else {
-                Button("Open") { Task { await model.open(appID) } }.buttonStyle(.borderedProminent)
+                Button("Open") { Task { await model.open(appID) } }
+                    .buttonStyle(.borderedProminent)
+                    .accessibilityLabel("Open \(name)")
             }
         } else {
-            Button("Get") { Task { await model.install(appID) } }.buttonStyle(.borderedProminent)
+            Button("Get") { Task { await model.install(appID) } }
+                .buttonStyle(.borderedProminent)
+                .accessibilityLabel("Get \(name)")
         }
     }
 }
