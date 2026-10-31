@@ -11,6 +11,10 @@ pub mod pb {
     include!(concat!(env!("OUT_DIR"), "/crosswind.display.rs"));
 }
 
+pub mod control_pb {
+    include!(concat!(env!("OUT_DIR"), "/crosswind.control.rs"));
+}
+
 use smithay::reexports::{calloop::EventLoop, wayland_server::Display};
 
 /// vsock port the host listens on for the display channel.

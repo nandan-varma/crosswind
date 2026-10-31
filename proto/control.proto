@@ -1,0 +1,202 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Control channel between the host and crosswindd (apps, Flatpak operations, logs).
+// Transport: one AF_VSOCK stream on port 5001 (host listens, guest connects), framed like display.proto:
+// little-endian u32 length followed by one serialized `Request` (host to guest) or `Message` (guest to host).
+syntax = "proto3";
+
+package crosswind.control;
+
+// ---- host -> guest ----
+
+message Request {
+  uint64 id = 1;  // echoed in the Response
+  oneof body {
+    Hello hello = 2;
+    RefreshCatalog refresh_catalog = 3;
+    GetCatalog get_catalog = 4;
+    ListInstalled list_installed = 5;
+    Install install = 6;
+    Uninstall uninstall = 7;
+    Update update = 8;
+    Cancel cancel = 9;
+    Launch launch = 10;
+    Stop stop = 11;
+    ListRunning list_running = 12;
+    GetPermissions get_permissions = 13;
+    SetPermissions set_permissions = 14;
+    Shutdown shutdown = 15;
+  }
+}
+
+// First request after connect: synchronizes the guest with the host environment.
+message Hello {
+  int64 unix_time_ms = 1;
+  string time_zone = 2;   // IANA name
+  string locale = 3;      // POSIX, e.g. en_US.UTF-8
+  bool dark_mode = 4;
+}
+
+// Pulls the Flathub AppStream metadata for aarch64 (verified by Flatpak against the pinned repo key).
+message RefreshCatalog {}
+
+// Returns the cached appstream.xml.gz bytes.
+message GetCatalog {}
+
+message ListInstalled {}
+
+message Install {
+  string app_id = 1;   // e.g. org.gnome.Calculator
+}
+
+message Uninstall {
+  string app_id = 1;
+  bool delete_data = 2;
+}
+
+// Empty app_id updates everything installed.
+message Update {
+  string app_id = 1;
+}
+
+message Cancel {
+  uint64 operation = 1;
+}
+
+message Launch {
+  string app_id = 1;
+  repeated string args = 2;
+}
+
+message Stop {
+  string app_id = 1;
+}
+
+message ListRunning {}
+
+message GetPermissions {
+  string app_id = 1;
+}
+
+message SetPermissions {
+  string app_id = 1;
+  Permissions permissions = 2;
+}
+
+message Shutdown {}
+
+// Effective Flatpak permissions in a form the UI can edit. `flatpak override --user` stores the delta.
+message Permissions {
+  repeated string sockets = 1;       // x11, wayland, pulseaudio, fallback-x11, ...
+  repeated string devices = 2;       // dri, all, kvm, ...
+  repeated string shared = 3;        // network, ipc
+  repeated string filesystems = 4;   // host, home, xdg-documents:ro, ...
+  repeated string features = 5;      // bluetooth, devel, ...
+}
+
+// ---- guest -> host ----
+
+message Message {
+  oneof body {
+    Response response = 1;
+    Event event = 2;
+  }
+}
+
+message Response {
+  uint64 id = 1;
+  oneof result {
+    Error error = 2;
+    Ok ok = 3;
+    InstalledList installed = 4;
+    RunningList running = 5;
+    Catalog catalog = 6;
+    Operation operation = 7;
+    Permissions permissions = 8;
+  }
+}
+
+message Ok {}
+
+message Error {
+  string message = 1;
+}
+
+message InstalledApp {
+  string app_id = 1;
+  string name = 2;
+  string version = 3;
+  string branch = 4;
+  uint64 installed_size = 5;
+  bool update_available = 6;
+}
+
+message InstalledList {
+  repeated InstalledApp apps = 1;
+}
+
+message RunningApp {
+  string app_id = 1;
+  uint32 pid = 2;
+}
+
+message RunningList {
+  repeated RunningApp apps = 1;
+}
+
+message Catalog {
+  bytes appstream_xml_gz = 1;
+  string arch = 2;
+}
+
+// Returned immediately by Install/Uninstall/Update; progress arrives as Events.
+message Operation {
+  uint64 id = 1;
+}
+
+message Event {
+  oneof body {
+    Progress progress = 1;
+    OperationDone operation_done = 2;
+    AppStarted app_started = 3;
+    AppExited app_exited = 4;
+    LogLine log = 5;
+  }
+}
+
+message Progress {
+  uint64 operation = 1;
+  string app_id = 2;
+  string phase = 3;           // "download", "install", "uninstall", "update"
+  string detail = 4;          // current ref being processed
+  uint32 percent = 5;         // 0-100 for the whole operation
+  uint64 bytes_transferred = 6;
+  uint64 bytes_total = 7;
+}
+
+message OperationDone {
+  uint64 operation = 1;
+  string app_id = 2;
+  Error error = 3;            // unset on success
+  bool cancelled = 4;
+}
+
+message AppStarted {
+  string app_id = 1;
+  uint32 pid = 2;
+  string launch_id = 3;       // correlation id for logs and traces
+}
+
+message AppExited {
+  string app_id = 1;
+  int32 exit_code = 2;
+  string launch_id = 3;
+}
+
+message LogLine {
+  string source = 1;          // "crosswindd", "flatpak", or an app id
+  string launch_id = 2;
+  int32 level = 3;            // syslog severity: 3 error, 4 warning, 6 info, 7 debug
+  string text = 4;
+  int64 unix_time_ms = 5;
+}

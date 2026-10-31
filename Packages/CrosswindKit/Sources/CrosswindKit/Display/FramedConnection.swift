@@ -5,21 +5,25 @@ import SwiftProtobuf
 public typealias ToHost = Crosswind_Display_ToHost
 public typealias ToGuest = Crosswind_Display_ToGuest
 
+public typealias DisplayConnection = FramedConnection<ToHost, ToGuest>
+
 /// A vsock stream carrying length-prefixed (little-endian u32) protobuf messages.
 /// Reads run on a dedicated thread; writes are serialized on a queue.
-public final class FramedConnection: @unchecked Sendable {
+public final class FramedConnection<Incoming: SwiftProtobuf.Message & Sendable, Outgoing: SwiftProtobuf.Message>:
+    @unchecked Sendable
+{
     private let fd: Int32
     private let owner: AnyObject  // keeps the VZVirtioSocketConnection alive
     private let writeQueue = DispatchQueue(label: "dev.crosswind.vsock.write")
     private static let maxFrame = 64 << 20
 
-    public let messages: AsyncStream<ToHost>
-    private let continuation: AsyncStream<ToHost>.Continuation
+    public let messages: AsyncStream<Incoming>
+    private let continuation: AsyncStream<Incoming>.Continuation
 
     public init(fd: Int32, owner: AnyObject) {
         self.fd = fd
         self.owner = owner
-        (messages, continuation) = AsyncStream.makeStream(of: ToHost.self, bufferingPolicy: .unbounded)
+        (messages, continuation) = AsyncStream.makeStream(of: Incoming.self, bufferingPolicy: .unbounded)
         let fd = fd
         let continuation = continuation
         Thread.detachNewThread {
@@ -27,7 +31,7 @@ public final class FramedConnection: @unchecked Sendable {
         }
     }
 
-    public func send(_ message: ToGuest) {
+    public func send(_ message: Outgoing) {
         guard let body = try? message.serializedData() else { return }
         var frame = Data(capacity: 4 + body.count)
         withUnsafeBytes(of: UInt32(body.count).littleEndian) { frame.append(contentsOf: $0) }
@@ -46,7 +50,7 @@ public final class FramedConnection: @unchecked Sendable {
         }
     }
 
-    private static func readLoop(fd: Int32, continuation: AsyncStream<ToHost>.Continuation) {
+    private static func readLoop(fd: Int32, continuation: AsyncStream<Incoming>.Continuation) {
         defer { continuation.finish() }
         var header = [UInt8](repeating: 0, count: 4)
         while readExactly(fd, &header, 4) {
@@ -54,7 +58,7 @@ public final class FramedConnection: @unchecked Sendable {
             guard length <= maxFrame else { return }
             var body = [UInt8](repeating: 0, count: length)
             guard readExactly(fd, &body, length) else { return }
-            guard let message = try? ToHost(serializedBytes: body) else { return }
+            guard let message = try? Incoming(serializedBytes: body) else { return }
             continuation.yield(message)
         }
     }

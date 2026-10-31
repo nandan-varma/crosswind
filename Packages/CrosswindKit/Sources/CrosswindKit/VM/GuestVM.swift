@@ -22,7 +22,7 @@ public final class GuestVM: NSObject {
     private let console = Pipe()
 
     /// Called on the main actor for every accepted display connection.
-    public var onDisplayConnection: ((FramedConnection) -> Void)?
+    public var onDisplayConnection: ((DisplayConnection) -> Void)?
 
     public init(imageDirectory: URL, dataDisk: URL, resources: Resources = .init()) {
         self.imageDirectory = imageDirectory
@@ -110,7 +110,7 @@ extension GuestVM: VZVirtioSocketListenerDelegate {
         _ listener: VZVirtioSocketListener, shouldAcceptNewConnection connection: VZVirtioSocketConnection,
         from socketDevice: VZVirtioSocketDevice
     ) -> Bool {
-        let framed = FramedConnection(fd: connection.fileDescriptor, owner: connection)
+        let framed = DisplayConnection(fd: connection.fileDescriptor, owner: connection)
         MainActor.assumeIsolated { onDisplayConnection?(framed) }
         return true
     }

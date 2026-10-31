@@ -4,7 +4,7 @@ import AppKit
 /// Terminates the display channel: turns guest window messages into native windows.
 @MainActor
 public final class DisplayServer {
-    private let connection: FramedConnection
+    private let connection: DisplayConnection
     private var windows: [UInt32: GuestWindow] = [:]
     private var titles: [UInt32: String] = [:]
 
@@ -12,7 +12,7 @@ public final class DisplayServer {
     public var onFrame: ((_ window: UInt32, _ seq: UInt64, _ bytes: Int) -> Void)?
     public var windowIDs: [UInt32] { windows.keys.sorted() }
 
-    public init(connection: FramedConnection) {
+    public init(connection: DisplayConnection) {
         self.connection = connection
         sendOutput()
         Task { [weak self] in
