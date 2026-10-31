@@ -281,6 +281,20 @@ impl Control {
         Ok(())
     }
 
+    /// The app and launch that own `pid`, found by walking its ancestors up to a `flatpak run` we started.
+    pub fn owner_of(&self, mut pid: i32) -> Option<(&str, &str)> {
+        for _ in 0..64 {
+            if let Some((launch_id, proc)) = self.procs.iter().find(|(_, p)| p.pgid == pid) {
+                return Some((&proc.app_id, launch_id));
+            }
+            pid = parent_pid(pid)?;
+            if pid <= 1 {
+                return None;
+            }
+        }
+        None
+    }
+
     /// Handles a note sent from a worker or watcher thread.
     pub fn on_note(&mut self, note: Note) {
         match note {
@@ -330,6 +344,15 @@ fn pipe_lines(reader: impl Read + Send + 'static, notes: channel::Sender<Note>, 
             }
         }
     });
+}
+
+fn parent_pid(pid: i32) -> Option<i32> {
+    parse_ppid(&std::fs::read_to_string(format!("/proc/{pid}/stat")).ok()?)
+}
+
+/// `/proc/<pid>/stat` is `pid (comm) state ppid ...`; comm may itself contain spaces and parentheses.
+fn parse_ppid(stat: &str) -> Option<i32> {
+    stat[stat.rfind(')')? + 1..].split_whitespace().nth(1)?.parse().ok()
 }
 
 fn signal_group(pgid: i32, sig: i32) {
@@ -390,6 +413,12 @@ impl State {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn ppid_parses_commands_with_spaces_and_parens() {
+        assert_eq!(parse_ppid("42 (bwrap (x) y) S 7 42 42 0"), Some(7));
+        assert_eq!(parse_ppid("garbage"), None);
+    }
 
     #[test]
     fn launch_ids_are_32_hex_chars_and_distinct() {

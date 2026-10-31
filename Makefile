@@ -1,7 +1,7 @@
 # Crosswind developer commands. Run `make help` for the list.
 
 .DEFAULT_GOAL := help
-.PHONY: help project build test lint format proto image guest
+.PHONY: help project build test lint format proto image guest dev-agent dev-agent-stop
 
 # Lima VM with the Alpine aarch64 build environment (see image/build.sh).
 LIMA_VM ?= cwbuild
@@ -43,6 +43,12 @@ format: ## Rewrite Swift sources with swift-format
 
 proto: ## Regenerate Swift protobuf bindings from proto/
 	sh scripts/proto.sh
+
+dev-agent: build ## Build, then register the CrosswindHost agent from the Debug build (development)
+	sh scripts/dev-agent.sh install
+
+dev-agent-stop: ## Unregister the development CrosswindHost agent
+	sh scripts/dev-agent.sh uninstall
 
 guest: ## Build crosswindd (release) inside the Lima VM
 	limactl shell $(LIMA_VM) sh -c 'cd "$(CURDIR)/guest" && CARGO_TARGET_DIR=$(CW_TARGET) cargo build --release'

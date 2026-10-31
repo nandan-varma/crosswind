@@ -22,15 +22,30 @@ packages:
     url: https://github.com/apple/swift-argument-parser
     exactVersion: 1.8.2
 targets:
+  # Store app: UI only. Embeds the host agent (launchd helper) and the per-app stub template.
   Crosswind:
     type: application
     platform: macOS
     sources:
-      - path: App
+      - path: App/Store
         excludes:
-          - Crosswind.entitlements
+          - Resources
+      - path: App/Store/Resources/dev.crosswind.host.plist
+        buildPhase:
+          copyFiles:
+            destination: wrapper
+            subpath: Contents/Library/LaunchAgents
     dependencies:
       - package: CrosswindKit
+      - target: CrosswindHost
+        embed: true
+        copy:
+          destination: wrapper
+          subpath: Contents/Library/Helpers
+      - target: CrosswindAppStub
+        embed: true
+        copy:
+          destination: resources
     info:
       path: build/Info.plist
       properties:
@@ -45,10 +60,52 @@ targets:
         LSApplicationCategoryType: public.app-category.developer-tools
         NSHumanReadableCopyright: "AGPL-3.0-or-later"
         NSPrincipalClass: NSApplication
+  # Background agent: owns the VM. Started on demand by launchd through the Mach service dev.crosswind.host.
+  CrosswindHost:
+    type: application
+    platform: macOS
+    sources:
+      - path: App/Host
+    dependencies:
+      - package: CrosswindKit
+    info:
+      path: build/CrosswindHost-Info.plist
+      properties:
+        CFBundleName: CrosswindHost
+        CFBundleDisplayName: CrosswindHost
+        CFBundleIdentifier: dev.crosswind.host
+        CFBundleExecutable: CrosswindHost
+        CFBundlePackageType: APPL
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSMinimumSystemVersion: "27.0"
+        LSUIElement: true
+        NSPrincipalClass: NSApplication
     entitlements:
-      path: App/Crosswind.entitlements
+      path: App/Host/CrosswindHost.entitlements
       properties:
         com.apple.security.virtualization: true
+  # Template for the per-app stub bundles. Generated copies set CrosswindAppID later.
+  CrosswindAppStub:
+    type: application
+    platform: macOS
+    sources:
+      - path: App/Stub
+    dependencies:
+      - package: CrosswindKit
+    info:
+      path: build/CrosswindAppStub-Info.plist
+      properties:
+        CFBundleName: CrosswindAppStub
+        CFBundleDisplayName: CrosswindAppStub
+        CFBundleIdentifier: dev.crosswind.appstub
+        CFBundleExecutable: CrosswindAppStub
+        CFBundlePackageType: APPL
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CrosswindAppID: ""
+        LSMinimumSystemVersion: "27.0"
+        NSPrincipalClass: NSApplication
   crosswindctl:
     type: tool
     platform: macOS
@@ -74,6 +131,8 @@ schemes:
     build:
       targets:
         Crosswind: all
+        CrosswindHost: all
+        CrosswindAppStub: all
         crosswindctl: all
         CrosswindTests: [test]
     test:

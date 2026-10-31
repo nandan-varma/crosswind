@@ -6,6 +6,7 @@ struct CrosswindApp: App {
     var body: some Scene {
         WindowGroup {
             StoreShell()
+                .task { HostRegistration.register() }
         }
         .defaultSize(width: 980, height: 640)
     }

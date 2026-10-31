@@ -17,7 +17,7 @@ use smithay::{
     },
     desktop::utils::{bbox_from_surface_tree, send_frames_surface_tree},
     input::pointer::CursorImageStatus,
-    reexports::wayland_server::protocol::wl_surface::WlSurface,
+    reexports::wayland_server::{Resource, protocol::wl_surface::WlSurface},
     utils::{Logical, Physical, Point, Rectangle, Transform},
     wayland::{compositor::with_states, shell::xdg::SurfaceCachedState},
 };
@@ -107,6 +107,7 @@ impl State {
             Role::Toplevel(_) => None,
         };
         let parent = parent_surface.and_then(|s| self.windows.iter().find(|w| w.surface == s)).map_or(0, |w| w.id);
+        let (flatpak_id, launch_id) = self.owner_of(&self.windows[idx].surface).unwrap_or_default();
         let win = &mut self.windows[idx];
         win.announced = true;
         let (kind, x, y, title, app_id) = match &win.role {
@@ -135,11 +136,17 @@ impl State {
             min_height: min.h as u32,
             max_width: max.w as u32,
             max_height: max.h as u32,
-            // TODO: fill from the guest process tree once the proto's flatpak_id/launch_id attribution lands.
-            flatpak_id: String::new(),
-            launch_id: String::new(),
+            flatpak_id,
+            launch_id,
         };
         self.send(pb::to_host::Msg::Opened(opened));
+    }
+
+    /// The Flatpak app and launch behind a Wayland client, from its process.
+    fn owner_of(&self, surface: &WlSurface) -> Option<(String, String)> {
+        let client = self.display_handle.get_client(surface.id()).ok()?;
+        let pid = client.get_credentials(&self.display_handle).ok()?.pid;
+        self.control.owner_of(pid).map(|(app, launch)| (app.to_owned(), launch.to_owned()))
     }
 
     /// The host presented a frame: let the client draw the next one and flush anything queued.
