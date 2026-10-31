@@ -34,7 +34,18 @@ public final class AgentCore {
     private let session: GuestSession
     private var clients: [ObjectIdentifier: Client] = [:]
     private var stubs: [String: Client] = [:]
-    private var windowOwner: [UInt32: String] = [:]
+    private struct WindowRecord {
+        var app: String
+        var title: String
+        var width: UInt32 = 0
+        var height: UInt32 = 0
+        var scale120: UInt32 = 0
+        var frames: UInt64 = 0
+        var lastInput: ContinuousClock.Instant?
+        var lastLatencyMs = 0.0
+    }
+
+    private var windows: [UInt32: WindowRecord] = [:]
     private var displayToGuest: DisplayConnection?
     private var controlToGuest: ControlConnection?
     private var inflight: [UInt64: ForwardedRequest] = [:]
@@ -77,7 +88,7 @@ public final class AgentCore {
             run(command, for: client)
         case .display(let input)?:
             guard client.role == .stub, owns(client, window: windowID(of: input)) else { return }
-            displayToGuest?.send(input)
+            send(input)
         case nil:
             break
         }
@@ -156,6 +167,7 @@ public final class AgentCore {
                     $0.id = command.id
                     $0.error = error
                     $0.state = self.session.state
+                    $0.windows = self.info()
                 }
             })
         }
@@ -164,7 +176,10 @@ public final class AgentCore {
                 switch command.body {
                 case .startVm?: try await ensureRunning()
                 case .stopVm?: await session.stop()
-                case .getState?: break
+                case .getState?, .listWindows?: break
+                case .injectInput(let inject)?:
+                    guard client.role == .ctl else { throw GuestSessionError.guest("not permitted") }
+                    send(.with { $0.input = inject.input })
                 case .launchApp(let launch)?:
                     try await ensureRunning()
                     let response = try await request(.launch(.with { $0.appID = launch.appID; $0.args = launch.args }))
@@ -207,20 +222,24 @@ public final class AgentCore {
         switch message.msg {
         case .opened(let opened)?:
             let app = opened.flatpakID.isEmpty ? opened.appID : opened.flatpakID
-            windowOwner[opened.id] = app
+            windows[opened.id] = WindowRecord(app: app, title: opened.title)
             send(message, toStubOf: app)
-        case .changed(let changed)?: send(message, toStubOfWindow: changed.id)
+        case .changed(let changed)?:
+            if changed.hasTitle { windows[changed.id]?.title = changed.title }
+            send(message, toStubOfWindow: changed.id)
         case .closed(let closed)?:
             send(message, toStubOfWindow: closed.id)
-            windowOwner.removeValue(forKey: closed.id)
-        case .frame(let frame)?: send(message, toStubOfWindow: frame.window)
+            windows.removeValue(forKey: closed.id)
+        case .frame(let frame)?:
+            record(frame)
+            send(message, toStubOfWindow: frame.window)
         case .cursor(let cursor)?: send(message, toStubOfWindow: cursor.window)
         case nil: break
         }
     }
 
     private func send(_ message: ToHost, toStubOfWindow window: UInt32) {
-        guard let app = windowOwner[window] else { return }
+        guard let app = windows[window]?.app else { return }
         send(message, toStubOf: app)
     }
 
@@ -230,15 +249,50 @@ public final class AgentCore {
 
     private func guestDisplayEnded() {
         displayToGuest = nil
-        for app in Set(windowOwner.values) {
-            for (window, owner) in windowOwner where owner == app {
-                send(.with { $0.closed = .with { $0.id = window } }, toStubOf: app)
-            }
+        for (window, record) in windows {
+            send(.with { $0.closed = .with { $0.id = window } }, toStubOf: record.app)
         }
-        windowOwner.removeAll()
+        windows.removeAll()
     }
 
-    private func owns(_ client: Client, window: UInt32) -> Bool { windowOwner[window] == client.appID }
+    private func record(_ frame: Crosswind_Display_Frame) {
+        guard var record = windows[frame.window] else { return }
+        record.frames += 1
+        record.width = frame.width
+        record.height = frame.height
+        record.scale120 = frame.scale120
+        if let start = record.lastInput {
+            let elapsed = ContinuousClock.now - start
+            record.lastLatencyMs = Double(elapsed.components.attoseconds) / 1e15 + Double(elapsed.components.seconds) * 1e3
+            record.lastInput = nil
+        }
+        windows[frame.window] = record
+    }
+
+    private func info() -> [Crosswind_Agent_WindowInfo] {
+        windows.sorted { $0.key < $1.key }.map { id, record in
+            .with {
+                $0.id = id
+                $0.appID = record.app
+                $0.title = record.title
+                $0.width = record.width
+                $0.height = record.height
+                $0.scale120 = record.scale120
+                $0.frames = record.frames
+                $0.lastInputToFrameMs = record.lastLatencyMs
+            }
+        }
+    }
+
+    /// Forwards input to the guest and starts the input-to-frame clock for the window.
+    private func send(_ input: ToGuest) {
+        if case .input(let value)? = input.msg, windows[value.window] != nil {
+            if case .leave? = value.event {} else { windows[value.window]?.lastInput = .now }
+        }
+        displayToGuest?.send(input)
+    }
+
+    private func owns(_ client: Client, window: UInt32) -> Bool { windows[window]?.app == client.appID }
 
     private func windowID(of input: ToGuest) -> UInt32 {
         switch input.msg {

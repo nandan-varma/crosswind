@@ -199,6 +199,22 @@ public nonisolated struct Crosswind_Agent_Command: Sendable {
     set {body = .launchApp(newValue)}
   }
 
+  public var injectInput: Crosswind_Agent_InjectInput {
+    get {
+      if case .injectInput(let v)? = body {return v}
+      return Crosswind_Agent_InjectInput()
+    }
+    set {body = .injectInput(newValue)}
+  }
+
+  public var listWindows: Crosswind_Agent_ListWindows {
+    get {
+      if case .listWindows(let v)? = body {return v}
+      return Crosswind_Agent_ListWindows()
+    }
+    set {body = .listWindows(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public nonisolated enum OneOf_Body: Equatable, Sendable {
@@ -206,8 +222,42 @@ public nonisolated struct Crosswind_Agent_Command: Sendable {
     case stopVm(Crosswind_Agent_StopVm)
     case getState(Crosswind_Agent_GetState)
     case launchApp(Crosswind_Agent_LaunchApp)
+    case injectInput(Crosswind_Agent_InjectInput)
+    case listWindows(Crosswind_Agent_ListWindows)
 
   }
+
+  public init() {}
+}
+
+/// Delivers synthetic input to a window as if the user produced it (tests, diagnostics). crosswindctl only.
+public nonisolated struct Crosswind_Agent_InjectInput: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var input: Crosswind_Display_Input {
+    get {_input ?? Crosswind_Display_Input()}
+    set {_input = newValue}
+  }
+  /// Returns true if `input` has been explicitly set.
+  public var hasInput: Bool {self._input != nil}
+  /// Clears the value of `input`. Subsequent reads from it will return its default value.
+  public mutating func clearInput() {self._input = nil}
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+
+  fileprivate var _input: Crosswind_Display_Input? = nil
+}
+
+public nonisolated struct Crosswind_Agent_ListWindows: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 }
@@ -335,11 +385,42 @@ public nonisolated struct Crosswind_Agent_CommandResult: Sendable {
   /// Clears the value of `state`. Subsequent reads from it will return its default value.
   public mutating func clearState() {self._state = nil}
 
+  /// for ListWindows
+  public var windows: [Crosswind_Agent_WindowInfo] = []
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 
   fileprivate var _state: Crosswind_Agent_State? = nil
+}
+
+public nonisolated struct Crosswind_Agent_WindowInfo: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var id: UInt32 = 0
+
+  public var appID: String = String()
+
+  public var title: String = String()
+
+  /// physical pixels
+  public var width: UInt32 = 0
+
+  public var height: UInt32 = 0
+
+  public var scale120: UInt32 = 0
+
+  public var frames: UInt64 = 0
+
+  /// Time from the last input sent to this window to the next frame the guest produced for it.
+  public var lastInputToFrameMs: Double = 0
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
 }
 
 public nonisolated struct Crosswind_Agent_State: Sendable {
@@ -458,7 +539,7 @@ nonisolated extension Crosswind_Agent_ClientMessage: SwiftProtobuf.Message, Swif
 
 nonisolated extension Crosswind_Agent_Command: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Command"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{3}start_vm\0\u{3}stop_vm\0\u{3}get_state\0\u{3}launch_app\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{3}start_vm\0\u{3}stop_vm\0\u{3}get_state\0\u{3}launch_app\0\u{3}inject_input\0\u{3}list_windows\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -519,6 +600,32 @@ nonisolated extension Crosswind_Agent_Command: SwiftProtobuf.Message, SwiftProto
           self.body = .launchApp(v)
         }
       }()
+      case 6: try {
+        var v: Crosswind_Agent_InjectInput?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .injectInput(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .injectInput(v)
+        }
+      }()
+      case 7: try {
+        var v: Crosswind_Agent_ListWindows?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .listWindows(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .listWindows(v)
+        }
+      }()
       default: break
       }
     }
@@ -549,6 +656,14 @@ nonisolated extension Crosswind_Agent_Command: SwiftProtobuf.Message, SwiftProto
       guard case .launchApp(let v)? = self.body else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 5)
     }()
+    case .injectInput?: try {
+      guard case .injectInput(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 6)
+    }()
+    case .listWindows?: try {
+      guard case .listWindows(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 7)
+    }()
     case nil: break
     }
     try unknownFields.traverse(visitor: &visitor)
@@ -557,6 +672,59 @@ nonisolated extension Crosswind_Agent_Command: SwiftProtobuf.Message, SwiftProto
   public static func ==(lhs: Crosswind_Agent_Command, rhs: Crosswind_Agent_Command) -> Bool {
     if lhs.id != rhs.id {return false}
     if lhs.body != rhs.body {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Crosswind_Agent_InjectInput: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".InjectInput"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}input\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularMessageField(value: &self._input) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._input {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Crosswind_Agent_InjectInput, rhs: Crosswind_Agent_InjectInput) -> Bool {
+    if lhs._input != rhs._input {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Crosswind_Agent_ListWindows: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".ListWindows"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap()
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    // Load everything into unknown fields
+    while try decoder.nextFieldNumber() != nil {}
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Crosswind_Agent_ListWindows, rhs: Crosswind_Agent_ListWindows) -> Bool {
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -757,7 +925,7 @@ nonisolated extension Crosswind_Agent_AgentMessage: SwiftProtobuf.Message, Swift
 
 nonisolated extension Crosswind_Agent_CommandResult: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".CommandResult"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}error\0\u{1}state\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}error\0\u{1}state\0\u{1}windows\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -768,6 +936,7 @@ nonisolated extension Crosswind_Agent_CommandResult: SwiftProtobuf.Message, Swif
       case 1: try { try decoder.decodeSingularUInt64Field(value: &self.id) }()
       case 2: try { try decoder.decodeSingularStringField(value: &self.error) }()
       case 3: try { try decoder.decodeSingularMessageField(value: &self._state) }()
+      case 4: try { try decoder.decodeRepeatedMessageField(value: &self.windows) }()
       default: break
       }
     }
@@ -787,6 +956,9 @@ nonisolated extension Crosswind_Agent_CommandResult: SwiftProtobuf.Message, Swif
     try { if let v = self._state {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
     } }()
+    if !self.windows.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.windows, fieldNumber: 4)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -794,6 +966,72 @@ nonisolated extension Crosswind_Agent_CommandResult: SwiftProtobuf.Message, Swif
     if lhs.id != rhs.id {return false}
     if lhs.error != rhs.error {return false}
     if lhs._state != rhs._state {return false}
+    if lhs.windows != rhs.windows {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Crosswind_Agent_WindowInfo: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".WindowInfo"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{3}app_id\0\u{1}title\0\u{1}width\0\u{1}height\0\u{3}scale_120\0\u{1}frames\0\u{3}last_input_to_frame_ms\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularUInt32Field(value: &self.id) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.appID) }()
+      case 3: try { try decoder.decodeSingularStringField(value: &self.title) }()
+      case 4: try { try decoder.decodeSingularUInt32Field(value: &self.width) }()
+      case 5: try { try decoder.decodeSingularUInt32Field(value: &self.height) }()
+      case 6: try { try decoder.decodeSingularUInt32Field(value: &self.scale120) }()
+      case 7: try { try decoder.decodeSingularUInt64Field(value: &self.frames) }()
+      case 8: try { try decoder.decodeSingularDoubleField(value: &self.lastInputToFrameMs) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.id != 0 {
+      try visitor.visitSingularUInt32Field(value: self.id, fieldNumber: 1)
+    }
+    if !self.appID.isEmpty {
+      try visitor.visitSingularStringField(value: self.appID, fieldNumber: 2)
+    }
+    if !self.title.isEmpty {
+      try visitor.visitSingularStringField(value: self.title, fieldNumber: 3)
+    }
+    if self.width != 0 {
+      try visitor.visitSingularUInt32Field(value: self.width, fieldNumber: 4)
+    }
+    if self.height != 0 {
+      try visitor.visitSingularUInt32Field(value: self.height, fieldNumber: 5)
+    }
+    if self.scale120 != 0 {
+      try visitor.visitSingularUInt32Field(value: self.scale120, fieldNumber: 6)
+    }
+    if self.frames != 0 {
+      try visitor.visitSingularUInt64Field(value: self.frames, fieldNumber: 7)
+    }
+    if self.lastInputToFrameMs.bitPattern != 0 {
+      try visitor.visitSingularDoubleField(value: self.lastInputToFrameMs, fieldNumber: 8)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Crosswind_Agent_WindowInfo, rhs: Crosswind_Agent_WindowInfo) -> Bool {
+    if lhs.id != rhs.id {return false}
+    if lhs.appID != rhs.appID {return false}
+    if lhs.title != rhs.title {return false}
+    if lhs.width != rhs.width {return false}
+    if lhs.height != rhs.height {return false}
+    if lhs.scale120 != rhs.scale120 {return false}
+    if lhs.frames != rhs.frames {return false}
+    if lhs.lastInputToFrameMs != rhs.lastInputToFrameMs {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

@@ -49,6 +49,7 @@ public struct CatalogIndex: Sendable {
 
     private let entries: [Entry]
     private let byCategory: [CatalogCategory: [Entry]]
+    private let byID: [String: CatalogApp]
 
     public init(apps: [CatalogApp]) {
         let entries = apps.map { app in
@@ -64,6 +65,7 @@ public struct CatalogIndex: Sendable {
             )
         }
         self.entries = entries
+        byID = Dictionary(apps.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         var byCategory: [CatalogCategory: [Entry]] = [:]
         for entry in entries {
             for category in CatalogCategory.allCases where entry.app.categories.contains(category.rawValue) {
@@ -72,6 +74,10 @@ public struct CatalogIndex: Sendable {
         }
         self.byCategory = byCategory
     }
+
+    public var isEmpty: Bool { entries.isEmpty }
+
+    public func app(id: String) -> CatalogApp? { byID[id] }
 
     /// Apps whose AppStream categories include `category`, ordered by popularity then name.
     public func apps(in category: CatalogCategory, popularity: [String: Double] = [:]) -> [CatalogApp] {

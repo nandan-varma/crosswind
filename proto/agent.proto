@@ -34,8 +34,17 @@ message Command {
     StopVm stop_vm = 3;
     GetState get_state = 4;
     LaunchApp launch_app = 5;
+    InjectInput inject_input = 6;
+    ListWindows list_windows = 7;
   }
 }
+
+// Delivers synthetic input to a window as if the user produced it (tests, diagnostics). crosswindctl only.
+message InjectInput {
+  crosswind.display.Input input = 1;
+}
+
+message ListWindows {}
 
 message StartVm {}
 message StopVm {}
@@ -62,6 +71,19 @@ message CommandResult {
   uint64 id = 1;
   string error = 2;    // empty on success
   State state = 3;     // for GetState
+  repeated WindowInfo windows = 4;  // for ListWindows
+}
+
+message WindowInfo {
+  uint32 id = 1;
+  string app_id = 2;
+  string title = 3;
+  uint32 width = 4;     // physical pixels
+  uint32 height = 5;
+  uint32 scale_120 = 6;
+  uint64 frames = 7;
+  // Time from the last input sent to this window to the next frame the guest produced for it.
+  double last_input_to_frame_ms = 8;
 }
 
 enum VmPhase {

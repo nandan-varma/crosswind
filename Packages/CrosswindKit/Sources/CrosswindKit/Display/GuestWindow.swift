@@ -13,7 +13,9 @@ final class GuestWindow: NSObject, NSWindowDelegate {
     let kind: Crosswind_Display_WindowKind
     let view = SurfaceView(frame: .zero)
     private(set) var window: NSWindow?
-    private var surface: IOSurface?
+    private var buffers: [IOSurface] = []
+    private var frontIndex = 0
+    private var previousDamage: [(x: UInt32, y: UInt32, width: UInt32, height: UInt32)] = []
     private var scale: CGFloat = 1
     private var popupOffset: CGPoint = .zero
     private weak var parent: GuestWindow?
@@ -50,21 +52,36 @@ final class GuestWindow: NSObject, NSWindowDelegate {
         let scale = CGFloat(frame.scale120) / 120
         let width = Int(frame.width)
         let height = Int(frame.height)
-        if surface == nil || surface!.width != width || surface!.height != height {
-            surface = IOSurface(properties: [
-                .width: width, .height: height, .bytesPerElement: 4, .pixelFormat: 0x4247_5241,  // 'BGRA'
-            ])
+        if buffers.isEmpty || buffers[0].width != width || buffers[0].height != height {
+            buffers = (0..<2).compactMap { _ in
+                IOSurface(properties: [
+                    .width: width, .height: height, .bytesPerElement: 4, .pixelFormat: 0x4247_5241,  // 'BGRA'
+                ])
+            }
+            previousDamage = []
         }
-        guard let surface else { return }
+        guard buffers.count == 2 else { return }
         self.scale = scale
 
-        surface.lock(options: [], seed: nil)
-        let base = surface.baseAddress
-        let stride = surface.bytesPerRow
-        for rect in frame.damage {
-            Self.decode(rect, into: base, stride: stride)
+        // Core Animation only re-reads a layer's IOSurface when it is handed a different one, so frames alternate
+        // between two surfaces. The back surface is one frame stale: carry over last frame's damage first.
+        let front = buffers[frontIndex]
+        let back = buffers[1 - frontIndex]
+        front.lock(options: .readOnly, seed: nil)
+        back.lock(options: [], seed: nil)
+        let stride = back.bytesPerRow
+        for rect in previousDamage {
+            for row in Int(rect.y)..<Int(rect.y + rect.height) {
+                let offset = row * stride + Int(rect.x) * 4
+                memcpy(back.baseAddress + offset, front.baseAddress + offset, Int(rect.width) * 4)
+            }
         }
-        surface.unlock(options: [], seed: nil)
+        for rect in frame.damage { Self.decode(rect, into: back.baseAddress, stride: stride) }
+        back.unlock(options: [], seed: nil)
+        front.unlock(options: .readOnly, seed: nil)
+        previousDamage = frame.damage.map { (x: $0.x, y: $0.y, width: $0.width, height: $0.height) }
+        frontIndex = 1 - frontIndex
+        let surface = buffers[frontIndex]
 
         let logical = NSSize(width: CGFloat(width) / scale, height: CGFloat(height) / scale)
         if window == nil {

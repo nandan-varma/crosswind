@@ -11,6 +11,7 @@ struct CrosswindCtl: AsyncParsableCommand {
         subcommands: [
             Status.self, Start.self, Stop.self, Installed.self, Install.self, Uninstall.self, Update.self,
             Launch.self, Logs.self, CatalogCommand.self, StubCommand.self, ImageCommand.self,
+            Windows.self, TypeText.self, Click.self,
         ]
     )
 }
@@ -42,7 +43,7 @@ struct Start: AsyncParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Boot the Linux environment.")
 
     func run() async throws {
-        print(describe(try await connect().command(.startVm(.init()))))
+        print(describe(try await connect().command(.startVm(.init())).state))
     }
 }
 
@@ -50,7 +51,7 @@ struct Stop: AsyncParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Shut the Linux environment down.")
 
     func run() async throws {
-        print(describe(try await connect().command(.stopVm(.init()))))
+        print(describe(try await connect().command(.stopVm(.init())).state))
     }
 }
 
@@ -117,7 +118,7 @@ struct Launch: AsyncParsableCommand {
     @Argument var appID: String
 
     func run() async throws {
-        print(describe(try await connect().command(.launchApp(.with { $0.appID = appID }))))
+        print(describe(try await connect().command(.launchApp(.with { $0.appID = appID })).state))
     }
 }
 
@@ -215,5 +216,71 @@ struct ImageCommand: AsyncParsableCommand {
             try await store.install(manifest) { print(String(format: "\r%3.0f%%", $0 * 100), terminator: "") }
             print("\rinstalled image \(manifest.version)")
         }
+    }
+}
+
+struct Windows: AsyncParsableCommand {
+    static let configuration = CommandConfiguration(abstract: "List guest windows with frame and latency counters.")
+
+    func run() async throws {
+        let result = try await connect().command(.listWindows(.init()))
+        for window in result.windows {
+            let latency = String(format: "%.1f ms", window.lastInputToFrameMs)
+            print("\(window.id)\t\(window.appID)\t\(window.width)x\(window.height)\t\(window.frames) frames\t\(latency)\t\(window.title)")
+        }
+    }
+}
+
+struct TypeText: AsyncParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "type", abstract: "Type text into a window (letters, digits, space) and report input-to-frame latency.")
+    @Argument var window: UInt32
+    @Argument var text: String
+
+    /// evdev key codes for the characters supported here.
+    private static let codes: [Character: UInt32] = {
+        var map: [Character: UInt32] = [" ": 57]
+        for (index, character) in "1234567890".enumerated() { map[character] = UInt32(2 + index) }
+        for (index, character) in "qwertyuiop".enumerated() { map[character] = UInt32(16 + index) }
+        for (index, character) in "asdfghjkl".enumerated() { map[character] = UInt32(30 + index) }
+        for (index, character) in "zxcvbnm".enumerated() { map[character] = UInt32(44 + index) }
+        return map
+    }()
+
+    func run() async throws {
+        let client = try await connect()
+        for character in text.lowercased() {
+            guard let code = Self.codes[character] else { continue }
+            for pressed in [true, false] {
+                let key = Crosswind_Display_Input.OneOf_Event.key(.with { $0.keycode = code; $0.pressed = pressed })
+                _ = try await client.command(.injectInput(.with { $0.input = .with { $0.window = window; $0.event = key } }))
+            }
+            try await Task.sleep(for: .milliseconds(300))
+            let info = try await client.command(.listWindows(.init())).windows.first { $0.id == window }
+            print("\(character): \(String(format: "%.1f", info?.lastInputToFrameMs ?? -1)) ms")
+        }
+    }
+}
+
+struct Click: AsyncParsableCommand {
+    static let configuration = CommandConfiguration(abstract: "Click at a point (window-local points) and report latency.")
+    @Argument var window: UInt32
+    @Argument var x: Double
+    @Argument var y: Double
+
+    func run() async throws {
+        let client = try await connect()
+        func send(_ event: Crosswind_Display_Input.OneOf_Event) async throws {
+            _ = try await client.command(.injectInput(.with { $0.input = .with { $0.window = window; $0.event = event } }))
+        }
+        try await send(.motion(.with { $0.x = x; $0.y = y }))
+        try await Task.sleep(for: .milliseconds(100))
+        for pressed in [true, false] {
+            try await send(.button(.with { $0.button = 0x110; $0.pressed = pressed }))
+            try await Task.sleep(for: .milliseconds(80))
+        }
+        try await Task.sleep(for: .milliseconds(500))
+        let info = try await client.command(.listWindows(.init())).windows.first { $0.id == window }
+        print(String(format: "click-to-frame %.1f ms", info?.lastInputToFrameMs ?? -1))
     }
 }

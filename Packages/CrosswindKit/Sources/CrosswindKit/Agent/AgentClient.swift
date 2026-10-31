@@ -59,7 +59,7 @@ public actor AgentClient {
     }
 
     /// Runs an agent-level command and returns the agent's reply.
-    public func command(_ body: Crosswind_Agent_Command.OneOf_Body) async throws -> Crosswind_Agent_State {
+    public func command(_ body: Crosswind_Agent_Command.OneOf_Body) async throws -> Crosswind_Agent_CommandResult {
         nextID += 1
         let id = nextID
         let result = try await withCheckedThrowingContinuation { continuation in
@@ -72,7 +72,7 @@ public actor AgentClient {
             })
         }
         if !result.error.isEmpty { throw AgentCommandError.failed(result.error) }
-        return result.state
+        return result
     }
 
     public func disconnect() { connection.disconnect() }
