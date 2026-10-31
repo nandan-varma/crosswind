@@ -215,6 +215,22 @@ public nonisolated struct Crosswind_Agent_Command: Sendable {
     set {body = .listWindows(newValue)}
   }
 
+  public var restartVm: Crosswind_Agent_RestartVm {
+    get {
+      if case .restartVm(let v)? = body {return v}
+      return Crosswind_Agent_RestartVm()
+    }
+    set {body = .restartVm(newValue)}
+  }
+
+  public var resetEnvironment: Crosswind_Agent_ResetEnvironment {
+    get {
+      if case .resetEnvironment(let v)? = body {return v}
+      return Crosswind_Agent_ResetEnvironment()
+    }
+    set {body = .resetEnvironment(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public nonisolated enum OneOf_Body: Equatable, Sendable {
@@ -224,6 +240,8 @@ public nonisolated struct Crosswind_Agent_Command: Sendable {
     case launchApp(Crosswind_Agent_LaunchApp)
     case injectInput(Crosswind_Agent_InjectInput)
     case listWindows(Crosswind_Agent_ListWindows)
+    case restartVm(Crosswind_Agent_RestartVm)
+    case resetEnvironment(Crosswind_Agent_ResetEnvironment)
 
   }
 
@@ -283,6 +301,28 @@ public nonisolated struct Crosswind_Agent_StopVm: Sendable {
 }
 
 public nonisolated struct Crosswind_Agent_GetState: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+/// Stops the VM and starts it again (applies changed resource settings).
+public nonisolated struct Crosswind_Agent_RestartVm: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+/// Stops the VM and deletes the data disk: every installed app and its data are gone.
+public nonisolated struct Crosswind_Agent_ResetEnvironment: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -539,7 +579,7 @@ nonisolated extension Crosswind_Agent_ClientMessage: SwiftProtobuf.Message, Swif
 
 nonisolated extension Crosswind_Agent_Command: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Command"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{3}start_vm\0\u{3}stop_vm\0\u{3}get_state\0\u{3}launch_app\0\u{3}inject_input\0\u{3}list_windows\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{3}start_vm\0\u{3}stop_vm\0\u{3}get_state\0\u{3}launch_app\0\u{3}inject_input\0\u{3}list_windows\0\u{3}restart_vm\0\u{3}reset_environment\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -626,6 +666,32 @@ nonisolated extension Crosswind_Agent_Command: SwiftProtobuf.Message, SwiftProto
           self.body = .listWindows(v)
         }
       }()
+      case 8: try {
+        var v: Crosswind_Agent_RestartVm?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .restartVm(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .restartVm(v)
+        }
+      }()
+      case 9: try {
+        var v: Crosswind_Agent_ResetEnvironment?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .resetEnvironment(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .resetEnvironment(v)
+        }
+      }()
       default: break
       }
     }
@@ -663,6 +729,14 @@ nonisolated extension Crosswind_Agent_Command: SwiftProtobuf.Message, SwiftProto
     case .listWindows?: try {
       guard case .listWindows(let v)? = self.body else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 7)
+    }()
+    case .restartVm?: try {
+      guard case .restartVm(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 8)
+    }()
+    case .resetEnvironment?: try {
+      guard case .resetEnvironment(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 9)
     }()
     case nil: break
     }
@@ -782,6 +856,44 @@ nonisolated extension Crosswind_Agent_GetState: SwiftProtobuf.Message, SwiftProt
   }
 
   public static func ==(lhs: Crosswind_Agent_GetState, rhs: Crosswind_Agent_GetState) -> Bool {
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Crosswind_Agent_RestartVm: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".RestartVm"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap()
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    // Load everything into unknown fields
+    while try decoder.nextFieldNumber() != nil {}
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Crosswind_Agent_RestartVm, rhs: Crosswind_Agent_RestartVm) -> Bool {
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Crosswind_Agent_ResetEnvironment: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".ResetEnvironment"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap()
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    // Load everything into unknown fields
+    while try decoder.nextFieldNumber() != nil {}
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Crosswind_Agent_ResetEnvironment, rhs: Crosswind_Agent_ResetEnvironment) -> Bool {
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

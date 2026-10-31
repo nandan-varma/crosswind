@@ -45,10 +45,14 @@ public final class AgentCore {
         var lastLatencyMs = 0.0
     }
 
-    private var windows: [UInt32: WindowRecord] = [:]
+    private var windows: [UInt32: WindowRecord] = [:] {
+        didSet { session.openWindowCount = windows.count }
+    }
     private var displayToGuest: DisplayConnection?
     private var controlToGuest: ControlConnection?
-    private var inflight: [UInt64: ForwardedRequest] = [:]
+    private var inflight: [UInt64: ForwardedRequest] = [:] {
+        didSet { session.requestsInFlight = inflight.count }
+    }
     private var nextGuestRequestID: UInt64 = 0
 
     /// Describes the host display to the guest (main screen size, scale, refresh rate).
@@ -122,11 +126,35 @@ public final class AgentCore {
         }
     }
 
+    /// Forwards a client's request. The VM boots first if it is stopped (never started, or idled out).
     private func forward(_ request: Crosswind_Control_Request, from client: Client) {
         if case .callReply? = request.body {  // answers a guest call; the guest does not respond to it
             controlToGuest?.send(request)
             return
         }
+        guard controlToGuest == nil else {
+            sendToGuest(request, from: client)
+            return
+        }
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                try await self.ensureRunning()
+                self.sendToGuest(request, from: client)
+            } catch {
+                client.connection.send(.with {
+                    $0.guest = .with {
+                        $0.response = .with {
+                            $0.id = request.id
+                            $0.error = .with { $0.message = error.localizedDescription }
+                        }
+                    }
+                })
+            }
+        }
+    }
+
+    private func sendToGuest(_ request: Crosswind_Control_Request, from client: Client) {
         let id = issue(ForwardedRequest(client: ObjectIdentifier(client), clientRequestID: request.id, reply: nil))
         var outgoing = request
         outgoing.id = id
@@ -209,6 +237,8 @@ public final class AgentCore {
                 switch command.body {
                 case .startVm?: try await ensureRunning()
                 case .stopVm?: await session.stop()
+                case .restartVm?: try await session.restart()
+                case .resetEnvironment?: try await session.resetDataDisk()
                 case .getState?, .listWindows?: break
                 case .injectInput(let inject)?:
                     guard client.role == .ctl else { throw GuestSessionError.guest("not permitted") }

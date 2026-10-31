@@ -118,6 +118,9 @@ targets:
   crosswindctl:
     type: tool
     platform: macOS
+    settings:
+      base:
+        SKIP_INSTALL: YES
     sources:
       - path: tools/crosswindctl
     dependencies:

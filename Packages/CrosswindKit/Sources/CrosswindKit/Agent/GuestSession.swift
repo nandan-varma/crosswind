@@ -37,6 +37,16 @@ public final class GuestSession {
     private var vm: GuestVM?
     private var starting: Task<Void, Error>?
 
+    /// Windows the display path has open. AgentCore keeps it current.
+    var openWindowCount = 0
+    /// Client requests waiting for the guest. AgentCore keeps it current.
+    var requestsInFlight = 0
+    /// Flatpak operations (install, update, uninstall) in flight, from guest Progress and OperationDone events.
+    private var operations: Set<UInt64> = []
+    private var idleSince: ContinuousClock.Instant?
+    private var ballooned = false
+    private var monitor: Task<Void, Never>?
+
     public init(paths: GuestPaths) {
         self.paths = paths
         let (stream, continuation) = AsyncStream<Crosswind_Agent_State>.makeStream(
@@ -60,7 +70,22 @@ public final class GuestSession {
         setPhase(.stopping)
         try? await vm.stop()
         self.vm = nil
+        tearDown()
         setPhase(.stopped)
+    }
+
+    /// Stops the VM and starts it again, so changed resource settings take effect.
+    public func restart() async throws {
+        await stop()
+        try await ensureRunning()
+    }
+
+    /// Stops the VM and deletes the data disk. Every installed app and its data are lost; the next start makes a new
+    /// disk.
+    public func resetDataDisk() async throws {
+        await stop()
+        guard FileManager.default.fileExists(atPath: paths.dataDisk.path) else { return }
+        try FileManager.default.removeItem(at: paths.dataDisk)
     }
 
     private func boot() async throws {
@@ -84,6 +109,8 @@ public final class GuestSession {
             guard connected else { throw GuestSessionError.noControlChannel }
             try await onReady?()
             setPhase(.running)
+            idleSince = .now
+            startMonitor()
         } catch {
             self.vm = nil
             setPhase(.failed, detail: error.localizedDescription)
@@ -91,13 +118,18 @@ public final class GuestSession {
         }
     }
 
-    /// Tracks which apps run in the guest from control events.
+    /// Tracks which apps run in the guest, and which Flatpak operations are in flight, from control events.
     func apply(_ event: Crosswind_Control_Event) {
         switch event.body {
         case .appStarted(let started)?:
             if !state.runningApps.contains(started.appID) { state.runningApps = (state.runningApps + [started.appID]).sorted() }
+            restoreMemory()
         case .appExited(let exited)?:
             state.runningApps.removeAll { $0 == exited.appID }
+        case .progress(let progress)?:
+            operations.insert(progress.operation)
+        case .operationDone(let done)?:
+            operations.remove(done.operation)
         default:
             break
         }
@@ -107,8 +139,61 @@ public final class GuestSession {
     func guestEnded() {
         guard state.phase == .running else { return }
         vm = nil
-        state.runningApps = []
+        tearDown()
         setPhase(.failed, detail: "The Linux environment stopped unexpectedly")
+    }
+
+    // MARK: Idle
+
+    private func startMonitor() {
+        monitor?.cancel()
+        monitor = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(30))
+                self?.checkIdle()
+            }
+        }
+    }
+
+    /// Applies `IdlePolicy` once: gives memory back after a short idle spell, stops the VM after the user's timeout.
+    private func checkIdle() {
+        guard state.phase == .running else { return }
+        let busy = IdlePolicy.isBusy(
+            apps: state.runningApps.count, operations: operations.count, windows: openWindowCount,
+            requests: requestsInFlight)
+        guard !busy else {
+            idleSince = nil
+            restoreMemory()
+            return
+        }
+        let now = ContinuousClock.now
+        let since = idleSince ?? now
+        idleSince = since
+        switch IdlePolicy.action(busy: false, idleFor: now - since, timeout: Preferences.idleTimeout) {
+        case .wait:
+            break
+        case .shrink:
+            guard !ballooned else { return }
+            ballooned = true
+            vm?.setMemoryTarget(IdlePolicy.memoryFloor)
+        case .stop:
+            Task { await self.stop() }
+        }
+    }
+
+    private func restoreMemory() {
+        guard ballooned else { return }
+        ballooned = false
+        vm?.setMemoryTarget(nil)
+    }
+
+    private func tearDown() {
+        monitor?.cancel()
+        monitor = nil
+        operations.removeAll()
+        idleSince = nil
+        ballooned = false
+        state.runningApps = []
     }
 
     private func setPhase(_ phase: Crosswind_Agent_VmPhase, detail: String = "") {

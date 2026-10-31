@@ -28,6 +28,7 @@ message Request {
     Shutdown shutdown = 15;
     SetAppearance set_appearance = 16;
     CallReply call_reply = 17;       // answer to a guest-initiated Call
+    OfferClipboard offer_clipboard = 18;
   }
 }
 
@@ -37,6 +38,12 @@ message Hello {
   string time_zone = 2;   // IANA name
   string locale = 3;      // POSIX, e.g. en_US.UTF-8
   bool dark_mode = 4;
+}
+
+// The Mac's clipboard changed and a Linux app is frontmost: announce what it holds. The data stays on the Mac
+// until an app in the guest pastes (the guest then issues `ClipboardRead`).
+message OfferClipboard {
+  repeated string mimes = 1;       // MIME types of the Mac clipboard (text/plain;charset=utf-8, image/png, text/html)
 }
 
 // Host appearance changed (the guest's Settings portal reports it to apps).
@@ -120,7 +127,18 @@ message Call {
     FileChooser file_chooser = 3;
     Notify notify = 4;
     OpenUrl open_url = 5;
+    ClipboardRead clipboard_read = 6;
   }
+}
+
+// A guest app pastes: fetch this type from the Mac clipboard.
+message ClipboardRead {
+  string mime = 1;
+}
+
+message ClipboardData {
+  string mime = 1;
+  bytes data = 2;
 }
 
 message FileChooser {
@@ -157,6 +175,7 @@ message CallReply {
     Error error = 2;
     Ok ok = 3;
     FileChooserResult file_chooser = 4;
+    ClipboardData clipboard = 5;
   }
 }
 
@@ -224,7 +243,13 @@ message Event {
     AppStarted app_started = 3;
     AppExited app_exited = 4;
     LogLine log = 5;
+    ClipboardChanged clipboard_changed = 6;
   }
+}
+
+// A guest app copied. Small items are sent eagerly (the user just pressed copy): text up to 1 MiB, images up to 16 MiB.
+message ClipboardChanged {
+  repeated ClipboardData items = 1;
 }
 
 message Progress {

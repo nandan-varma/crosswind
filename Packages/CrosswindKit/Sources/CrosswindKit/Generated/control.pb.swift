@@ -170,6 +170,14 @@ public nonisolated struct Crosswind_Control_Request: Sendable {
     set {body = .callReply(newValue)}
   }
 
+  public var offerClipboard: Crosswind_Control_OfferClipboard {
+    get {
+      if case .offerClipboard(let v)? = body {return v}
+      return Crosswind_Control_OfferClipboard()
+    }
+    set {body = .offerClipboard(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public nonisolated enum OneOf_Body: Equatable, Sendable {
@@ -190,6 +198,7 @@ public nonisolated struct Crosswind_Control_Request: Sendable {
     case setAppearance(Crosswind_Control_SetAppearance)
     /// answer to a guest-initiated Call
     case callReply(Crosswind_Control_CallReply)
+    case offerClipboard(Crosswind_Control_OfferClipboard)
 
   }
 
@@ -211,6 +220,21 @@ public nonisolated struct Crosswind_Control_Hello: Sendable {
   public var locale: String = String()
 
   public var darkMode: Bool = false
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+/// The Mac's clipboard changed and a Linux app is frontmost: announce what it holds. The data stays on the Mac
+/// until an app in the guest pastes (the guest then issues `ClipboardRead`).
+public nonisolated struct Crosswind_Control_OfferClipboard: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// MIME types of the Mac clipboard (text/plain;charset=utf-8, image/png, text/html)
+  public var mimes: [String] = []
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -504,14 +528,50 @@ public nonisolated struct Crosswind_Control_Call: Sendable {
     set {body = .openURL(newValue)}
   }
 
+  public var clipboardRead: Crosswind_Control_ClipboardRead {
+    get {
+      if case .clipboardRead(let v)? = body {return v}
+      return Crosswind_Control_ClipboardRead()
+    }
+    set {body = .clipboardRead(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public nonisolated enum OneOf_Body: Equatable, Sendable {
     case fileChooser(Crosswind_Control_FileChooser)
     case notify(Crosswind_Control_Notify)
     case openURL(Crosswind_Control_OpenUrl)
+    case clipboardRead(Crosswind_Control_ClipboardRead)
 
   }
+
+  public init() {}
+}
+
+/// A guest app pastes: fetch this type from the Mac clipboard.
+public nonisolated struct Crosswind_Control_ClipboardRead: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var mime: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public nonisolated struct Crosswind_Control_ClipboardData: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var mime: String = String()
+
+  public var data: Data = Data()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 }
@@ -649,12 +709,21 @@ public nonisolated struct Crosswind_Control_CallReply: Sendable {
     set {result = .fileChooser(newValue)}
   }
 
+  public var clipboard: Crosswind_Control_ClipboardData {
+    get {
+      if case .clipboard(let v)? = result {return v}
+      return Crosswind_Control_ClipboardData()
+    }
+    set {result = .clipboard(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public nonisolated enum OneOf_Result: Equatable, Sendable {
     case error(Crosswind_Control_Error)
     case ok(Crosswind_Control_Ok)
     case fileChooser(Crosswind_Control_FileChooserResult)
+    case clipboard(Crosswind_Control_ClipboardData)
 
   }
 
@@ -913,6 +982,14 @@ public nonisolated struct Crosswind_Control_Event: Sendable {
     set {body = .log(newValue)}
   }
 
+  public var clipboardChanged: Crosswind_Control_ClipboardChanged {
+    get {
+      if case .clipboardChanged(let v)? = body {return v}
+      return Crosswind_Control_ClipboardChanged()
+    }
+    set {body = .clipboardChanged(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public nonisolated enum OneOf_Body: Equatable, Sendable {
@@ -921,8 +998,22 @@ public nonisolated struct Crosswind_Control_Event: Sendable {
     case appStarted(Crosswind_Control_AppStarted)
     case appExited(Crosswind_Control_AppExited)
     case log(Crosswind_Control_LogLine)
+    case clipboardChanged(Crosswind_Control_ClipboardChanged)
 
   }
+
+  public init() {}
+}
+
+/// A guest app copied. Small items are sent eagerly (the user just pressed copy): text up to 1 MiB, images up to 16 MiB.
+public nonisolated struct Crosswind_Control_ClipboardChanged: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var items: [Crosswind_Control_ClipboardData] = []
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 }
@@ -1043,7 +1134,7 @@ fileprivate nonisolated let _protobuf_package = "crosswind.control"
 
 nonisolated extension Crosswind_Control_Request: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Request"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}hello\0\u{3}refresh_catalog\0\u{3}get_catalog\0\u{3}list_installed\0\u{1}install\0\u{1}uninstall\0\u{1}update\0\u{1}cancel\0\u{1}launch\0\u{1}stop\0\u{3}list_running\0\u{3}get_permissions\0\u{3}set_permissions\0\u{1}shutdown\0\u{3}set_appearance\0\u{3}call_reply\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}hello\0\u{3}refresh_catalog\0\u{3}get_catalog\0\u{3}list_installed\0\u{1}install\0\u{1}uninstall\0\u{1}update\0\u{1}cancel\0\u{1}launch\0\u{1}stop\0\u{3}list_running\0\u{3}get_permissions\0\u{3}set_permissions\0\u{1}shutdown\0\u{3}set_appearance\0\u{3}call_reply\0\u{3}offer_clipboard\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1260,6 +1351,19 @@ nonisolated extension Crosswind_Control_Request: SwiftProtobuf.Message, SwiftPro
           self.body = .callReply(v)
         }
       }()
+      case 18: try {
+        var v: Crosswind_Control_OfferClipboard?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .offerClipboard(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .offerClipboard(v)
+        }
+      }()
       default: break
       }
     }
@@ -1338,6 +1442,10 @@ nonisolated extension Crosswind_Control_Request: SwiftProtobuf.Message, SwiftPro
       guard case .callReply(let v)? = self.body else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 17)
     }()
+    case .offerClipboard?: try {
+      guard case .offerClipboard(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 18)
+    }()
     case nil: break
     }
     try unknownFields.traverse(visitor: &visitor)
@@ -1391,6 +1499,36 @@ nonisolated extension Crosswind_Control_Hello: SwiftProtobuf.Message, SwiftProto
     if lhs.timeZone != rhs.timeZone {return false}
     if lhs.locale != rhs.locale {return false}
     if lhs.darkMode != rhs.darkMode {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Crosswind_Control_OfferClipboard: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".OfferClipboard"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}mimes\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeRepeatedStringField(value: &self.mimes) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.mimes.isEmpty {
+      try visitor.visitRepeatedStringField(value: self.mimes, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Crosswind_Control_OfferClipboard, rhs: Crosswind_Control_OfferClipboard) -> Bool {
+    if lhs.mimes != rhs.mimes {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -1921,7 +2059,7 @@ nonisolated extension Crosswind_Control_Message: SwiftProtobuf.Message, SwiftPro
 
 nonisolated extension Crosswind_Control_Call: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Call"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{3}app_id\0\u{3}file_chooser\0\u{1}notify\0\u{3}open_url\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{3}app_id\0\u{3}file_chooser\0\u{1}notify\0\u{3}open_url\0\u{3}clipboard_read\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1970,6 +2108,19 @@ nonisolated extension Crosswind_Control_Call: SwiftProtobuf.Message, SwiftProtob
           self.body = .openURL(v)
         }
       }()
+      case 6: try {
+        var v: Crosswind_Control_ClipboardRead?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .clipboardRead(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .clipboardRead(v)
+        }
+      }()
       default: break
       }
     }
@@ -1999,6 +2150,10 @@ nonisolated extension Crosswind_Control_Call: SwiftProtobuf.Message, SwiftProtob
       guard case .openURL(let v)? = self.body else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 5)
     }()
+    case .clipboardRead?: try {
+      guard case .clipboardRead(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 6)
+    }()
     case nil: break
     }
     try unknownFields.traverse(visitor: &visitor)
@@ -2008,6 +2163,71 @@ nonisolated extension Crosswind_Control_Call: SwiftProtobuf.Message, SwiftProtob
     if lhs.id != rhs.id {return false}
     if lhs.appID != rhs.appID {return false}
     if lhs.body != rhs.body {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Crosswind_Control_ClipboardRead: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".ClipboardRead"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}mime\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.mime) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.mime.isEmpty {
+      try visitor.visitSingularStringField(value: self.mime, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Crosswind_Control_ClipboardRead, rhs: Crosswind_Control_ClipboardRead) -> Bool {
+    if lhs.mime != rhs.mime {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Crosswind_Control_ClipboardData: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".ClipboardData"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}mime\0\u{1}data\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.mime) }()
+      case 2: try { try decoder.decodeSingularBytesField(value: &self.data) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.mime.isEmpty {
+      try visitor.visitSingularStringField(value: self.mime, fieldNumber: 1)
+    }
+    if !self.data.isEmpty {
+      try visitor.visitSingularBytesField(value: self.data, fieldNumber: 2)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Crosswind_Control_ClipboardData, rhs: Crosswind_Control_ClipboardData) -> Bool {
+    if lhs.mime != rhs.mime {return false}
+    if lhs.data != rhs.data {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -2164,7 +2384,7 @@ nonisolated extension Crosswind_Control_OpenUrl: SwiftProtobuf.Message, SwiftPro
 
 nonisolated extension Crosswind_Control_CallReply: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".CallReply"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}error\0\u{1}ok\0\u{3}file_chooser\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}error\0\u{1}ok\0\u{3}file_chooser\0\u{1}clipboard\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -2212,6 +2432,19 @@ nonisolated extension Crosswind_Control_CallReply: SwiftProtobuf.Message, SwiftP
           self.result = .fileChooser(v)
         }
       }()
+      case 5: try {
+        var v: Crosswind_Control_ClipboardData?
+        var hadOneofValue = false
+        if let current = self.result {
+          hadOneofValue = true
+          if case .clipboard(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.result = .clipboard(v)
+        }
+      }()
       default: break
       }
     }
@@ -2237,6 +2470,10 @@ nonisolated extension Crosswind_Control_CallReply: SwiftProtobuf.Message, SwiftP
     case .fileChooser?: try {
       guard case .fileChooser(let v)? = self.result else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
+    }()
+    case .clipboard?: try {
+      guard case .clipboard(let v)? = self.result else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 5)
     }()
     case nil: break
     }
@@ -2709,7 +2946,7 @@ nonisolated extension Crosswind_Control_Operation: SwiftProtobuf.Message, SwiftP
 
 nonisolated extension Crosswind_Control_Event: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Event"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}progress\0\u{3}operation_done\0\u{3}app_started\0\u{3}app_exited\0\u{1}log\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}progress\0\u{3}operation_done\0\u{3}app_started\0\u{3}app_exited\0\u{1}log\0\u{3}clipboard_changed\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -2782,6 +3019,19 @@ nonisolated extension Crosswind_Control_Event: SwiftProtobuf.Message, SwiftProto
           self.body = .log(v)
         }
       }()
+      case 6: try {
+        var v: Crosswind_Control_ClipboardChanged?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .clipboardChanged(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .clipboardChanged(v)
+        }
+      }()
       default: break
       }
     }
@@ -2813,6 +3063,10 @@ nonisolated extension Crosswind_Control_Event: SwiftProtobuf.Message, SwiftProto
       guard case .log(let v)? = self.body else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 5)
     }()
+    case .clipboardChanged?: try {
+      guard case .clipboardChanged(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 6)
+    }()
     case nil: break
     }
     try unknownFields.traverse(visitor: &visitor)
@@ -2820,6 +3074,36 @@ nonisolated extension Crosswind_Control_Event: SwiftProtobuf.Message, SwiftProto
 
   public static func ==(lhs: Crosswind_Control_Event, rhs: Crosswind_Control_Event) -> Bool {
     if lhs.body != rhs.body {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Crosswind_Control_ClipboardChanged: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".ClipboardChanged"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}items\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeRepeatedMessageField(value: &self.items) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.items.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.items, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Crosswind_Control_ClipboardChanged, rhs: Crosswind_Control_ClipboardChanged) -> Bool {
+    if lhs.items != rhs.items {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

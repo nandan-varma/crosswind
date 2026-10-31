@@ -9,8 +9,9 @@ public enum ControlPort { public static let control: UInt32 = 5001 }
 @MainActor
 public final class GuestVM: NSObject {
     public struct Resources: Sendable {
-        public var cpuCount = max(2, ProcessInfo.processInfo.activeProcessorCount / 2)
-        public var memoryBytes: UInt64 = 4 << 30
+        /// Read from `Preferences` each time a VM is created, so changes apply at the next start.
+        public var cpuCount = Preferences.cpuCount
+        public var memoryBytes = UInt64(Preferences.memoryGiB) << 30
         public var dataDiskBytes: UInt64 = 64 << 30
         public init() {}
     }
@@ -59,6 +60,15 @@ public final class GuestVM: NSObject {
         }
         try await machine.start()
         Log.vm.info("vm started")
+    }
+
+    /// Balloons the guest down to `bytes` of usable memory (the guest returns the rest to the host), or back to the
+    /// configured size when nil. Only works while the VM runs; the balloon device is always configured.
+    public func setMemoryTarget(_ bytes: UInt64?) {
+        guard let balloon = machine?.memoryBalloonDevices.first as? VZVirtioTraditionalMemoryBalloonDevice else {
+            return
+        }
+        balloon.targetVirtualMemorySize = min(bytes ?? resources.memoryBytes, resources.memoryBytes)
     }
 
     public func stop() async throws {

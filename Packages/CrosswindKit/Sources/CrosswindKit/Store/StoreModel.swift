@@ -18,7 +18,6 @@ public final class StoreModel {
     public enum Phase: Equatable {
         case connecting
         case installingImage(Double)
-        case startingEnvironment
         case loadingCatalog
         case ready
         case failed(String)
@@ -55,19 +54,17 @@ public final class StoreModel {
 
     // MARK: Lifecycle
 
-    /// Connects, installs the guest image if needed, boots the environment and loads the catalog.
+    /// Connects, installs the guest image if needed and loads the catalog. The Linux environment is not booted
+    /// here: the agent starts it when a request needs it.
     public func start() async {
         do {
             let agent = try await AgentClient.connect(role: .store)
             self.agent = agent
             observe(agent)
             try await ensureImage()
-            phase = .startingEnvironment
-            _ = try await agent.command(.startVm(.init()))
             phase = .loadingCatalog
             await loadCatalog(agent)
             phase = .ready
-            await refreshInstalled()
             Task { await loadPopularity() }
         } catch {
             phase = .failed(error.localizedDescription)
@@ -85,12 +82,11 @@ public final class StoreModel {
 
     private func observe(_ agent: AgentClient) {
         Task { [weak self] in
-            for await state in agent.states { self?.environment = state }
-        }
-        Task { [weak self] in
-            for await event in agent.control.events {
-                guard case .appExited = event else { continue }
-                _ = self  // running state arrives through `environment.runningApps`
+            for await state in agent.states {
+                guard let self else { return }
+                let becameRunning = state.phase == .running && self.environment.phase != .running
+                self.environment = state
+                if becameRunning { await self.refreshInstalled() }
             }
         }
     }
@@ -99,9 +95,26 @@ public final class StoreModel {
 
     private var catalogFile: URL { cache.appending(path: "appstream.xml.gz") }
 
+    /// Shows the cached catalog at once. A cache older than a day is refreshed in the background; without a cache
+    /// the refresh is awaited, since the guest must boot for it.
     private func loadCatalog(_ agent: AgentClient) async {
-        if let data = try? Data(contentsOf: catalogFile) { await parse(data) }
-        // Refresh from Flathub through the guest (signature-verified), then re-read.
+        let cached = try? Data(contentsOf: catalogFile)
+        if let cached { await parse(cached) }
+        guard cached == nil || catalogIsStale else { return }
+        if cached == nil {
+            await refreshCatalog(agent)
+        } else {
+            Task { await self.refreshCatalog(agent) }
+        }
+    }
+
+    private var catalogIsStale: Bool {
+        let modified = (try? FileManager.default.attributesOfItem(atPath: catalogFile.path)[.modificationDate]) as? Date
+        return Date().timeIntervalSince(modified ?? .distantPast) > 24 * 60 * 60
+    }
+
+    /// Refreshes from Flathub through the guest (signature-verified), then re-reads.
+    private func refreshCatalog(_ agent: AgentClient) async {
         do {
             try await agent.control.refreshCatalog()
             let data = try await agent.control.catalog()
@@ -231,6 +244,20 @@ public final class StoreModel {
             operations[appID] = AppOperation(kind: kind, fraction: 0, detail: "", failure: error.localizedDescription)
         }
         await refreshInstalled()
+    }
+
+    /// Restarts the Linux environment so changed resource settings apply.
+    public func restartEnvironment() async throws {
+        _ = try await agent?.command(.restartVm(.init()))
+    }
+
+    /// Stops the environment and deletes its data disk, then removes the stubs of every app it had. Nothing is
+    /// installed afterwards.
+    public func resetEnvironment() async throws {
+        _ = try await agent?.command(.resetEnvironment(.init()))
+        for appID in Set(installed.keys).union(stubs.installedAppIDs()) { try? stubs.remove(appID: appID) }
+        installed = [:]
+        operations = [:]
     }
 
     public func refreshInstalled() async {
