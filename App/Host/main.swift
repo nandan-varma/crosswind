@@ -9,12 +9,17 @@ final class HostDelegate: NSObject, NSApplicationDelegate {
     private let session = GuestSession(paths: .standard)
     private var core: AgentCore?
     private var endpoint: AgentEndpoint?
+    private var appearanceObservation: NSKeyValueObservation?
     private var statusItem: StatusItemController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let core = AgentCore(
             session: session, output: Self.mainScreenOutput, openURL: { NSWorkspace.shared.open($0) })
+        core.isDarkMode = { NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua }
         self.core = core
+        appearanceObservation = NSApp.observe(\.effectiveAppearance) { _, _ in
+            Task { @MainActor in core.appearanceChanged() }
+        }
         statusItem = StatusItemController(session: session)
         let endpoint = AgentEndpoint { connection, role, appID in
             Task { @MainActor in core.accept(connection, role: role, appID: appID) }

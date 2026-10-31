@@ -230,8 +230,18 @@ public final class AgentCore {
         try await session.ensureRunning()
     }
 
+    /// The Mac's appearance, reported to the guest so apps follow light/dark mode. Set by the host app.
+    public var isDarkMode: () -> Bool = { false }
+
+    /// Tells the guest the Mac's appearance changed.
+    public func appearanceChanged() {
+        guard controlToGuest != nil else { return }
+        Task { _ = try? await request(.setAppearance(.with { $0.darkMode = isDarkMode() })) }
+    }
+
     private func greetGuest() async throws {
         let hello = Crosswind_Control_Hello.with {
+            $0.darkMode = isDarkMode()
             $0.unixTimeMs = Int64(Date().timeIntervalSince1970 * 1000)
             $0.timeZone = TimeZone.current.identifier
             $0.locale = Locale.current.identifier + ".UTF-8"

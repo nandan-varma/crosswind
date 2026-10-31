@@ -175,7 +175,7 @@ struct StoreModelQueryTests {
                 installed("no.such.App", "Ghost")
             ))
 
-        #expect(model.installedApps.map(\.id) == [Self.darktable, Self.jan])
+        #expect(model.installedApps.map(\.id) == [Self.jan, Self.darktable])
     }
 
     @Test("updatableApps lists only installed apps with an update, sorted")
@@ -190,6 +190,6 @@ struct StoreModelQueryTests {
                 installed(Self.eduk, "eduK")
             ))
 
-        #expect(model.updatableApps == [Self.darktable, Self.jan])
+        #expect(model.updatableApps == [Self.jan, Self.darktable])
     }
 }

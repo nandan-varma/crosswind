@@ -3,6 +3,7 @@
 // and Launchpad/Spotlight presence, and hosts the app's native windows. `CrosswindAppID` in Info.plist names the app.
 import AppKit
 import CrosswindKit
+import UserNotifications
 
 /// AppKit does not deliver `keyUp` to the first responder while Command is held; guest apps need the release.
 final class StubApplication: NSApplication {
@@ -29,6 +30,7 @@ final class StubDelegate: NSObject, NSApplicationDelegate {
                 server = DisplayServer(
                     messages: client.display, send: { message in Task { await client.send(display: message) } })
                 watchForExit(client)
+                answerCalls(client)
                 _ = try await client.command(.launchApp(.with { $0.appID = appID }))
             } catch {
                 present(error)
@@ -44,6 +46,35 @@ final class StubDelegate: NSObject, NSApplicationDelegate {
             }
             await NSApp.terminate(nil)  // the agent went away
         }
+    }
+
+    /// Requests the guest makes of the host for this app: notifications now, file dialogs later.
+    private func answerCalls(_ client: AgentClient) {
+        Task {
+            for await call in client.control.calls {
+                switch call.body {
+                case .notify(let notify)?:
+                    await post(notify)
+                    await client.control.reply(to: call, .ok(.init()))
+                default:
+                    await client.control.reply(to: call, .error(.with { $0.message = "not supported yet" }))
+                }
+            }
+        }
+    }
+
+    private func post(_ notify: Crosswind_Control_Notify) async {
+        let center = UNUserNotificationCenter.current()
+        if notify.withdraw {
+            center.removeDeliveredNotifications(withIdentifiers: [notify.notificationID])
+            return
+        }
+        guard (try? await center.requestAuthorization(options: [.alert, .sound])) == true else { return }
+        let content = UNMutableNotificationContent()
+        content.title = notify.title
+        content.body = notify.body
+        let request = UNNotificationRequest(identifier: notify.notificationID, content: content, trigger: nil)
+        try? await center.add(request)
     }
 
     private func present(_ error: Error) {
