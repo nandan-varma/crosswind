@@ -1,1 +1,28 @@
-{"apps":{}}
+{
+  "apps": {
+    "com.vscodium.codium": {
+      "guestImageVersion": "dev-1793486068",
+      "note": "no window within 90.0 seconds",
+      "status": "broken",
+      "testedAt": "2026-10-31T23:38:00Z"
+    },
+    "org.gnome.Calculator": {
+      "guestImageVersion": "dev-1793486068",
+      "note": "",
+      "status": "works",
+      "testedAt": "2026-10-31T23:35:19Z"
+    },
+    "org.gnome.TextEditor": {
+      "guestImageVersion": "dev-1793486068",
+      "note": "did not exit within 10 s of a close request; stopping it",
+      "status": "caveats",
+      "testedAt": "2026-10-31T23:35:34Z"
+    },
+    "org.gnome.clocks": {
+      "guestImageVersion": "dev-1793486068",
+      "note": "did not exit within 10 s of a close request; stopping it",
+      "status": "caveats",
+      "testedAt": "2026-10-31T23:35:52Z"
+    }
+  }
+}

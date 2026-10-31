@@ -1,0 +1,162 @@
+{
+  "apps": [
+    {
+      "appID": "com.vscodium.codium",
+      "appVersion": "1.140.06880",
+      "arch": "aarch64",
+      "checks": {
+        "cleanExit": "skipped",
+        "inputWorks": "skipped",
+        "needsX11": false,
+        "noCrash": "fail",
+        "renders": "skipped",
+        "windowAppears": "fail"
+      },
+      "guestImageVersion": "dev-1793486068",
+      "name": "VSCodium",
+      "notes": [
+        "no window within 90.0 seconds",
+        "[com.vscodium.codium] F: Can't get document portal: GDBus.Error:org.freedesktop.portal.Error.Failed: Can't mount path /run/crosswind/doc",
+        "[com.vscodium.codium] com.vscodium.codium-wrapper: Setting up NPM packages",
+        "[com.vscodium.codium] com.vscodium.codium-wrapper: Setting up Cargo packages",
+        "[com.vscodium.codium] com.vscodium.codium-wrapper: Setting up Python packages",
+        "[com.vscodium.codium] com.vscodium.codium-wrapper: 'ruby' is not available"
+      ],
+      "status": "broken",
+      "testedAt": "2026-10-31T23:38:00Z"
+    },
+    {
+      "appID": "org.gnome.Calculator",
+      "appVersion": "51.1",
+      "arch": "aarch64",
+      "checks": {
+        "cleanExit": "pass",
+        "inputWorks": "pass",
+        "needsX11": false,
+        "noCrash": "pass",
+        "renders": "pass",
+        "windowAppears": "pass"
+      },
+      "guestImageVersion": "dev-1793486068",
+      "name": "Calculator",
+      "notes": [],
+      "screenshot": "screenshots/org.gnome.Calculator.png",
+      "status": "works",
+      "testedAt": "2026-10-31T23:35:19Z"
+    },
+    {
+      "appID": "org.gnome.TextEditor",
+      "appVersion": "51.0",
+      "arch": "aarch64",
+      "checks": {
+        "cleanExit": "fail",
+        "inputWorks": "pass",
+        "needsX11": false,
+        "noCrash": "pass",
+        "renders": "pass",
+        "windowAppears": "pass"
+      },
+      "guestImageVersion": "dev-1793486068",
+      "name": "Text Editor",
+      "notes": [
+        "did not exit within 10 s of a close request; stopping it",
+        "needed SIGTERM (exit 143)",
+        "[org.gnome.TextEditor] F: Can't get document portal: GDBus.Error:org.freedesktop.DBus.Error.NoReply: Message recipient disconnected from message bus without replying",
+        "[org.gnome.TextEditor] ",
+        "[org.gnome.TextEditor] (gnome-text-editor:2): Gdk-WARNING **: 16:35:21.501: Failed to read portal settings: GDBus.Error:org.freedesktop.DBus.Error.UnknownMethod: No such interface \u201corg.freedesktop.portal.Settings\u201d on object at path /org/freedesktop/portal/desktop",
+        "[org.gnome.TextEditor] ",
+        "[org.gnome.TextEditor] (gnome-text-editor:2): Gtk-WARNING **: 16:35:21.533: Creating a portal monitor failed: GDBus.Error:org.freedesktop.DBus.Error.UnknownMethod: No such interface \u201corg.freedesktop.portal.Inhibit\u201d on object at path /org/freedesktop/portal/desktop",
+        "[org.gnome.TextEditor] MESA-EGL: warning: failed to get driver name for fd -1",
+        "[org.gnome.TextEditor] MESA-EGL: warning: MESA-LOADER: failed to retrieve device information",
+        "[org.gnome.TextEditor] MESA-EGL: warning: failed to get driver name for fd -1",
+        "[org.gnome.TextEditor] MESA: error: ZINK: failed to choose pdev",
+        "[org.gnome.TextEditor] MESA-EGL: warning: egl: failed to create dri2 screen",
+        "[org.gnome.TextEditor] ",
+        "[org.gnome.TextEditor] (gnome-text-editor:2): Gtk-WARNING **: 16:35:24.241: Calling org.freedesktop.portal.Inhibit.Inhibit failed: GDBus.Error:org.freedesktop.DBus.Error.UnknownMethod: No such interface \u201corg.freedesktop.portal.Inhibit\u201d on object at path /org/freedesktop/portal/desktop",
+        "[org.gnome.TextEditor] ",
+        "[org.gnome.TextEditor] (gnome-text-editor:2): GLib-GIO-CRITICAL **: 16:35:24.498: g_file_new_for_path: assertion 'path != NULL' failed",
+        "[org.gnome.TextEditor] ",
+        "[org.gnome.TextEditor] (gnome-text-editor:2): editor-document-WARNING **: 16:35:24.498: Your system has an improperly configured XDG_DOCUMENTS_DIR. Using $HOME instead."
+      ],
+      "screenshot": "screenshots/org.gnome.TextEditor.png",
+      "status": "caveats",
+      "testedAt": "2026-10-31T23:35:34Z"
+    },
+    {
+      "appID": "org.gnome.clocks",
+      "appVersion": "51.0",
+      "arch": "aarch64",
+      "checks": {
+        "cleanExit": "fail",
+        "inputWorks": "pass",
+        "needsX11": false,
+        "noCrash": "pass",
+        "renders": "pass",
+        "windowAppears": "pass"
+      },
+      "guestImageVersion": "dev-1793486068",
+      "name": "Clocks",
+      "notes": [
+        "did not exit within 10 s of a close request; stopping it",
+        "needed SIGTERM (exit 143)",
+        "[org.gnome.clocks] F: Can't get document portal: GDBus.Error:org.freedesktop.portal.Error.Failed: Can't mount path /run/crosswind/doc",
+        "[org.gnome.clocks] ",
+        "[org.gnome.clocks] (org.gnome.clocks:2): Gdk-WARNING **: 16:35:39.389: Failed to read portal settings: GDBus.Error:org.freedesktop.DBus.Error.UnknownMethod: No such interface \u201corg.freedesktop.portal.Settings\u201d on object at path /org/freedesktop/portal/desktop",
+        "[org.gnome.clocks] ",
+        "[org.gnome.clocks] ** (org.gnome.clocks:2): WARNING **: 16:35:39.420: utils.vala:147: Failed to get clock format from portal, fallback to GSettings.",
+        "[org.gnome.clocks] MESA-EGL: warning: failed to get driver name for fd -1",
+        "[org.gnome.clocks] MESA-EGL: warning: MESA-LOADER: failed to retrieve device information",
+        "[org.gnome.clocks] MESA-EGL: warning: failed to get driver name for fd -1",
+        "[org.gnome.clocks] MESA: error: ZINK: failed to choose pdev",
+        "[org.gnome.clocks] MESA-EGL: warning: egl: failed to create dri2 screen",
+        "[org.gnome.clocks] ",
+        "[org.gnome.clocks] (org.gnome.clocks:2): Gtk-WARNING **: 16:35:39.514: Creating a portal monitor failed: GDBus.Error:org.freedesktop.DBus.Error.UnknownMethod: No such interface \u201corg.freedesktop.portal.Inhibit\u201d on object at path /org/freedesktop/portal/desktop",
+        "[org.gnome.clocks] ",
+        "[org.gnome.clocks] (org.gnome.clocks:2): org.gnome.Clocks-WARNING **: 16:35:39.960: geocoding.vala:42: Failed to connect to GeoClue2 service: GDBus.Error:org.freedesktop.DBus.Error.UnknownMethod: No such interface \u201corg.freedesktop.portal.Location\u201d on object at path /org/freedesktop/portal/desktop"
+      ],
+      "screenshot": "screenshots/org.gnome.clocks.png",
+      "status": "caveats",
+      "testedAt": "2026-10-31T23:35:52Z"
+    },
+    {
+      "appID": "org.kde.kate",
+      "appVersion": "",
+      "arch": "aarch64",
+      "checks": {
+        "cleanExit": "skipped",
+        "inputWorks": "skipped",
+        "needsX11": false,
+        "noCrash": "skipped",
+        "renders": "skipped",
+        "windowAppears": "skipped"
+      },
+      "guestImageVersion": "dev-1793486068",
+      "name": "org.kde.kate",
+      "notes": [
+        "Not run: the catalog lists this app as org.kde.kcalc.desktop, which the first harness build did not match. Fixed in the harness; rerun needed."
+      ],
+      "status": "untested",
+      "testedAt": "2026-10-31T23:35:52Z"
+    },
+    {
+      "appID": "org.kde.kcalc",
+      "appVersion": "",
+      "arch": "aarch64",
+      "checks": {
+        "cleanExit": "skipped",
+        "inputWorks": "skipped",
+        "needsX11": false,
+        "noCrash": "skipped",
+        "renders": "skipped",
+        "windowAppears": "skipped"
+      },
+      "guestImageVersion": "dev-1793486068",
+      "name": "org.kde.kcalc",
+      "notes": [
+        "Not run: the catalog lists this app as org.kde.kcalc.desktop, which the first harness build did not match. Fixed in the harness; rerun needed."
+      ],
+      "status": "untested",
+      "testedAt": "2026-10-31T23:35:52Z"
+    }
+  ]
+}

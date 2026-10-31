@@ -53,7 +53,15 @@ public enum CompatHarness {
     ) async throws -> [CompatRecord] {
         let catalog = try AppStreamParser.parse(gzipped: try await control.control.catalog())
         guard !catalog.isEmpty else { throw HarnessError.emptyCatalog }
-        let apps = Dictionary(catalog.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        // AppStream ids of some apps carry a ".desktop" suffix (org.kde.kcalc.desktop); Flatpak ids do not.
+        var apps: [String: CatalogApp] = [:]
+        for app in catalog {
+            apps[app.id] = apps[app.id] ?? app
+            if app.id.hasSuffix(".desktop") {
+                let flatpakID = String(app.id.dropLast(".desktop".count))
+                apps[flatpakID] = apps[flatpakID] ?? app
+            }
+        }
 
         let events = EventLog()
         let pump = Task { for await event in control.control.events { await events.record(event) } }
