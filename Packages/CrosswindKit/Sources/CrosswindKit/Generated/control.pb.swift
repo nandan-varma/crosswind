@@ -423,29 +423,57 @@ public nonisolated struct Crosswind_Control_Shutdown: Sendable {
 }
 
 /// Effective Flatpak permissions in a form the UI can edit. `flatpak override --user` stores the delta.
-public nonisolated struct Crosswind_Control_Permissions: Sendable {
+public nonisolated struct Crosswind_Control_Permissions: @unchecked Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// x11, wayland, pulseaudio, fallback-x11, ...
-  public var sockets: [String] = []
+  public var sockets: [String] {
+    get {_storage._sockets}
+    set {_uniqueStorage()._sockets = newValue}
+  }
 
   /// dri, all, kvm, ...
-  public var devices: [String] = []
+  public var devices: [String] {
+    get {_storage._devices}
+    set {_uniqueStorage()._devices = newValue}
+  }
 
   /// network, ipc
-  public var shared: [String] = []
+  public var shared: [String] {
+    get {_storage._shared}
+    set {_uniqueStorage()._shared = newValue}
+  }
 
   /// host, home, xdg-documents:ro, ...
-  public var filesystems: [String] = []
+  public var filesystems: [String] {
+    get {_storage._filesystems}
+    set {_uniqueStorage()._filesystems = newValue}
+  }
 
   /// bluetooth, devel, ...
-  public var features: [String] = []
+  public var features: [String] {
+    get {_storage._features}
+    set {_uniqueStorage()._features = newValue}
+  }
+
+  /// Only in GetPermissions responses: the same lists as the app's manifest, before any user override.
+  /// Entries present in `permissions` but not here were added by the user; entries here but absent were removed.
+  public var defaults: Crosswind_Control_Permissions {
+    get {_storage._defaults ?? Crosswind_Control_Permissions()}
+    set {_uniqueStorage()._defaults = newValue}
+  }
+  /// Returns true if `defaults` has been explicitly set.
+  public var hasDefaults: Bool {_storage._defaults != nil}
+  /// Clears the value of `defaults`. Subsequent reads from it will return its default value.
+  public mutating func clearDefaults() {_uniqueStorage()._defaults = nil}
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
+
+  fileprivate var _storage = _StorageClass.defaultInstance
 }
 
 public nonisolated struct Crosswind_Control_Message: Sendable {
@@ -1925,49 +1953,104 @@ nonisolated extension Crosswind_Control_Shutdown: SwiftProtobuf.Message, SwiftPr
 
 nonisolated extension Crosswind_Control_Permissions: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Permissions"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}sockets\0\u{1}devices\0\u{1}shared\0\u{1}filesystems\0\u{1}features\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}sockets\0\u{1}devices\0\u{1}shared\0\u{1}filesystems\0\u{1}features\0\u{1}defaults\0")
+
+  fileprivate class _StorageClass {
+    var _sockets: [String] = []
+    var _devices: [String] = []
+    var _shared: [String] = []
+    var _filesystems: [String] = []
+    var _features: [String] = []
+    var _defaults: Crosswind_Control_Permissions? = nil
+
+      // This property is used as the initial default value for new instances of the type.
+      // The type itself is protecting the reference to its storage via CoW semantics.
+      // This will force a copy to be made of this reference when the first mutation occurs;
+      // hence, it is safe to mark this as `nonisolated(unsafe)`.
+      static nonisolated(unsafe) let defaultInstance = _StorageClass()
+
+    private init() {}
+
+    init(copying source: _StorageClass) {
+      _sockets = source._sockets
+      _devices = source._devices
+      _shared = source._shared
+      _filesystems = source._filesystems
+      _features = source._features
+      _defaults = source._defaults
+    }
+  }
+
+  fileprivate mutating func _uniqueStorage() -> _StorageClass {
+    if !isKnownUniquelyReferenced(&_storage) {
+      _storage = _StorageClass(copying: _storage)
+    }
+    return _storage
+  }
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
-    while let fieldNumber = try decoder.nextFieldNumber() {
-      // The use of inline closures is to circumvent an issue where the compiler
-      // allocates stack space for every case branch when no optimizations are
-      // enabled. https://github.com/apple/swift-protobuf/issues/1034
-      switch fieldNumber {
-      case 1: try { try decoder.decodeRepeatedStringField(value: &self.sockets) }()
-      case 2: try { try decoder.decodeRepeatedStringField(value: &self.devices) }()
-      case 3: try { try decoder.decodeRepeatedStringField(value: &self.shared) }()
-      case 4: try { try decoder.decodeRepeatedStringField(value: &self.filesystems) }()
-      case 5: try { try decoder.decodeRepeatedStringField(value: &self.features) }()
-      default: break
+    _ = _uniqueStorage()
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      while let fieldNumber = try decoder.nextFieldNumber() {
+        // The use of inline closures is to circumvent an issue where the compiler
+        // allocates stack space for every case branch when no optimizations are
+        // enabled. https://github.com/apple/swift-protobuf/issues/1034
+        switch fieldNumber {
+        case 1: try { try decoder.decodeRepeatedStringField(value: &_storage._sockets) }()
+        case 2: try { try decoder.decodeRepeatedStringField(value: &_storage._devices) }()
+        case 3: try { try decoder.decodeRepeatedStringField(value: &_storage._shared) }()
+        case 4: try { try decoder.decodeRepeatedStringField(value: &_storage._filesystems) }()
+        case 5: try { try decoder.decodeRepeatedStringField(value: &_storage._features) }()
+        case 6: try { try decoder.decodeSingularMessageField(value: &_storage._defaults) }()
+        default: break
+        }
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if !self.sockets.isEmpty {
-      try visitor.visitRepeatedStringField(value: self.sockets, fieldNumber: 1)
-    }
-    if !self.devices.isEmpty {
-      try visitor.visitRepeatedStringField(value: self.devices, fieldNumber: 2)
-    }
-    if !self.shared.isEmpty {
-      try visitor.visitRepeatedStringField(value: self.shared, fieldNumber: 3)
-    }
-    if !self.filesystems.isEmpty {
-      try visitor.visitRepeatedStringField(value: self.filesystems, fieldNumber: 4)
-    }
-    if !self.features.isEmpty {
-      try visitor.visitRepeatedStringField(value: self.features, fieldNumber: 5)
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every if/case branch local when no optimizations
+      // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+      // https://github.com/apple/swift-protobuf/issues/1182
+      if !_storage._sockets.isEmpty {
+        try visitor.visitRepeatedStringField(value: _storage._sockets, fieldNumber: 1)
+      }
+      if !_storage._devices.isEmpty {
+        try visitor.visitRepeatedStringField(value: _storage._devices, fieldNumber: 2)
+      }
+      if !_storage._shared.isEmpty {
+        try visitor.visitRepeatedStringField(value: _storage._shared, fieldNumber: 3)
+      }
+      if !_storage._filesystems.isEmpty {
+        try visitor.visitRepeatedStringField(value: _storage._filesystems, fieldNumber: 4)
+      }
+      if !_storage._features.isEmpty {
+        try visitor.visitRepeatedStringField(value: _storage._features, fieldNumber: 5)
+      }
+      try { if let v = _storage._defaults {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 6)
+      } }()
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Crosswind_Control_Permissions, rhs: Crosswind_Control_Permissions) -> Bool {
-    if lhs.sockets != rhs.sockets {return false}
-    if lhs.devices != rhs.devices {return false}
-    if lhs.shared != rhs.shared {return false}
-    if lhs.filesystems != rhs.filesystems {return false}
-    if lhs.features != rhs.features {return false}
+    if lhs._storage !== rhs._storage {
+      let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
+        let _storage = _args.0
+        let rhs_storage = _args.1
+        if _storage._sockets != rhs_storage._sockets {return false}
+        if _storage._devices != rhs_storage._devices {return false}
+        if _storage._shared != rhs_storage._shared {return false}
+        if _storage._filesystems != rhs_storage._filesystems {return false}
+        if _storage._features != rhs_storage._features {return false}
+        if _storage._defaults != rhs_storage._defaults {return false}
+        return true
+      }
+      if !storagesAreEqual {return false}
+    }
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

@@ -16,21 +16,37 @@ final class GuestWindow: NSObject, NSWindowDelegate {
     private(set) var window: NSWindow?
     private var buffers: [IOSurface] = []
     private var frontIndex = 0
-    private var previousDamage: [(x: UInt32, y: UInt32, width: UInt32, height: UInt32)] = []
+    private var previousDamage: [DamageRect] = []
     private var scale: CGFloat = 1
     private var popupOffset: CGPoint = .zero
     private weak var parent: GuestWindow?
     private var pendingAck: UInt64?
     private var displayLink: CADisplayLink?
     private var guestDrivenResize = false
+    private var limits: WindowPolicy.SizeLimits
+    private let autosaveName: String
 
     var send: ((ToGuest.OneOf_Msg) -> Void)?
+    /// Called when this window loses key status (the DisplayServer dismisses the popups it owns).
+    var onResignKey: (() -> Void)?
 
-    init(opened: Opened, parent: GuestWindow?) {
+    var parentID: UInt32? { parent?.id }
+
+    /// Asks the guest to dismiss this popup (the guest answers with xdg popup_done and then closes it).
+    func requestDismiss() {
+        send?(.close(.with { $0.window = id }))
+    }
+
+    /// `index` numbers the app's main windows in opening order and keys the saved frame (see `WindowPolicy`).
+    init(opened: Opened, parent: GuestWindow?, index: Int) {
         id = opened.id
         kind = opened.kind
         self.parent = parent
         popupOffset = CGPoint(x: Int(opened.x), y: Int(opened.y))
+        limits = WindowPolicy.SizeLimits(
+            minWidth: opened.minWidth, minHeight: opened.minHeight, maxWidth: opened.maxWidth,
+            maxHeight: opened.maxHeight)
+        autosaveName = WindowPolicy.autosaveName(appID: opened.appID, index: index)
         super.init()
         view.onInput = { [weak self] event in
             guard let self else { return }
@@ -43,8 +59,30 @@ final class GuestWindow: NSObject, NSWindowDelegate {
         }
     }
 
+    /// Applies a guest request. State changes go through the native verbs, and each one triggers `configure()`
+    /// only when the window actually changes, so a round trip settles without looping.
     func update(_ changed: Crosswind_Display_WindowChanged) {
         if changed.hasTitle { window?.title = changed.title }
+        if changed.hasMinWidth || changed.hasMinHeight || changed.hasMaxWidth || changed.hasMaxHeight {
+            limits = WindowPolicy.SizeLimits(
+                minWidth: changed.hasMinWidth ? changed.minWidth : limits.minWidth,
+                minHeight: changed.hasMinHeight ? changed.minHeight : limits.minHeight,
+                maxWidth: changed.hasMaxWidth ? changed.maxWidth : limits.maxWidth,
+                maxHeight: changed.hasMaxHeight ? changed.maxHeight : limits.maxHeight)
+            if kind == .toplevel, let window { WindowPlacement.apply(limits, to: window) }
+        }
+        guard kind == .toplevel, let window else { return }
+        if changed.hasMaximized, !limits.isFixed, window.isZoomed != changed.maximized { window.zoom(nil) }
+        if changed.hasFullscreen, window.styleMask.contains(.fullScreen) != changed.fullscreen {
+            window.toggleFullScreen(nil)
+        }
+        if changed.hasMinimized {
+            if changed.minimized, !window.isMiniaturized {
+                window.miniaturize(nil)
+            } else if !changed.minimized, window.isMiniaturized {
+                window.deminiaturize(nil)
+            }
+        }
     }
 
     // MARK: Frames
@@ -84,9 +122,9 @@ final class GuestWindow: NSObject, NSWindowDelegate {
                 memcpy(back.baseAddress + offset, front.baseAddress + offset, Int(rect.width) * 4)
             }
         }
-        var applied: [(x: UInt32, y: UInt32, width: UInt32, height: UInt32)] = []
+        var applied: [DamageRect] = []
         for rect in frame.damage where Self.decode(rect, into: back.baseAddress, stride: stride) {
-            applied.append((x: rect.x, y: rect.y, width: rect.width, height: rect.height))
+            applied.append(rect)
         }
         back.unlock(options: [], seed: nil)
         front.unlock(options: .readOnly, seed: nil)
@@ -113,7 +151,9 @@ final class GuestWindow: NSObject, NSWindowDelegate {
     @discardableResult
     private static func decode(_ rect: DamageRect, into base: UnsafeMutableRawPointer, stride: Int) -> Bool {
         guard let packed = RectCodec.unpack(width: rect.width, height: rect.height, pixels: rect.pixels) else {
-            if DisplayLimits.violationLog.allow() { Log.display.warning("damage rect refused: payload does not decode") }
+            if DisplayLimits.violationLog.allow() {
+                Log.display.warning("damage rect refused: payload does not decode")
+            }
             return false
         }
         let w = Int(rect.width)
@@ -166,8 +206,11 @@ final class GuestWindow: NSObject, NSWindowDelegate {
                 contentRect: frame, styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered,
                 defer: false)
             window.title = title
+            window.representedURL = nil
             window.tabbingMode = .disallowed
             window.collectionBehavior = [.fullScreenPrimary]
+            // The app's frame is restored by our autosave name, not by AppKit's state restoration.
+            window.isRestorable = false
         }
         window.isReleasedWhenClosed = false
         window.delegate = self
@@ -176,14 +219,12 @@ final class GuestWindow: NSObject, NSWindowDelegate {
         self.window = window
 
         if kind == .popup, let parentWindow = parent?.window {
-            let content = parentWindow.contentLayoutRect
-            let topLeft = parentWindow.convertToScreen(NSRect(x: content.minX, y: content.maxY, width: 0, height: 0))
-                .origin
-            window.setFrameOrigin(NSPoint(x: topLeft.x + popupOffset.x, y: topLeft.y - popupOffset.y - size.height))
+            WindowPlacement.popup(window, size: size, offset: popupOffset, parentWindow: parentWindow)
             parentWindow.addChildWindow(window, ordered: .above)
             window.orderFront(nil)
         } else {
-            window.center()
+            WindowPlacement.main(window, size: size, autosaveName: autosaveName)
+            WindowPlacement.apply(limits, to: window)
             window.makeKeyAndOrderFront(nil)
         }
     }
@@ -217,7 +258,12 @@ final class GuestWindow: NSObject, NSWindowDelegate {
 
     func windowDidResize(_ notification: Notification) { configure() }
     func windowDidBecomeKey(_ notification: Notification) { configure() }
-    func windowDidResignKey(_ notification: Notification) { configure() }
+    func windowDidResignKey(_ notification: Notification) {
+        configure()
+        onResignKey?()
+    }
+    /// The window moved to a display with another backing scale: the guest re-renders at the new scale.
+    func windowDidChangeBackingProperties(_ notification: Notification) { configure() }
     func windowDidEnterFullScreen(_ notification: Notification) { configure() }
     func windowDidExitFullScreen(_ notification: Notification) { configure() }
 

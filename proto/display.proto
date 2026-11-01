@@ -16,7 +16,15 @@ message ToHost {
     WindowClosed closed = 3;
     Frame frame = 4;
     Cursor cursor = 5;
+    TextInputState text_input_state = 6;
   }
+}
+
+// The client of `window` enabled (true) or disabled (false) text input (zwp_text_input_v3). While enabled, the
+// host routes keys through the macOS input method and sends the results back as ToGuest.text_input.
+message TextInputState {
+  uint32 window = 1;
+  bool enabled = 2;
 }
 
 enum WindowKind {
@@ -99,7 +107,41 @@ message ToGuest {
     Input input = 3;
     CloseRequest close = 4;
     Output output = 5;
+    KeyboardLayout keyboard_layout = 6;
+    TextInput text_input = 7;
   }
+}
+
+// Result of host-side composition for the focused text input of `window`. Applied in the order delete_surrounding,
+// commit, preedit, then the guest sends `done`.
+message TextInput {
+  uint32 window = 1;
+  optional TextDeleteSurrounding delete_surrounding = 2;
+  optional TextCommit commit = 3;
+  optional TextPreedit preedit = 4;
+}
+
+message TextDeleteSurrounding {
+  uint32 before = 1;  // bytes before the cursor
+  uint32 after = 2;   // bytes after the cursor
+}
+
+message TextCommit {
+  string text = 1;
+}
+
+// Empty text clears the preedit. Cursor offsets are UTF-8 byte offsets into text.
+message TextPreedit {
+  string text = 1;
+  int32 cursor_begin = 2;
+  int32 cursor_end = 3;
+}
+
+// The host's current keyboard layout as XKB names. The guest rebuilds the seat keymap from it; key codes stay
+// physical (evdev), so the resulting characters follow the layout. Empty layout = "us".
+message KeyboardLayout {
+  string layout = 1;   // XKB layout, for example "de" or "us"
+  string variant = 2;  // XKB variant, for example "dvorak" or "fr"; may be empty
 }
 
 // Describes the host display the guest should present itself on.

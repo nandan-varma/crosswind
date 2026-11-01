@@ -30,10 +30,22 @@ enum EdgeValues {
     static let scales: [UInt32] = [0, 1, 59, 60, 120, 240, 960, 961, UInt32.max]
 }
 
+/// One damage rect as the guest would send it: position, size and compressed payload length.
+struct RectSpec {
+    var x: UInt32
+    var y: UInt32
+    var w: UInt32
+    var h: UInt32
+    var bytes: Int
+}
+
+/// A uniformly random value, or one of the edge values half the time.
+func biased(_ edges: [UInt32], max: UInt32, _ rng: inout SplitMix64) -> UInt32 {
+    Bool.random(using: &rng) ? edges.randomElement(using: &rng)! : UInt32.random(in: 0...max, using: &rng)
+}
+
 /// Builds a display frame from raw numbers, for fuzzing `DisplayLimits.checkFrame`.
-func makeFrame(
-    width: UInt32, height: UInt32, scale: UInt32, rects: [(x: UInt32, y: UInt32, w: UInt32, h: UInt32, bytes: Int)]
-) -> Crosswind_Display_Frame {
+func makeFrame(width: UInt32, height: UInt32, scale: UInt32, rects: [RectSpec]) -> Crosswind_Display_Frame {
     .with {
         $0.window = 1
         $0.width = width

@@ -300,7 +300,10 @@ pub fn get_permissions(app_id: &str) -> Result<pb::Permissions, String> {
     let over = glib::KeyFile::new();
     let text = inst.load_app_overrides(app_id, None::<&gio::Cancellable>).map_err(s)?;
     over.load_from_data(&text, glib::KeyFileFlags::NONE).map_err(s)?;
-    Ok(effective(&base, &over))
+    let mut out = effective(&base, &over);
+    // The manifest defaults are the metadata without any override.
+    out.defaults = Some(Box::new(effective(&base, &glib::KeyFile::new())));
+    Ok(out)
 }
 
 pub fn set_permissions(app_id: &str, want: &pb::Permissions) -> Result<(), String> {

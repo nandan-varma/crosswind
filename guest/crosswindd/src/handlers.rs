@@ -31,6 +31,8 @@ use smithay::{
     },
 };
 use smithay::input::dnd::{DnDGrab, DndGrabHandler, GrabType, Source};
+use smithay::reexports::wayland_protocols::xdg::shell::server::xdg_toplevel::State as XdgState;
+use smithay::reexports::wayland_server::protocol::wl_output::WlOutput;
 use smithay::input::pointer::Focus;
 
 use std::os::fd::OwnedFd;
@@ -142,6 +144,37 @@ impl XdgShellHandler for State {
         self.remove_window(surface.wl_surface());
     }
 
+    // The host owns the window frame: it zooms, goes full screen or minimizes the Mac window, then sends Configure
+    // back with the resulting state and size. Here the client's request is recorded and answered with a configure.
+
+    fn maximize_request(&mut self, surface: ToplevelSurface) {
+        surface.with_pending_state(|s| s.states.set(XdgState::Maximized));
+        surface.send_pending_configure();
+        self.send_changed(surface.wl_surface(), |c, _| c.maximized = Some(true));
+    }
+
+    fn unmaximize_request(&mut self, surface: ToplevelSurface) {
+        surface.with_pending_state(|s| s.states.unset(XdgState::Maximized));
+        surface.send_pending_configure();
+        self.send_changed(surface.wl_surface(), |c, _| c.maximized = Some(false));
+    }
+
+    fn fullscreen_request(&mut self, surface: ToplevelSurface, _output: Option<WlOutput>) {
+        surface.with_pending_state(|s| s.states.set(XdgState::Fullscreen));
+        surface.send_pending_configure();
+        self.send_changed(surface.wl_surface(), |c, _| c.fullscreen = Some(true));
+    }
+
+    fn unfullscreen_request(&mut self, surface: ToplevelSurface) {
+        surface.with_pending_state(|s| s.states.unset(XdgState::Fullscreen));
+        surface.send_pending_configure();
+        self.send_changed(surface.wl_surface(), |c, _| c.fullscreen = Some(false));
+    }
+
+    fn minimize_request(&mut self, surface: ToplevelSurface) {
+        self.send_changed(surface.wl_surface(), |c, _| c.minimized = Some(true));
+    }
+
     fn title_changed(&mut self, surface: ToplevelSurface) {
         self.send_changed(surface.wl_surface(), |c, t| c.title = Some(t.title));
     }
@@ -224,13 +257,23 @@ impl State {
     fn add_window(&mut self, role: Role, surface: WlSurface) {
         let id = self.next_id;
         self.next_id += 1;
-        self.windows.push(Win { id, role, surface, announced: false, dirty: false, in_flight: false, seq: 0, target: None });
+        let scale_120 = self.scale_120;
+        self.windows.push(Win {
+            id,
+            role,
+            surface,
+            announced: false,
+            dirty: false,
+            in_flight: false,
+            seq: 0,
+            target: None,
+            scale_120,
+        });
     }
 
     fn remove_window(&mut self, surface: &WlSurface) {
         if let Some(pos) = self.windows.iter().position(|w| &w.surface == surface) {
             let win = self.windows.remove(pos);
-            tracing::info!("DBG window {} removed announced={}", win.id, win.announced);  // DEBUG-TEMP
             if win.announced {
                 self.send(pb::to_host::Msg::Closed(pb::WindowClosed { id: win.id }));
             }

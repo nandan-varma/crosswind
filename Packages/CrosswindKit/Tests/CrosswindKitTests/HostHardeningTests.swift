@@ -49,7 +49,8 @@ struct GuestCallGateTests {
             if case .reject = gate.admit(notify("org.b", id: 0), now: start) { Issue.record("other app limited") }
         }
         #expect(gate.admit(notify("org.a"), now: start) == .reject("too many notifications; wait a minute"))
-        #expect(gate.admit(notify("org.a"), now: start + .seconds(61)) != .reject("too many notifications; wait a minute"))
+        let refused = GuestCallGate.Verdict.reject("too many notifications; wait a minute")
+        #expect(gate.admit(notify("org.a"), now: start + .seconds(61)) != refused)
     }
 
     @Test("notifications: text and icon are cut to their limits")
@@ -104,7 +105,8 @@ struct GuestCallGateTests {
     @Test("clipboard reads with absurd type names are refused; empty calls too")
     func clipboardAndEmpty() {
         let gate = GuestCallGate()
-        let read: Crosswind_Control_Call = .with { $0.clipboardRead = .with { $0.mime = String(repeating: "m", count: 5000) } }
+        let longMime = String(repeating: "m", count: 5000)
+        let read: Crosswind_Control_Call = .with { $0.clipboardRead = .with { $0.mime = longMime } }
         #expect(gate.admit(read) == .reject("unknown clipboard type"))
         #expect(gate.admit(Crosswind_Control_Call()) == .reject("empty call"))
     }
@@ -243,7 +245,8 @@ struct ControlChannelFuzzTests {
         let control = GuestControl(messages: messages, send: { _ in })
         for _ in 0..<5_000 {
             // Random bytes that happen to decode become messages; the rest are dropped at decode time.
-            if let message = try? Crosswind_Control_Message(serializedBytes: rng.bytes(Int.random(in: 0...64, using: &rng))) {
+            let length = Int.random(in: 0...64, using: &rng)
+            if let message = try? Crosswind_Control_Message(serializedBytes: rng.bytes(length)) {
                 continuation.yield(message)
             }
         }

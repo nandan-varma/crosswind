@@ -9,6 +9,15 @@ typealias InputEvent = Crosswind_Display_Input.OneOf_Event
 final class SurfaceView: NSView {
     var onInput: ((InputEvent) -> Void)?
     private(set) var cursor: NSCursor? = .arrow
+    /// Text-input updates for the guest. The owner sets `window` and forwards them.
+    var onTextInput: ((Crosswind_Display_TextInput) -> Void)?
+    /// Composition state for the NSTextInputClient conformance (see SurfaceView+TextInput.swift).
+    var textInput = TextInputState()
+    /// Set by the text-input methods while AppKit interprets one key event: true when text was produced.
+    var keyConsumedByText = false
+    private(set) var textInputEnabled = false
+    /// Key codes whose press went to the input method; their release is swallowed too.
+    private var consumedKeys = Set<UInt16>()
 
     override var isFlipped: Bool { true }
     override var acceptsFirstResponder: Bool { true }
@@ -103,12 +112,35 @@ final class SurfaceView: NSView {
 
     // MARK: Keyboard
 
+    /// The guest client enabled or disabled text input. Disabling drops any composition.
+    func setTextInputEnabled(_ enabled: Bool) {
+        textInputEnabled = enabled
+        if !enabled { textInput = TextInputState() }
+    }
+
     override func keyDown(with event: NSEvent) {
         guard !event.isARepeat else { return }  // clients repeat keys themselves from wl_keyboard.repeat_info
+        // Command shortcuts stay with the Mac menus and the Cmd->Ctrl mapping; they never go through the IME.
+        if textInputEnabled && !event.modifierFlags.contains(.command) {
+            keyConsumedByText = false
+            interpretKeyEvents([event])
+            if keyConsumedByText {
+                consumedKeys.insert(event.keyCode)
+                return
+            }
+        }
         key(event.keyCode, pressed: true, time: ms(event))
     }
 
-    override func keyUp(with event: NSEvent) { key(event.keyCode, pressed: false, time: ms(event)) }
+    override func keyUp(with event: NSEvent) {
+        if consumedKeys.remove(event.keyCode) != nil { return }
+        key(event.keyCode, pressed: false, time: ms(event))
+    }
+
+    /// Standard key bindings (arrows, delete, ctrl-a) come here. They are not text, so the key goes to the guest.
+    override func doCommand(by selector: Selector) {
+        keyConsumedByText = false
+    }
 
     override func flagsChanged(with event: NSEvent) {
         let code = event.keyCode

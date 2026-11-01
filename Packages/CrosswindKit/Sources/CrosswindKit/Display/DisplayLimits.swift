@@ -85,10 +85,10 @@ public enum DisplayLimits {
         }
         switch scalar.value {
         case 0x061C,  // arabic letter mark
-             0x200E, 0x200F,  // LRM, RLM
-             0x202A...0x202E,  // LRE, RLE, PDF, LRO, RLO
-             0x2066...0x2069,  // LRI, RLI, FSI, PDI
-             0xFEFF:  // byte order mark
+            0x200E, 0x200F,  // LRM, RLM
+            0x202A...0x202E,  // LRE, RLE, PDF, LRO, RLO
+            0x2066...0x2069,  // LRI, RLI, FSI, PDI
+            0xFEFF:  // byte order mark
             return true
         default:
             return false
@@ -140,7 +140,9 @@ public enum DisplayLimits {
     }
 
     public static func checkCursor(_ cursor: Crosswind_Display_Cursor) throws(Violation) {
-        guard cursor.name.utf8.count <= maxCursorNameBytes else { throw .cursorTooLarge(width: cursor.width, height: cursor.height) }
+        guard cursor.name.utf8.count <= maxCursorNameBytes else {
+            throw .cursorTooLarge(width: cursor.width, height: cursor.height)
+        }
         guard cursor.pixels.isEmpty || (cursor.width > 0 && cursor.height > 0) else {
             throw .cursorPixelsMismatch
         }

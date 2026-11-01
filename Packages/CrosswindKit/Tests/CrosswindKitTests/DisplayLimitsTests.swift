@@ -25,7 +25,9 @@ struct DisplayLimitsTests {
         try DisplayLimits.checkSurface(width: 16_384, height: 4096, scale120: 120)
         try DisplayLimits.checkSurface(width: 1, height: 1, scale120: 60)
         try DisplayLimits.checkSurface(width: 1, height: 1, scale120: 960)
-        #expect(throws: DisplayLimits.Violation.emptySurface) { try DisplayLimits.checkSurface(width: 0, height: 1, scale120: 120) }
+        #expect(throws: DisplayLimits.Violation.emptySurface) {
+            try DisplayLimits.checkSurface(width: 0, height: 1, scale120: 120)
+        }
         #expect(throws: DisplayLimits.Violation.surfaceTooLarge(width: 16_385, height: 1)) {
             try DisplayLimits.checkSurface(width: 16_385, height: 1, scale120: 120)
         }
@@ -43,16 +45,17 @@ struct DisplayLimitsTests {
     @Test("damage must lie inside the surface, without overflow at the top of the range")
     func damageBounds() throws {
         let surface = (w: UInt32(100), h: UInt32(50))
-        let fits = makeFrame(width: 100, height: 50, scale: 120, rects: [(x: 90, y: 40, w: 10, h: 10, bytes: 400)])
+        let fits = makeFrame(
+            width: 100, height: 50, scale: 120, rects: [RectSpec(x: 90, y: 40, w: 10, h: 10, bytes: 400)])
         try DisplayLimits.checkFrame(fits)
 
         // x + width wraps in UInt32 if computed naively; the check must still refuse it.
         let wrap = makeFrame(
             width: surface.w, height: surface.h, scale: 120,
-            rects: [(x: UInt32.max - 2, y: 0, w: 10, h: 1, bytes: 40)])
+            rects: [RectSpec(x: UInt32.max - 2, y: 0, w: 10, h: 1, bytes: 40)])
         #expect(throws: DisplayLimits.Violation.damageOutOfBounds(index: 0)) { try DisplayLimits.checkFrame(wrap) }
 
-        let empty = makeFrame(width: 100, height: 50, scale: 120, rects: [(x: 0, y: 0, w: 0, h: 5, bytes: 0)])
+        let empty = makeFrame(width: 100, height: 50, scale: 120, rects: [RectSpec(x: 0, y: 0, w: 0, h: 5, bytes: 0)])
         #expect(throws: DisplayLimits.Violation.damageEmpty(index: 0)) { try DisplayLimits.checkFrame(empty) }
     }
 
@@ -60,15 +63,17 @@ struct DisplayLimitsTests {
     func payloadBound() {
         let raw = 4 * 4 * 4
         let limit = DisplayLimits.maxCompressedBytes(forRaw: raw)
-        let ok = makeFrame(width: 16, height: 16, scale: 120, rects: [(x: 0, y: 0, w: 4, h: 4, bytes: limit)])
+        let ok = makeFrame(
+            width: 16, height: 16, scale: 120, rects: [RectSpec(x: 0, y: 0, w: 4, h: 4, bytes: limit)])
         #expect((try? DisplayLimits.checkFrame(ok)) != nil)
-        let big = makeFrame(width: 16, height: 16, scale: 120, rects: [(x: 0, y: 0, w: 4, h: 4, bytes: limit + 1)])
+        let big = makeFrame(
+            width: 16, height: 16, scale: 120, rects: [RectSpec(x: 0, y: 0, w: 4, h: 4, bytes: limit + 1)])
         #expect(throws: DisplayLimits.Violation.damagePayloadTooLarge(index: 0)) { try DisplayLimits.checkFrame(big) }
     }
 
     @Test("too many damage rects are refused")
     func damageCount() {
-        let rects = Array(repeating: (x: UInt32(0), y: UInt32(0), w: UInt32(1), h: UInt32(1), bytes: 4), count: 257)
+        let rects = Array(repeating: RectSpec(x: 0, y: 0, w: 1, h: 1, bytes: 4), count: 257)
         let frame = makeFrame(width: 10, height: 10, scale: 120, rects: rects)
         #expect(throws: DisplayLimits.Violation.tooManyDamageRects(257)) { try DisplayLimits.checkFrame(frame) }
     }
@@ -151,16 +156,16 @@ struct DisplayLimitsTests {
         var rng = SplitMix64(seed: 0xF00D)
         var accepted = 0
         for _ in 0..<20_000 {
-            let width = Bool.random(using: &rng) ? EdgeValues.sizes.randomElement(using: &rng)! : UInt32.random(in: 0...20_000, using: &rng)
-            let height = Bool.random(using: &rng) ? EdgeValues.sizes.randomElement(using: &rng)! : UInt32.random(in: 0...20_000, using: &rng)
-            let scale = Bool.random(using: &rng) ? EdgeValues.scales.randomElement(using: &rng)! : UInt32.random(in: 0...1000, using: &rng)
+            let width = biased(EdgeValues.sizes, max: 20_000, &rng)
+            let height = biased(EdgeValues.sizes, max: 20_000, &rng)
+            let scale = Bool.random(using: &rng)
+                ? EdgeValues.scales.randomElement(using: &rng)! : UInt32.random(in: 0...1000, using: &rng)
             let count = Int.random(in: 0...4, using: &rng)
-            let rects = (0..<count).map { _ -> (x: UInt32, y: UInt32, w: UInt32, h: UInt32, bytes: Int) in
-                (
+            let rects = (0..<count).map { _ in
+                RectSpec(
                     x: EdgeValues.sizes.randomElement(using: &rng)!, y: UInt32.random(in: 0...20_000, using: &rng),
                     w: UInt32.random(in: 0...20_000, using: &rng), h: EdgeValues.sizes.randomElement(using: &rng)!,
-                    bytes: Int.random(in: 0...2048, using: &rng)
-                )
+                    bytes: Int.random(in: 0...2048, using: &rng))
             }
             let frame = makeFrame(width: width, height: height, scale: scale, rects: rects)
             guard (try? DisplayLimits.checkFrame(frame)) != nil else { continue }

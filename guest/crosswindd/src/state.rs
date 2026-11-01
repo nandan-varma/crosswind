@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 use std::{ffi::OsString, sync::Arc, time::Instant};
 
+use smithay::wayland::text_input::{TextInputManagerState, TextInputSeat};
 use smithay::{
     backend::renderer::{damage::OutputDamageTracker, pixman::PixmanRenderer},
     desktop::PopupManager,
@@ -49,6 +50,8 @@ pub struct Win {
     pub in_flight: bool,
     pub seq: u64,
     pub target: Option<Target>,
+    /// The host's backing scale for this window (1/120 units). Starts at the default and follows Configure.
+    pub scale_120: u32,
 }
 
 pub struct Target {
@@ -119,6 +122,11 @@ impl State {
         let mut seat = seat_state.new_wl_seat(&dh, "seat0");
         seat.add_keyboard(Default::default(), 600, 25).expect("default xkb keymap");
         seat.add_pointer();
+        // The global lives as long as the display; the handle is not needed after this.
+        TextInputManagerState::new::<Self>(&dh);
+        // The compositor is the input method: text-input requests are processed without a real IME server, and the
+        // host's IME results are injected with `commit_string`/`preedit_string`.
+        seat.text_input().set_compositor_input_method(true);
 
         let output = Output::new(
             "crosswind".into(),
@@ -221,6 +229,13 @@ impl State {
             write_token: None,
             display_handle: dh,
             loop_handle,
+        }
+    }
+
+    /// Tells the host whether the client of `surface` has text input enabled. Unknown surfaces are ignored.
+    pub fn send_text_input(&mut self, surface: &WlSurface, enabled: bool) {
+        if let Some(id) = self.win_by_surface(surface).map(|w| w.id) {
+            self.send(pb::to_host::Msg::TextInputState(pb::TextInputState { window: id, enabled }));
         }
     }
 

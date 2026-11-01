@@ -40,6 +40,15 @@ final class StubDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// Clicking the Dock tile of a running app without windows (a GApplication that stays alive after its last
+    /// window closed) asks the app to show a window again, as Linux launchers do.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows: Bool) -> Bool {
+        if !hasVisibleWindows, let client {
+            Task { _ = try? await client.command(.launchApp(.with { $0.appID = appID })) }
+        }
+        return true
+    }
+
     /// The app ending in the guest ends its stub.
     private func watchForExit(_ client: AgentClient) {
         Task { [appID] in

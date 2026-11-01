@@ -23,6 +23,10 @@ struct AppDetailView: View {
                     about(app)
                     whatsNew(app)
                     information(app)
+                    if model.installed[app.id] != nil {
+                        PermissionsView(appID: app.id, store: model)
+                            .id(app.id)
+                    }
                 }
                 .padding(28)
                 .frame(maxWidth: 860, alignment: .leading)

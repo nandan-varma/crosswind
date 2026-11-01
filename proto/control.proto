@@ -107,6 +107,9 @@ message Permissions {
   repeated string shared = 3;        // network, ipc
   repeated string filesystems = 4;   // host, home, xdg-documents:ro, ...
   repeated string features = 5;      // bluetooth, devel, ...
+  // Only in GetPermissions responses: the same lists as the app's manifest, before any user override.
+  // Entries present in `permissions` but not here were added by the user; entries here but absent were removed.
+  Permissions defaults = 6;
 }
 
 // ---- guest -> host ----

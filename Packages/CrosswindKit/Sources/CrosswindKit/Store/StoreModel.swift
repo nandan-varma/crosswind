@@ -274,6 +274,25 @@ public final class StoreModel {
         operations = [:]
     }
 
+    /// The app's effective Flatpak permissions and, when the guest reports them, its manifest defaults.
+    public func permissions(for appID: String) async throws -> PermissionsReport {
+        guard let control = agent?.control else { throw GuestControlError.disconnected }
+        return PermissionsReport(try await control.permissions(appID: appID))
+    }
+
+    /// Replaces the app's override so that its effective permissions equal `permissions`. Applies at the next start.
+    public func setPermissions(for appID: String, _ permissions: AppPermissions) async throws {
+        guard let control = agent?.control else { throw GuestControlError.disconnected }
+        try await control.setPermissions(appID: appID, permissions.proto)
+    }
+
+    /// Stops the running app, then opens it again through its stub so that it starts with the current permissions.
+    public func restartApp(_ appID: String) async throws {
+        guard let control = agent?.control else { throw GuestControlError.disconnected }
+        try await control.stop(appID: appID)
+        await open(appID)
+    }
+
     public func refreshInstalled() async {
         guard let list = try? await agent?.control.installed() else { return }
         installed = Dictionary(uniqueKeysWithValues: list.map { ($0.appID, $0) })
