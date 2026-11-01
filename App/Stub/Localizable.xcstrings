@@ -1,7 +1,90 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-
+  "sourceLanguage": "en",
+  "strings": {
+    "Cancel": {
+      "comment": "Button that closes an alert without sharing.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        }
+      }
+    },
+    "Couldn't start %@": {
+      "comment": "Alert title when the app fails to start. %@ is the app name.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't start %@"
+          }
+        }
+      }
+    },
+    "Linux apps can read and write everything in shared folders, including subfolders of %@. You can remove the share in Crosswind Settings.": {
+      "comment": "Alert message asking to share a folder. %@ is the folder path.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Linux apps can read and write everything in shared folders, including subfolders of %@. You can remove the share in Crosswind Settings."
+          }
+        }
+      }
+    },
+    "Share %@ with Linux apps?": {
+      "comment": "Alert title asking to share a folder. %@ is the folder name.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share %@ with Linux apps?"
+          }
+        }
+      }
+    },
+    "Share Folder": {
+      "comment": "Alert button that shares the whole folder.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share Folder"
+          }
+        }
+      }
+    },
+    "Share Only These Files": {
+      "comment": "Alert button that shares only the chosen files, when there are several.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share Only These Files"
+          }
+        }
+      }
+    },
+    "Share Only This File": {
+      "comment": "Alert button that shares only the chosen file.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share Only This File"
+          }
+        }
+      }
+    }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

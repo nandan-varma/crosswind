@@ -15,6 +15,7 @@ use smithay::reexports::calloop::{Interest, LoopHandle, Mode, PostAction, generi
 
 use super::Bridge;
 use crate::control_pb::{self as pb, call, call_reply};
+use crate::limits;
 
 pub const SOCKET_PATH: &str = "/run/crosswind/open-url.sock";
 const MAX_URL: usize = 8192;
@@ -90,6 +91,9 @@ pub fn parse_request(line: &str) -> Result<String, String> {
     if !url.contains(':') {
         return Err("not a URL".to_owned());
     }
+    if !limits::allowed_url_scheme(url) {
+        return Err("only http, https and mailto links can be opened".to_owned());
+    }
     Ok(url.to_owned())
 }
 
@@ -109,5 +113,21 @@ mod tests {
         assert!(parse_request("example.com").is_err());
         assert!(parse_request("https://a b\n").is_err());
         assert!(parse_request(&format!("https://{}", "a".repeat(MAX_URL))).is_err());
+        assert!(parse_request("file:///etc/passwd\n").is_err());
+        assert!(parse_request("smb://host/share\n").is_err());
+        assert!(parse_request("javascript:alert(1)\n").is_err());
+    }
+
+    #[test]
+    fn random_request_lines_are_accepted_only_with_an_allowed_scheme() {
+        let mut state = 7u64;
+        for _ in 0..20_000 {
+            let len = (limits::xorshift(&mut state) % 64) as usize;
+            let line: String = (0..len).map(|_| (limits::xorshift(&mut state) % 128) as u8 as char).collect();
+            if let Ok(url) = parse_request(&line) {
+                assert!(limits::allowed_url_scheme(&url));
+                assert!(url.len() <= MAX_URL);
+            }
+        }
     }
 }

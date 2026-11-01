@@ -16,6 +16,10 @@ start() {
     mount --bind /data/home /home
     # The daemon runs as crosswind (uid 1000): its home persists on the data disk, its runtime dir is tmpfs.
     install -d -o 1000 -g 1000 -m 700 /data/home/crosswind /run/crosswind
+    # FUSE for the document portal (xdg-document-portal mounts under XDG_RUNTIME_DIR as uid 1000). /dev/fuse is
+    # root-only by default, so the daemon's group may open it.
+    modprobe -q fuse
+    if [ -c /dev/fuse ]; then chgrp crosswind /dev/fuse; chmod 660 /dev/fuse; fi
     # Sound devices from virtio_snd (loaded by the modules service): group audio, so the daemon's audio stack can open them.
     if ls /dev/snd/* >/dev/null 2>&1; then chgrp audio /dev/snd/*; chmod 660 /dev/snd/*; fi
     # X11 socket directory for xwayland-satellite (root-owned and sticky, as X servers require); Flatpak binds it into X11 apps.

@@ -7,6 +7,7 @@ mod control;
 mod flatpak;
 mod handlers;
 mod host;
+mod limits;
 mod link;
 mod portal;
 mod render;
@@ -32,6 +33,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_env_filter(tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()))
         .init();
 
+    // DEBUG-TEMP: fuse facts for the document portal investigation.
+    {
+        use std::os::unix::fs::MetadataExt;
+        for p in ["/dev/fuse", "/usr/bin/fusermount3", "/usr/libexec/xdg-document-portal", "/run/crosswind", "/etc/fuse.conf"] {
+            match std::fs::metadata(p) {
+                Ok(m) => tracing::info!("DBG {p} mode={:o} uid={} gid={}", m.mode(), m.uid(), m.gid()),
+                Err(e) => tracing::info!("DBG {p} {e}"),
+            }
+        }
+        tracing::info!("DBG uid={} gid={}", unsafe { libc::getuid() }, unsafe { libc::getgid() });
+        tracing::info!("DBG open /dev/fuse: {:?}", std::fs::OpenOptions::new().read(true).write(true).open("/dev/fuse").map(|_| ()));
+        tracing::info!("DBG fuse in /proc/filesystems: {}", std::fs::read_to_string("/proc/filesystems").unwrap_or_default().contains("fuse"));
+    }
     let mut event_loop: EventLoop<state::State> = EventLoop::try_new()?;
     let display: Display<state::State> = Display::new()?;
     let link = link::Link::connect(DISPLAY_PORT)?;

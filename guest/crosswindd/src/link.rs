@@ -79,14 +79,20 @@ impl Link {
         }
         let mut out = Vec::new();
         while let Some(head) = self.inbox.get(..4) {
-            let len = u32::from_le_bytes(head.try_into().expect("4 bytes")) as usize;
+            let mut len_bytes = [0u8; 4];
+            len_bytes.copy_from_slice(head);
+            let len = u32::from_le_bytes(len_bytes) as usize;
             if len > MAX_FRAME {
                 return Err(io::Error::new(ErrorKind::InvalidData, "oversized frame"));
             }
             if self.inbox.len() < 4 + len {
                 break;
             }
-            out.push(M::decode(&self.inbox[4..4 + len])?);
+            // The length prefix is intact, so a body that does not decode is skipped, not fatal.
+            match M::decode(&self.inbox[4..4 + len]) {
+                Ok(msg) => out.push(msg),
+                Err(e) => tracing::warn!("dropped undecodable message ({len} bytes): {e}"),
+            }
             self.inbox.drain(..4 + len);
         }
         Ok(out)
@@ -107,7 +113,10 @@ pub fn arm_write<D: 'static>(
     if !link.wants_write() || token.is_some() {
         return;
     }
-    let fd = link.fd().try_clone_to_owned().expect("dup vsock fd");
+    let Ok(fd) = link.fd().try_clone_to_owned() else {
+        tracing::error!("cannot duplicate the vsock descriptor; write readiness not armed");
+        return;
+    };
     let registered = handle.insert_source(Generic::new(fd, Interest::WRITE, Mode::Level), move |_, _, state| {
         if select(state).0.flush().is_err() {
             on_error(state);

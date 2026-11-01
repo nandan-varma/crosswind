@@ -13,9 +13,10 @@ struct StoreRoot: View {
                 Label("Allow Crosswind in the background", systemImage: "checkmark.shield")
             } description: {
                 Text(
-                    "Crosswind runs Linux apps through a small background service. "
-                        + "Turn on Crosswind in System Settings › General › Login Items & Extensions."
-                )
+                    """
+                    Crosswind runs Linux apps through a small background service. \
+                    Turn on Crosswind in System Settings › General › Login Items & Extensions.
+                    """)
             } actions: {
                 Button("Open Login Items Settings") { registration.openSettings() }
                     .buttonStyle(.borderedProminent)

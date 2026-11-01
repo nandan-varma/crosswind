@@ -8,7 +8,7 @@ use zbus::{OwnedVariant, Variant, interface};
 
 use super::Bridge;
 use crate::control_pb::{self as pb, call};
-
+use crate::limits;
 
 /// The parts of an `a{sv}` notification dict that the host understands.
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -20,12 +20,13 @@ pub struct Parsed {
     pub default_action: String,
 }
 
+/// Parses the dict, cutting every field to its limit: the host shows these on the Mac.
 pub fn parse(dict: &HashMap<String, OwnedVariant>) -> Parsed {
     Parsed {
-        title: string(dict, "title"),
-        body: string(dict, "body"),
+        title: limits::clean(&string(dict, "title"), limits::MAX_NOTIFY_TITLE),
+        body: limits::clean(&string(dict, "body"), limits::MAX_NOTIFY_BODY),
         icon_png: icon_bytes(dict),
-        default_action: string(dict, "default-action"),
+        default_action: limits::clean(&string(dict, "default-action"), limits::MAX_FIELD),
     }
 }
 
@@ -48,7 +49,8 @@ fn icon_bytes(dict: &HashMap<String, OwnedVariant>) -> Vec<u8> {
     while let Variant::Variant(v) = payload {
         payload = *v;
     }
-    Vec::<u8>::try_from(payload).unwrap_or_default()
+    let bytes = Vec::<u8>::try_from(payload).unwrap_or_default();
+    if bytes.len() > limits::MAX_NOTIFY_ICON { Vec::new() } else { bytes }
 }
 
 pub struct Notifications {
@@ -61,7 +63,7 @@ impl Notifications {
     fn add_notification(&self, app_id: &str, id: &str, notification: HashMap<String, OwnedVariant>) {
         let n = parse(&notification);
         let body = call::Body::Notify(pb::Notify {
-            notification_id: id.to_owned(),
+            notification_id: limits::clean(id, limits::MAX_IDENTIFIER),
             title: n.title,
             body: n.body,
             icon_png: n.icon_png,
@@ -75,7 +77,7 @@ impl Notifications {
     #[zbus(name = "RemoveNotification")]
     fn remove_notification(&self, app_id: &str, id: &str) {
         let body = call::Body::Notify(pb::Notify {
-            notification_id: id.to_owned(),
+            notification_id: limits::clean(id, limits::MAX_IDENTIFIER),
             withdraw: true,
             ..Default::default()
         });

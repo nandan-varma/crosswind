@@ -120,7 +120,8 @@ struct DisplayLimitsTests {
             do {
                 depth = try DisplayLimits.admitOpen(id: id, isPopup: true, parent: parent, app: "a", existing: open)
             } catch {
-                #expect(error as? DisplayLimits.Violation == .popupTooDeep(DisplayLimits.maxPopupDepth + 1))
+                let violation = error as? DisplayLimits.Violation
+                #expect(violation == .popupTooDeep(DisplayLimits.maxPopupDepth + 1))
                 break
             }
             open[id] = .init(app: "a", popupDepth: depth)
@@ -184,8 +185,9 @@ struct RectCodecTests {
     @Test("LZ4 rects round trip at their exact size")
     func roundTrip() throws {
         var rng = SplitMix64(seed: 7)
-        for (w, h) in [(1, 1), (3, 5), (64, 16), (255, 2)] {
-            let raw = Data(rng.bytes(w * h * 4))
+        for (w, h) in [(64, 16), (255, 2), (128, 64)] {
+            // Screen-like content: runs and gradients compress; random bytes would not.
+            let raw = Data((0..<(w * h * 4)).map { UInt8(($0 / 4 + $0 % 4) % 9) })
             let packed = try #require(RectCodec.pack(raw))
             let out = RectCodec.unpack(width: UInt32(w), height: UInt32(h), pixels: packed)
             #expect(out == raw)

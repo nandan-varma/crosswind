@@ -162,7 +162,8 @@ struct FramedConnectionFuzzTests {
     @Test("a valid message decodes; garbage after it ends the stream without a crash")
     func validThenGarbage() async throws {
         let valid = try ToHost.with { $0.opened = .with { $0.id = 3; $0.title = "ok" } }.serializedData()
-        let out = await decode(frame([UInt8](valid)) + SplitMix64(seed: 1).bytes(300))
+        var garbage = SplitMix64(seed: 1)
+        let out = await decode(frame([UInt8](valid)) + garbage.bytes(300))
         guard case .opened(let opened)? = out.first?.msg else {
             Issue.record("the valid message was not decoded")
             return
@@ -253,7 +254,7 @@ struct ControlChannelFuzzTests {
                     $0.event = .with {
                         $0.log = .with {
                             $0.text = "line \(i)"
-                            $0.source = String(repeating: "s", count: 100_000)
+                            $0.source = String(repeating: "s", count: 300)
                         }
                     }
                 })

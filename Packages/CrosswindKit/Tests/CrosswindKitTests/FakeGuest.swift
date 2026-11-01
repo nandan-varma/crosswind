@@ -28,8 +28,14 @@ final class FakeGuest: @unchecked Sendable {
         }
     }
 
+    /// The next request, skipping `OfferClipboard`: the agent sends it whenever the real Mac pasteboard changes,
+    /// which is not something a test controls.
     func nextRequest() async -> Crosswind_Control_Request? {
-        await requests.next()
+        while let request = await requests.next() {
+            if case .offerClipboard? = request.body { continue }
+            return request
+        }
+        return nil
     }
 
     func send(_ message: Crosswind_Control_Message) {

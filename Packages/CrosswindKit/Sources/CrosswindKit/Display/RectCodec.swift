@@ -12,16 +12,20 @@ public enum RectCodec {
         else {
             return nil
         }
-        var out = Data(count: expected)
+        // One spare byte: the decoder stops at the capacity, so a block that would produce more than `expected`
+        // fills the spare byte and is refused, instead of being silently truncated.
+        var out = Data(count: expected + 1)
         let written = out.withUnsafeMutableBytes { dst -> Int in
             pixels.withUnsafeBytes { src -> Int in
                 guard let dstBase = dst.baseAddress, let srcBase = src.baseAddress else { return 0 }
                 return compression_decode_buffer(
-                    dstBase.assumingMemoryBound(to: UInt8.self), expected,
+                    dstBase.assumingMemoryBound(to: UInt8.self), expected + 1,
                     srcBase.assumingMemoryBound(to: UInt8.self), src.count, nil, COMPRESSION_LZ4_RAW)
             }
         }
-        return written == expected ? out : nil
+        guard written == expected else { return nil }
+        out.removeLast()
+        return out
     }
 
     /// Compresses raw BGRA bytes the way the guest does (LZ4 raw). Used by tests to build valid payloads.

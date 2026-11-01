@@ -34,12 +34,39 @@ pub fn geometry(surface: &WlSurface) -> Rectangle<i32, Logical> {
         .unwrap_or_else(|| bbox_from_surface_tree(surface, (0, 0)))
 }
 
+// DEBUG-TEMP: per-second counters for the idle redraw investigation.
+pub static DBG_COMMITS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+pub static DBG_EMPTY: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+pub static DBG_SENT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+pub static DBG_ACKS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+pub static DBG_CBS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+pub static DBG_BYTES: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+static DBG_LAST: std::sync::Mutex<Option<std::time::Instant>> = std::sync::Mutex::new(None);
+pub fn dbg_tick() {
+    use std::sync::atomic::Ordering::Relaxed;
+    let mut last = DBG_LAST.lock().unwrap();
+    let now = std::time::Instant::now();
+    match *last {
+        Some(t) if now.duration_since(t).as_secs_f64() < 1.0 => {}
+        _ => {
+            tracing::info!(
+                "DBG commits={} empty={} sent={} acks={} callbacks={} bytes={}",
+                DBG_COMMITS.swap(0, Relaxed), DBG_EMPTY.swap(0, Relaxed), DBG_SENT.swap(0, Relaxed),
+                DBG_ACKS.swap(0, Relaxed), DBG_CBS.swap(0, Relaxed), DBG_BYTES.swap(0, Relaxed)
+            );
+            *last = Some(now);
+        }
+    }
+}
+
 impl State {
     pub fn render_window(&mut self, id: u32) {
         let Some(idx) = self.windows.iter().position(|w| w.id == id) else { return };
         if self.windows[idx].in_flight {
             return; // rendered when the host acknowledges the previous frame
         }
+        DBG_COMMITS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        dbg_tick();
         let surface = self.windows[idx].surface.clone();
         if !with_renderer_surface_state(&surface, |s| s.buffer().is_some()).unwrap_or(false) {
             return;
@@ -57,11 +84,20 @@ impl State {
         let pw = (geo.size.w as f64 * scale).round() as i32;
         let ph = (geo.size.h as f64 * scale).round() as i32;
 
+        // Frames the host would refuse are not rendered (the host limits are in docs/security.md).
+        if !crate::limits::surface_ok(pw as u32, ph as u32, scale_120) {
+            tracing::warn!(pw, ph, scale_120, "window too large to stream; not rendered");
+            return;
+        }
+
         let State { renderer, windows, .. } = self;
         let win = &mut windows[idx];
         let reallocated = !matches!(&win.target, Some(t) if t.size == (pw, ph) && t.scale_120 == scale_120);
         if reallocated {
-            let image = renderer.create_buffer(Fourcc::Argb8888, (pw, ph).into()).expect("pixman buffer");
+            let Ok(image) = renderer.create_buffer(Fourcc::Argb8888, (pw, ph).into()) else {
+                tracing::warn!(pw, ph, "pixman buffer allocation failed");
+                return;
+            };
             win.target = Some(Target {
                 image,
                 tracker: OutputDamageTracker::new((pw, ph), scale, Transform::Normal),
@@ -70,7 +106,7 @@ impl State {
                 first: true,
             });
         }
-        let target = win.target.as_mut().expect("target");
+        let Some(target) = win.target.as_mut() else { return };
 
         let origin: Point<i32, Physical> = Point::<i32, Logical>::from((-geo.loc.x, -geo.loc.y)).to_physical_precise_round(scale);
         let elements: Vec<WaylandSurfaceRenderElement<PixmanRenderer>> =
@@ -91,10 +127,14 @@ impl State {
         win.dirty = false;
 
         if damage.is_empty() {
+            DBG_EMPTY.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            DBG_CBS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             self.send_frame_callbacks(&surface);
             return;
         }
         let rects = encode_damage(&target.image, &damage, (pw, ph), reallocated);
+        DBG_SENT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        DBG_BYTES.fetch_add(rects.iter().map(|r| r.pixels.len() as u64).sum(), std::sync::atomic::Ordering::Relaxed);
         win.seq += 1;
         win.in_flight = true;
         let frame = pb::Frame { window: id, seq: win.seq, width: pw as u32, height: ph as u32, scale_120, damage: rects };
@@ -158,6 +198,8 @@ impl State {
         win.in_flight = false;
         let surface = win.surface.clone();
         let dirty = win.dirty;
+        DBG_ACKS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        DBG_CBS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         self.send_frame_callbacks(&surface);
         if dirty {
             self.render_window(id);

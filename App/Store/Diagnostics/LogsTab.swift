@@ -16,7 +16,10 @@ struct LogsTab: View {
     @State private var selection: LogEntry.ID?
 
     enum LevelFilter: Int, CaseIterable, Identifiable {
-        case error = 3, warning = 4, info = 6, debug = 7
+        case error = 3
+        case warning = 4
+        case info = 6
+        case debug = 7
         var id: Int { rawValue }
         var label: String {
             switch self {

@@ -94,7 +94,7 @@ final class GuestCallGate {
     /// Only the schemes a Linux app may legitimately hand to the Mac: web links and mail.
     static func allowsURL(_ raw: String) -> Bool {
         guard raw.utf8.count <= maxURLBytes,
-            !raw.unicodeScalars.contains(where: { $0.properties.isWhitespace || $0.properties.generalCategory == .control }),
+            !raw.unicodeScalars.contains(where: { $0.properties.isWhitespace || DisplayLimits.isStrippedInTitle($0) }),
             let colon = raw.firstIndex(of: ":")
         else {
             return false

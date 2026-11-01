@@ -15,8 +15,9 @@ struct WindowsTab: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             if model.windows.isEmpty {
-                ContentUnavailableView("No guest windows", systemImage: "macwindow",
-                                       description: Text("Windows appear here while an app is open."))
+                ContentUnavailableView(
+                    "No guest windows", systemImage: "macwindow",
+                    description: Text("Windows appear here while an app is open."))
             } else {
                 Table(model.windows, selection: $selected) {
                     TableColumn("ID") { Text(verbatim: "\($0.id)") }.width(min: 40, ideal: 50, max: 60)

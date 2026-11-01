@@ -13,8 +13,10 @@ struct SharedFoldersSettings: View {
         Form {
             Section {
                 Text(
-                    "Linux apps can read and write everything in shared folders. "
-                        + "Nothing is shared until you add a folder."
+                    """
+                    Linux apps can read and write everything in shared folders. \
+                    Nothing is shared until you add a folder.
+                    """
                 )
                 .font(.callout)
                 .foregroundStyle(.secondary)

@@ -1,7 +1,2574 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-
+  "sourceLanguage": "en",
+  "strings": {
+    "%lld GiB": {
+      "comment": "Memory size in gibibytes. %lld is the number.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld GiB"
+          }
+        }
+      }
+    },
+    "%lld apps can be updated.": {
+      "comment": "Count line on the Updates page. Plural variations for one and other.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld app can be updated."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld apps can be updated."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld results": {
+      "comment": "Section header above search results. Plural variations for one and other.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld result"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld results"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld updates available": {
+      "comment": "Accessibility value on the Updates sidebar item. Plural variations for one and other.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld update available"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld updates available"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "AGPL-3.0 License": {
+      "comment": "Link in Settings > About to the license text.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AGPL-3.0 License"
+          }
+        }
+      }
+    },
+    "About": {
+      "comment": "Section heading on the app page, and the Settings tab.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About"
+          }
+        }
+      }
+    },
+    "About Compatibility": {
+      "comment": "Tooltip and accessibility label for the compatibility info button.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About Compatibility"
+          }
+        }
+      }
+    },
+    "Actions": {
+      "comment": "Diagnostics window tab name.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actions"
+          }
+        }
+      }
+    },
+    "Add Folder…": {
+      "comment": "Button that opens a folder picker to share another folder.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Folder…"
+          }
+        }
+      }
+    },
+    "After %lld min": {
+      "comment": "Idle timeout value. %lld is the number of minutes.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "After %lld min"
+          }
+        }
+      }
+    },
+    "All": {
+      "comment": "Filter option: every source, launch or level.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All"
+          }
+        }
+      }
+    },
+    "All levels": {
+      "comment": "Log level filter option: show every level.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All levels"
+          }
+        }
+      }
+    },
+    "Allow Crosswind in the background": {
+      "comment": "Title when the background service needs approval in System Settings.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow Crosswind in the background"
+          }
+        }
+      }
+    },
+    "Allow Linux apps to use the microphone": {
+      "comment": "Toggle: lets Linux apps record from the microphone.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow Linux apps to use the microphone"
+          }
+        }
+      }
+    },
+    "App": {
+      "comment": "Diagnostics table column: app identifier of a guest window.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App"
+          }
+        }
+      }
+    },
+    "App Not Found": {
+      "comment": "Title when the requested app is not in the catalog.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Not Found"
+          }
+        }
+      }
+    },
+    "Apps you get from the store appear here.": {
+      "comment": "Empty state description on the Installed page.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apps you get from the store appear here."
+          }
+        }
+      }
+    },
+    "Audio": {
+      "comment": "Category name.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio"
+          }
+        }
+      }
+    },
+    "Audio & Video": {
+      "comment": "Category name.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio & Video"
+          }
+        }
+      }
+    },
+    "Auto-scroll": {
+      "comment": "Toggle: keep the newest log line selected.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto-scroll"
+          }
+        }
+      }
+    },
+    "Browse": {
+      "comment": "Section heading for the grid of more popular apps.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Browse"
+          }
+        }
+      }
+    },
+    "CPU": {
+      "comment": "Host agent row label for CPU usage.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CPU"
+          }
+        }
+      }
+    },
+    "Calculating…": {
+      "comment": "Storage size value while the folder is measured.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calculating…"
+          }
+        }
+      }
+    },
+    "Cancel": {
+      "comment": "Button that closes a dialog without acting.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        }
+      }
+    },
+    "Choose a folder to share with Linux apps.": {
+      "comment": "Message in the folder picker.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a folder to share with Linux apps."
+          }
+        }
+      }
+    },
+    "Command key acts as Control": {
+      "comment": "Toggle: the Command key sends Control to Linux apps.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Command key acts as Control"
+          }
+        }
+      }
+    },
+    "Compatibility": {
+      "comment": "Information row label for the compatibility rating.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compatibility"
+          }
+        }
+      }
+    },
+    "Compatibility: %@": {
+      "comment": "Accessibility label for the rating badge. %@ is the rating name, e.g. Works.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compatibility: %@"
+          }
+        }
+      }
+    },
+    "Connecting…": {
+      "comment": "Setup progress title while connecting to the host agent.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connecting…"
+          }
+        }
+      }
+    },
+    "Connection": {
+      "comment": "Environment tab row label for the agent connection.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connection"
+          }
+        }
+      }
+    },
+    "Copy": {
+      "comment": "Button that copies the visible log lines.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy"
+          }
+        }
+      }
+    },
+    "Copy the visible log lines": {
+      "comment": "Tooltip for the Copy button.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy the visible log lines"
+          }
+        }
+      }
+    },
+    "Could not save the shared folders: %@": {
+      "comment": "Error when shared folders cannot be saved. %@ is the system error.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not save the shared folders: %@"
+          }
+        }
+      }
+    },
+    "Crosswind couldn't start": {
+      "comment": "Title when the Linux environment fails to start.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crosswind couldn't start"
+          }
+        }
+      }
+    },
+    "Crosswind runs Linux apps through a small background service. Turn on Crosswind in System Settings › General › Login Items & Extensions.": {
+      "comment": "Description when the background service needs approval in Login Items.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crosswind runs Linux apps through a small background service. Turn on Crosswind in System Settings › General › Login Items & Extensions."
+          }
+        }
+      }
+    },
+    "CrosswindHost is not running": {
+      "comment": "Shown when the host agent process is not running.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CrosswindHost is not running"
+          }
+        }
+      }
+    },
+    "Data disk": {
+      "comment": "Storage row label for the guest data disk.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Data disk"
+          }
+        }
+      }
+    },
+    "Deleting the data also removes the app's settings and files in the Linux environment.": {
+      "comment": "Uninstall dialog message when the data is deleted too.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deleting the data also removes the app's settings and files in the Linux environment."
+          }
+        }
+      }
+    },
+    "Detail": {
+      "comment": "Environment tab row label for the phase detail.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detail"
+          }
+        }
+      }
+    },
+    "Developer": {
+      "comment": "Information row label for the app's publisher.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Developer"
+          }
+        }
+      }
+    },
+    "Development": {
+      "comment": "Category name: developer tools.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Development"
+          }
+        }
+      }
+    },
+    "Diagnostics": {
+      "comment": "Window menu item that opens the Diagnostics window.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diagnostics"
+          }
+        }
+      }
+    },
+    "Discover": {
+      "comment": "Sidebar item and page title for the front page.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Discover"
+          }
+        }
+      }
+    },
+    "Dismiss": {
+      "comment": "Button that clears a failed action's message.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dismiss"
+          }
+        }
+      }
+    },
+    "Donate": {
+      "comment": "Link to the app's donation page.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Donate"
+          }
+        }
+      }
+    },
+    "Done": {
+      "comment": "Button that closes the full-size screenshot sheet.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        }
+      }
+    },
+    "Education": {
+      "comment": "Category name.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Education"
+          }
+        }
+      }
+    },
+    "Environment": {
+      "comment": "Settings tab and Diagnostics tab name for the Linux environment.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Environment"
+          }
+        }
+      }
+    },
+    "Error": {
+      "comment": "Log level filter option: errors only.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error"
+          }
+        }
+      }
+    },
+    "Every installed app and its data is deleted. This cannot be undone.": {
+      "comment": "Reset confirmation message.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every installed app and its data is deleted. This cannot be undone."
+          }
+        }
+      }
+    },
+    "Everything is up to date": {
+      "comment": "Empty state title on the Updates page.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Everything is up to date"
+          }
+        }
+      }
+    },
+    "Export Diagnostic Bundle…": {
+      "comment": "Button that saves a diagnostics zip file.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export Diagnostic Bundle…"
+          }
+        }
+      }
+    },
+    "Export failed: %@": {
+      "comment": "Error when the diagnostics bundle cannot be exported. %@ is the error.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export failed: %@"
+          }
+        }
+      }
+    },
+    "FPS": {
+      "comment": "Windows table column: frames per second.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FPS"
+          }
+        }
+      }
+    },
+    "Failed": {
+      "comment": "Status label: the operation failed.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed"
+          }
+        }
+      }
+    },
+    "Failed: %@": {
+      "comment": "Status label with detail. %@ is the detail.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed: %@"
+          }
+        }
+      }
+    },
+    "Filter text": {
+      "comment": "Placeholder and accessibility label for the log text filter.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filter text"
+          }
+        }
+      }
+    },
+    "Find Apps": {
+      "comment": "Window menu command that moves focus to the search field.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Find Apps"
+          }
+        }
+      }
+    },
+    "Find apps by name, summary or keyword.": {
+      "comment": "Empty search state description.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Find apps by name, summary or keyword."
+          }
+        }
+      }
+    },
+    "Frames": {
+      "comment": "Windows table column: frames rendered.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frames"
+          }
+        }
+      }
+    },
+    "Games": {
+      "comment": "Category name.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Games"
+          }
+        }
+      }
+    },
+    "General": {
+      "comment": "Settings tab name.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "General"
+          }
+        }
+      }
+    },
+    "Get": {
+      "comment": "Button that installs an app.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get"
+          }
+        }
+      }
+    },
+    "Get %@": {
+      "comment": "Accessibility label for the Get button. %@ is the app name.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get %@"
+          }
+        }
+      }
+    },
+    "Graphics": {
+      "comment": "Category name.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Graphics"
+          }
+        }
+      }
+    },
+    "Guest kernel and hostname": {
+      "comment": "Environment row label. The value explains the field is not available.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guest kernel and hostname"
+          }
+        }
+      }
+    },
+    "Help": {
+      "comment": "Link to the app's help page.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Help"
+          }
+        }
+      }
+    },
+    "Host agent": {
+      "comment": "Environment tab section heading for the background agent.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Host agent"
+          }
+        }
+      }
+    },
+    "ID": {
+      "comment": "Windows table column: guest window identifier.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ID"
+          }
+        }
+      }
+    },
+    "Info and up": {
+      "comment": "Log level filter option: info and more severe.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Info and up"
+          }
+        }
+      }
+    },
+    "Information": {
+      "comment": "App page section heading for facts about the app.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Information"
+          }
+        }
+      }
+    },
+    "Input to frame": {
+      "comment": "Windows table column: latency from input to the next frame.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Input to frame"
+          }
+        }
+      }
+    },
+    "Input-to-frame latency chart": {
+      "comment": "Accessibility label for the latency chart.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Input-to-frame latency chart"
+          }
+        }
+      }
+    },
+    "Input-to-frame latency, %@, last %lld polls": {
+      "comment": "Chart heading. First %@ is the app ID, %lld the number of polls shown.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Input-to-frame latency, %@, last %lld polls"
+          }
+        }
+      }
+    },
+    "Installed": {
+      "comment": "Sidebar item for installed apps.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installed"
+          }
+        }
+      }
+    },
+    "Internet": {
+      "comment": "Category name: network apps.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Internet"
+          }
+        }
+      }
+    },
+    "Keep the newest log line selected while new lines arrive": {
+      "comment": "Tooltip for Auto-scroll.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep the newest log line selected while new lines arrive"
+          }
+        }
+      }
+    },
+    "Last error": {
+      "comment": "Environment tab section heading for the most recent error.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last error"
+          }
+        }
+      }
+    },
+    "Launch": {
+      "comment": "Log table column and picker: the launch session.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Launch"
+          }
+        }
+      }
+    },
+    "Launch at login": {
+      "comment": "Toggle: start Crosswind when you log in.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Launch at login"
+          }
+        }
+      }
+    },
+    "Level": {
+      "comment": "Log level picker label.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Level"
+          }
+        }
+      }
+    },
+    "Library": {
+      "comment": "Sidebar section heading for installed apps and updates.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Library"
+          }
+        }
+      }
+    },
+    "License": {
+      "comment": "Information row label for the project license.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "License"
+          }
+        }
+      }
+    },
+    "Links": {
+      "comment": "Information row label for the app's web links.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Links"
+          }
+        }
+      }
+    },
+    "Linux apps can read and write everything in shared folders. Nothing is shared until you add a folder.": {
+      "comment": "Explanation at the top of Shared Folders settings.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Linux apps can read and write everything in shared folders. Nothing is shared until you add a folder."
+          }
+        }
+      }
+    },
+    "Load Host Logs": {
+      "comment": "Button that loads the host agent's log lines.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Load Host Logs"
+          }
+        }
+      }
+    },
+    "Load the host agent's log lines": {
+      "comment": "Tooltip for Load Host Logs.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Load the host agent's log lines"
+          }
+        }
+      }
+    },
+    "Loading apps": {
+      "comment": "Setup progress title while the catalog loads.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading apps"
+          }
+        }
+      }
+    },
+    "Location": {
+      "comment": "Storage row label for the data folder path.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Location"
+          }
+        }
+      }
+    },
+    "Logs": {
+      "comment": "Diagnostics tab name.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logs"
+          }
+        }
+      }
+    },
+    "Memory": {
+      "comment": "Settings row label for guest memory.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Memory"
+          }
+        }
+      }
+    },
+    "Message": {
+      "comment": "Log table column: the log message.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Message"
+          }
+        }
+      }
+    },
+    "More": {
+      "comment": "Menu label on the app page.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More"
+          }
+        }
+      }
+    },
+    "More actions": {
+      "comment": "Accessibility label and tooltip for the More menu.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More actions"
+          }
+        }
+      }
+    },
+    "Never": {
+      "comment": "Idle timeout value: never stop the environment.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Never"
+          }
+        }
+      }
+    },
+    "No Apps": {
+      "comment": "Empty category title.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Apps"
+          }
+        }
+      }
+    },
+    "No Apps Running": {
+      "comment": "Menu bar submenu item when no app is running.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Apps Running"
+          }
+        }
+      }
+    },
+    "No Installed Apps": {
+      "comment": "Empty state title on the Installed page.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Installed Apps"
+          }
+        }
+      }
+    },
+    "No apps are listed in this category yet.": {
+      "comment": "Empty category description.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No apps are listed in this category yet."
+          }
+        }
+      }
+    },
+    "No guest windows": {
+      "comment": "Empty state title on the Windows tab.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No guest windows"
+          }
+        }
+      }
+    },
+    "No shared folders": {
+      "comment": "Empty state in Shared Folders settings.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No shared folders"
+          }
+        }
+      }
+    },
+    "None": {
+      "comment": "Value when no apps are running.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "None"
+          }
+        }
+      }
+    },
+    "Not created yet": {
+      "comment": "Data disk size when the disk file does not exist yet.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not created yet"
+          }
+        }
+      }
+    },
+    "Not specified": {
+      "comment": "License value when the catalog has none.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not specified"
+          }
+        }
+      }
+    },
+    "Off by default. Applies the next time the Linux environment starts.": {
+      "comment": "Caption under the microphone toggle.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Off by default. Applies the next time the Linux environment starts."
+          }
+        }
+      }
+    },
+    "Office": {
+      "comment": "Category name.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Office"
+          }
+        }
+      }
+    },
+    "Open": {
+      "comment": "Button that opens an installed app.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open"
+          }
+        }
+      }
+    },
+    "Open %@": {
+      "comment": "Accessibility label for the Open button. %@ is the app name.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open %@"
+          }
+        }
+      }
+    },
+    "Open Login Items Settings": {
+      "comment": "Button that opens Login Items in System Settings.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Login Items Settings"
+          }
+        }
+      }
+    },
+    "Opens a larger view": {
+      "comment": "Accessibility hint for a screenshot thumbnail.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens a larger view"
+          }
+        }
+      }
+    },
+    "Pause": {
+      "comment": "Toggle that freezes the log list.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pause"
+          }
+        }
+      }
+    },
+    "Phase": {
+      "comment": "Environment tab row label for the VM phase.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phase"
+          }
+        }
+      }
+    },
+    "Poll": {
+      "comment": "Chart axis label for the poll index.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poll"
+          }
+        }
+      }
+    },
+    "Popular": {
+      "comment": "Section heading for popular apps.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Popular"
+          }
+        }
+      }
+    },
+    "Quit Crosswind Host": {
+      "comment": "Menu bar item that quits the host agent.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quit Crosswind Host"
+          }
+        }
+      }
+    },
+    "Read only": {
+      "comment": "Toggle: the shared folder is read-only for Linux apps.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read only"
+          }
+        }
+      }
+    },
+    "Release Notes": {
+      "comment": "Disclosure label for the release notes.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Release Notes"
+          }
+        }
+      }
+    },
+    "Report a Problem": {
+      "comment": "Link to the app's bug tracker.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report a Problem"
+          }
+        }
+      }
+    },
+    "Reset": {
+      "comment": "Destructive button in the reset confirmation dialog.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset"
+          }
+        }
+      }
+    },
+    "Reset Linux Environment…": {
+      "comment": "Destructive button that resets the environment.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset Linux Environment…"
+          }
+        }
+      }
+    },
+    "Reset the Linux environment?": {
+      "comment": "Title of the reset confirmation dialog.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset the Linux environment?"
+          }
+        }
+      }
+    },
+    "Resident memory": {
+      "comment": "Host agent row label for memory use.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resident memory"
+          }
+        }
+      }
+    },
+    "Restart Environment": {
+      "comment": "Button that restarts the Linux environment.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restart Environment"
+          }
+        }
+      }
+    },
+    "Retry": {
+      "comment": "Button that retries a failed action.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retry"
+          }
+        }
+      }
+    },
+    "Running": {
+      "comment": "Badge and status label: the app is running.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Running"
+          }
+        }
+      }
+    },
+    "Running Apps": {
+      "comment": "Menu bar submenu title.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Running Apps"
+          }
+        }
+      }
+    },
+    "Running apps": {
+      "comment": "Environment tab section heading for running apps.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Running apps"
+          }
+        }
+      }
+    },
+    "Saved to": {
+      "comment": "Row label for the saved diagnostics file.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved to"
+          }
+        }
+      }
+    },
+    "Scale": {
+      "comment": "Windows table column: display scale.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scale"
+          }
+        }
+      }
+    },
+    "Science": {
+      "comment": "Category name.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Science"
+          }
+        }
+      }
+    },
+    "Screenshot %lld of %lld": {
+      "comment": "Accessibility label for a screenshot. First %lld is the position, second the total.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screenshot %lld of %lld"
+          }
+        }
+      }
+    },
+    "Search": {
+      "comment": "Navigation title for search results.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search"
+          }
+        }
+      }
+    },
+    "Search Apps": {
+      "comment": "Empty search state title.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search Apps"
+          }
+        }
+      }
+    },
+    "Search apps": {
+      "comment": "Prompt in the toolbar search field.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search apps"
+          }
+        }
+      }
+    },
+    "Setting up Linux apps": {
+      "comment": "Setup progress title while the environment image is installed.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Setting up Linux apps"
+          }
+        }
+      }
+    },
+    "Settings": {
+      "comment": "Sidebar category name: system settings apps.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings"
+          }
+        }
+      }
+    },
+    "Share": {
+      "comment": "Button in the folder picker that shares the chosen folder.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share"
+          }
+        }
+      }
+    },
+    "Share the clipboard with Linux apps": {
+      "comment": "Toggle: share text and images with Linux apps.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share the clipboard with Linux apps"
+          }
+        }
+      }
+    },
+    "Shared Folders": {
+      "comment": "Settings tab name.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shared Folders"
+          }
+        }
+      }
+    },
+    "Shared folders appear in Linux apps under /mnt/mac.": {
+      "comment": "Caption under the Add Folder button.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shared folders appear in Linux apps under /mnt/mac."
+          }
+        }
+      }
+    },
+    "Show Less": {
+      "comment": "Button that collapses the app description.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Less"
+          }
+        }
+      }
+    },
+    "Show More": {
+      "comment": "Button that expands the app description.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show More"
+          }
+        }
+      }
+    },
+    "Show a larger view of this screenshot": {
+      "comment": "Tooltip for a screenshot thumbnail.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show a larger view of this screenshot"
+          }
+        }
+      }
+    },
+    "Show in Finder": {
+      "comment": "Context menu item that reveals the app bundle.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show in Finder"
+          }
+        }
+      }
+    },
+    "Show the app's bundle in Finder": {
+      "comment": "Tooltip for Show in Finder.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show the app's bundle in Finder"
+          }
+        }
+      }
+    },
+    "Size": {
+      "comment": "Windows table column: window size in pixels.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Size"
+          }
+        }
+      }
+    },
+    "Source": {
+      "comment": "Log source picker label.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Source"
+          }
+        }
+      }
+    },
+    "Source on GitHub": {
+      "comment": "Link to the project repository.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Source on GitHub"
+          }
+        }
+      }
+    },
+    "Space used": {
+      "comment": "Storage row label for the total size of the data folder.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Space used"
+          }
+        }
+      }
+    },
+    "Start Environment": {
+      "comment": "Button that starts the virtual machine.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start Environment"
+          }
+        }
+      }
+    },
+    "Starting…": {
+      "comment": "Status label while the environment starts.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starting…"
+          }
+        }
+      }
+    },
+    "Stop Environment": {
+      "comment": "Button that stops the virtual machine.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop Environment"
+          }
+        }
+      }
+    },
+    "Stop sharing %@": {
+      "comment": "Accessibility label for removing a shared folder. %@ is the folder name.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop sharing %@"
+          }
+        }
+      }
+    },
+    "Stop sharing this folder": {
+      "comment": "Tooltip for removing a shared folder.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop sharing this folder"
+          }
+        }
+      }
+    },
+    "Stop the list from updating": {
+      "comment": "Tooltip for Pause.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop the list from updating"
+          }
+        }
+      }
+    },
+    "Stop when idle": {
+      "comment": "Stepper label for the idle timeout.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop when idle"
+          }
+        }
+      }
+    },
+    "Stopped": {
+      "comment": "Status label: the environment is stopped.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stopped"
+          }
+        }
+      }
+    },
+    "Stopping…": {
+      "comment": "Status label while the environment stops.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stopping…"
+          }
+        }
+      }
+    },
+    "Storage": {
+      "comment": "Settings tab name.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Storage"
+          }
+        }
+      }
+    },
+    "Store": {
+      "comment": "Sidebar section heading for the store.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Store"
+          }
+        }
+      }
+    },
+    "Support": {
+      "comment": "Diagnostics section heading for support tools.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Support"
+          }
+        }
+      }
+    },
+    "System": {
+      "comment": "Category name.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System"
+          }
+        }
+      }
+    },
+    "Tested %@ on guest image %@. Each app is launched in the Linux guest and checked for a window, rendered frames, input and a clean exit. The guest renders on the CPU, so GPU-accelerated drawing is not covered.": {
+      "comment": "Compatibility explanation. First %@ is the test date, second the guest image version.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tested %@ on guest image %@. Each app is launched in the Linux guest and checked for a window, rendered frames, input and a clean exit. The guest renders on the CPU, so GPU-accelerated drawing is not covered."
+          }
+        }
+      }
+    },
+    "Text and images are shared while a Crosswind app is in front.": {
+      "comment": "Tooltip for clipboard sharing.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Text and images are shared while a Crosswind app is in front."
+          }
+        }
+      }
+    },
+    "The last action didn't finish": {
+      "comment": "Title of the banner for a failed action.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The last action didn't finish"
+          }
+        }
+      }
+    },
+    "This app has not been tested on Crosswind yet. Its window, rendering, input and exit were not checked.": {
+      "comment": "Compatibility explanation for an app with no rating.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This app has not been tested on Crosswind yet. Its window, rendering, input and exit were not checked."
+          }
+        }
+      }
+    },
+    "This only happens the first time.": {
+      "comment": "Footnote under the setup progress.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This only happens the first time."
+          }
+        }
+      }
+    },
+    "Time": {
+      "comment": "Log table column: time of the entry.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Time"
+          }
+        }
+      }
+    },
+    "Top in %@": {
+      "comment": "Section heading for a top category. %@ is the category name.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Top in %@"
+          }
+        }
+      }
+    },
+    "Trending": {
+      "comment": "Eyebrow label above the trending app.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trending"
+          }
+        }
+      }
+    },
+    "Try Again": {
+      "comment": "Button that retries startup.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try Again"
+          }
+        }
+      }
+    },
+    "Uninstall": {
+      "comment": "Destructive button that removes an app.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uninstall"
+          }
+        }
+      }
+    },
+    "Uninstall %@?": {
+      "comment": "Confirmation title. %@ is the app name.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uninstall %@?"
+          }
+        }
+      }
+    },
+    "Uninstall and Delete Data": {
+      "comment": "Destructive button that removes an app and its data.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uninstall and Delete Data"
+          }
+        }
+      }
+    },
+    "Uninstall…": {
+      "comment": "Context menu item that starts uninstalling an app.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uninstall…"
+          }
+        }
+      }
+    },
+    "Unknown": {
+      "comment": "Environment state when the VM phase is not recognized.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unknown"
+          }
+        }
+      }
+    },
+    "Update": {
+      "comment": "Button that updates an app.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update"
+          }
+        }
+      }
+    },
+    "Update %@": {
+      "comment": "Accessibility label for the Update button. %@ is the app name.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update %@"
+          }
+        }
+      }
+    },
+    "Update All": {
+      "comment": "Button that updates every app with an update.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update All"
+          }
+        }
+      }
+    },
+    "Updates": {
+      "comment": "Sidebar item for available updates.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Updates"
+          }
+        }
+      }
+    },
+    "Updates Available": {
+      "comment": "Heading on the Updates page.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Updates Available"
+          }
+        }
+      }
+    },
+    "Updates for your installed apps appear here.": {
+      "comment": "Empty state description on the Updates page.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Updates for your installed apps appear here."
+          }
+        }
+      }
+    },
+    "Updating Linux environment…": {
+      "comment": "Setup progress title while the environment image is updated.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Updating Linux environment…"
+          }
+        }
+      }
+    },
+    "Updating all apps": {
+      "comment": "Accessibility label for the progress of Update All.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Updating all apps"
+          }
+        }
+      }
+    },
+    "Uptime": {
+      "comment": "Environment row label for how long the VM has run.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uptime"
+          }
+        }
+      }
+    },
+    "Use the Command key for shortcuts that Linux apps expect on Control.": {
+      "comment": "Tooltip for the Command key toggle.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use the Command key for shortcuts that Linux apps expect on Control."
+          }
+        }
+      }
+    },
+    "Utilities": {
+      "comment": "Category name.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Utilities"
+          }
+        }
+      }
+    },
+    "Verified developer": {
+      "comment": "Accessibility label and tooltip for the verified publisher seal.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verified developer"
+          }
+        }
+      }
+    },
+    "Version": {
+      "comment": "Information row label for the app version.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version"
+          }
+        }
+      }
+    },
+    "Version %@": {
+      "comment": "Version line. %@ is the version string.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %@"
+          }
+        }
+      }
+    },
+    "Version %@ → %@": {
+      "comment": "Update line. First %@ is the installed version, second the latest.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %@ → %@"
+          }
+        }
+      }
+    },
+    "Video": {
+      "comment": "Category name.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video"
+          }
+        }
+      }
+    },
+    "Virtual CPUs": {
+      "comment": "Stepper label for the number of guest CPUs.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Virtual CPUs"
+          }
+        }
+      }
+    },
+    "Virtual machine": {
+      "comment": "Environment tab section heading.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Virtual machine"
+          }
+        }
+      }
+    },
+    "Warning and up": {
+      "comment": "Log level filter option: warnings and errors.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Warning and up"
+          }
+        }
+      }
+    },
+    "Website": {
+      "comment": "Link to the app's website.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Website"
+          }
+        }
+      }
+    },
+    "What's New": {
+      "comment": "Section heading for the latest release notes.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What's New"
+          }
+        }
+      }
+    },
+    "Windows & Performance": {
+      "comment": "Diagnostics tab name.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Windows & Performance"
+          }
+        }
+      }
+    },
+    "Windows appear here while an app is open.": {
+      "comment": "Empty state description on the Windows tab.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Windows appear here while an app is open."
+          }
+        }
+      }
+    },
+    "Working on %@": {
+      "comment": "Accessibility label for an app with an operation running. %@ is the app name.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Working on %@"
+          }
+        }
+      }
+    },
+    "Your data in this app is kept.": {
+      "comment": "Uninstall confirmation message when data is kept.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your data in this app is kept."
+          }
+        }
+      }
+    },
+    "connected": {
+      "comment": "Value: the store is connected to the host agent.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "connected"
+          }
+        }
+      }
+    },
+    "failed": {
+      "comment": "Phase value: the VM failed to start or stop.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "failed"
+          }
+        }
+      }
+    },
+    "measuring": {
+      "comment": "CPU usage value before the first sample.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "measuring"
+          }
+        }
+      }
+    },
+    "not connected": {
+      "comment": "Value: the store is not connected to the host agent.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "not connected"
+          }
+        }
+      }
+    },
+    "not exposed by the control protocol": {
+      "comment": "Value explaining the guest kernel and hostname are not available.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "not exposed by the control protocol"
+          }
+        }
+      }
+    },
+    "running": {
+      "comment": "Phase value: the VM is running.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "running"
+          }
+        }
+      }
+    },
+    "starting": {
+      "comment": "Phase value: the VM is starting.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "starting"
+          }
+        }
+      }
+    },
+    "stopped": {
+      "comment": "Phase value: the VM is stopped.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "stopped"
+          }
+        }
+      }
+    },
+    "stopping": {
+      "comment": "Phase value: the VM is stopping.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "stopping"
+          }
+        }
+      }
+    },
+    "unknown": {
+      "comment": "Phase value when the VM phase is not recognized.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "unknown"
+          }
+        }
+      }
+    }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

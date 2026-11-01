@@ -230,6 +230,7 @@ impl State {
     fn remove_window(&mut self, surface: &WlSurface) {
         if let Some(pos) = self.windows.iter().position(|w| &w.surface == surface) {
             let win = self.windows.remove(pos);
+            tracing::info!("DBG window {} removed announced={}", win.id, win.announced);  // DEBUG-TEMP
             if win.announced {
                 self.send(pb::to_host::Msg::Closed(pb::WindowClosed { id: win.id }));
             }

@@ -7,13 +7,19 @@
 //! The user may take minutes, so the wait runs on its own thread and the zbus method awaits a
 //! oneshot. The zbus executor is never blocked.
 
-use std::{collections::HashMap, thread, time::Duration};
+use std::{
+    collections::HashMap,
+    sync::atomic::{AtomicBool, Ordering},
+    thread,
+    time::Duration,
+};
 
 use futures_channel::oneshot;
 use zbus::{OwnedVariant, Variant, fdo, interface, ObjectPath};
 
 use super::Bridge;
 use crate::control_pb::{self as pb, call, call_reply};
+use crate::limits;
 
 /// How long the user may take to answer the panel before the call gives up.
 pub const CHOOSER_TIMEOUT: Duration = Duration::from_secs(600);
@@ -50,15 +56,36 @@ pub fn parse_filters(filters: &[(String, Vec<(u32, String)>)]) -> Vec<String> {
     filters
         .iter()
         .flat_map(|(_, patterns)| patterns.iter())
-        .filter(|(kind, pattern)| matches!(kind, 0 | 1) && !pattern.is_empty())
+        .filter(|(kind, pattern)| matches!(kind, 0 | 1) && !pattern.is_empty() && pattern.len() <= limits::MAX_PATTERN)
+        .take(limits::MAX_FILTERS)
         .map(|(_, pattern)| pattern.clone())
         .collect()
+}
+
+/// One file dialog at a time: a second call while one is open is refused, so a guest app cannot stack panels.
+static DIALOG_OPEN: AtomicBool = AtomicBool::new(false);
+
+struct DialogSlot;
+
+impl DialogSlot {
+    fn try_take() -> Option<Self> {
+        (!DIALOG_OPEN.swap(true, Ordering::AcqRel)).then_some(DialogSlot)
+    }
+}
+
+impl Drop for DialogSlot {
+    fn drop(&mut self) {
+        DIALOG_OPEN.store(false, Ordering::Release);
+    }
 }
 
 /// Reads the options a{sv} dict. Missing or mistyped keys keep their defaults.
 pub fn parse_options(options: &HashMap<String, OwnedVariant>) -> Options {
     let flag = |key: &str| options.get(key).and_then(|v| bool::try_from(v.clone()).ok()).unwrap_or(false);
-    let text = |key: &str| options.get(key).and_then(|v| String::try_from(v.clone()).ok()).unwrap_or_default();
+    let text = |key: &str| {
+        let raw = options.get(key).and_then(|v| String::try_from(v.clone()).ok()).unwrap_or_default();
+        limits::clean(&raw, limits::MAX_FIELD)
+    };
     let filters = options
         .get("filters")
         .and_then(|v| <Vec<(String, Vec<(u32, String)>)>>::try_from(v.clone()).ok())
@@ -69,8 +96,10 @@ pub fn parse_options(options: &HashMap<String, OwnedVariant>) -> Options {
         .and_then(|v| <Vec<Vec<u8>>>::try_from(v.clone()).ok())
         .unwrap_or_default()
         .into_iter()
+        .take(limits::MAX_FILES)
         .filter_map(|name| String::from_utf8(name).ok())
-        .filter(|name| !name.is_empty() && !name.contains('/'))
+        .map(|name| limits::clean(&name, limits::MAX_FIELD))
+        .filter(|name| !name.is_empty() && !name.contains('/') && name != "." && name != "..")
         .collect();
     Options {
         multiple: flag("multiple"),
@@ -161,13 +190,17 @@ impl FileChooser {
         options: HashMap<String, OwnedVariant>,
     ) -> (u32, HashMap<String, OwnedVariant>) {
         let parsed = parse_options(&options);
+        let Some(_slot) = DialogSlot::try_take() else {
+            tracing::warn!("file chooser refused: another dialog is open");
+            return (RESPONSE_OTHER, HashMap::new());
+        };
         let body = call::Body::FileChooser(pb::FileChooser {
             mode: match kind_for(method, &parsed) {
                 Kind::Open => pb::file_chooser::Mode::Open,
                 Kind::Save => pb::file_chooser::Mode::Save,
                 Kind::OpenDirectory => pb::file_chooser::Mode::OpenDirectory,
             } as i32,
-            title: title.to_owned(),
+            title: limits::clean(title, limits::MAX_FIELD),
             multiple: parsed.multiple,
             filters: parsed.filters.clone(),
             suggested_name: parsed.current_name.clone(),

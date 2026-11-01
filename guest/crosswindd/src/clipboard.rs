@@ -121,7 +121,8 @@ pub fn paste(state: &mut State, seat: &Seat<State>, mime: String, fd: OwnedFd) {
                 Some(pb::call_reply::Result::Clipboard(data)) => Some(data.data),
                 _ => None,
             });
-        if let Some(data) = data {
+        // The host's data is untrusted in size too: anything over the cap for its type is dropped.
+        if let Some(data) = data.filter(|d| d.len() <= size_cap(host)) {
             let _ = File::from(fd).write_all(&data);
         }
     });

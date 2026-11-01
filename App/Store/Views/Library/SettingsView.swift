@@ -104,8 +104,10 @@ private struct EnvironmentSettings: View {
                 }
             } footer: {
                 Text(
-                    "Applies the next time the environment starts. Stopping it frees its memory; "
-                        + "apps start it again when you open them.")
+                    """
+                    Applies the next time the environment starts. Stopping it frees its memory; \
+                    apps start it again when you open them.
+                    """)
             }
             Section {
                 Button("Restart Environment") { run { try await model.restartEnvironment() } }

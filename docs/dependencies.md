@@ -9,7 +9,7 @@ Column notes: "Last push" is GitHub `pushed_at`. "Open issues" is GitHub `open_i
 - **No incompatible direct dependency found.** Every direct dependency is MIT, Apache-2.0, or MPL-2.0, and all three can be combined into an AGPL-3.0-or-later distribution. Apache-2.0 code is one-way compatible with AGPLv3. MPL-2.0 lists AGPL-3.0 as a Secondary License, so it can be combined as a Larger Work. The rejected GPL-3.0 `waypipe` is not linked into this project.
 - **The guest image ships GPL-2.0 and GPL-2.0-or-later code, plus LGPL-2.1.** This applies to `linux-virt` (the kernel), `busybox`, `busybox-openrc`, `mkinitfs`, `alpine-baselayout`, `iproute2`, `hicolor-icon-theme`, and LGPL packages such as `bubblewrap`, `flatpak`, `pipewire`, and `wireplumber`. These are separate programs in an aggregate image, so AGPL does not spread to them. Any release that distributes the image must still provide the corresponding source (or a written offer for it) for every GPL and LGPL component, and must include their license texts. This is an open obligation, not yet implemented in the release process. Verify before the first Developer ID release.
 - **Alpine packages are not pinned.** `image/build.sh` installs whatever `v3.23` main and community provide at build time. The license column below reflects the current v3.23 metadata. Re-check it when the image is rebuilt.
-- **Sparkle (planned)** has no single SPDX license on GitHub (reported as NOASSERTION). Its LICENSE file is a composite of MIT and several bundled third-party licenses (BSD-style and others). The app bundle must include those notices when Sparkle ships.
+- **Sparkle (2.10.1, shipped in the store app)** has no single SPDX license on GitHub (reported as NOASSERTION). Its LICENSE file is a composite: MIT for Sparkle's own code, plus MIT and BSD-style notices for bundled third-party code. The notices ship in the app as `Contents/Resources/Sparkle-LICENSE.txt` (copied from the package's LICENSE).
 - **pixman crate:** GitHub reports no license for `cmeissl/pixman-rs` and the repository has no LICENSE file at the root. The `pixman/Cargo.toml` and crates.io both say MIT. Treat this as MIT with a metadata gap, and raise it upstream.
 
 ## Summary
@@ -18,11 +18,24 @@ Column notes: "Last push" is GitHub `pushed_at`. "Open issues" is GitHub `open_i
 |---|---|---|
 | Rust direct deps (crosswindd) | 6 runtime + 1 build (+ Smithay) | `prost-build` is build-only |
 | Rust transitive crates | 103 | 104 entries in `guest/Cargo.lock`, minus the `crosswindd` package itself |
-| Swift direct deps | 2 packages (swift-protobuf, swift-argument-parser) | Declared in `Package.swift` and `project.yml` |
+| Swift direct deps | 3 packages (swift-protobuf, swift-argument-parser, Sparkle) | Declared in `Package.swift` and `project.yml`; Sparkle is in the app target only |
 | Dev tools | XcodeGen, SwiftLint, swift-format (Xcode), Lima | Not shipped |
 | Guest image packages | 31 listed in `image/packages` | Table below |
 
 ## Direct dependencies
+
+### Sparkle (Swift package, `Sparkle`)
+
+- **Why:** signed in-app updates for the Developer ID build (`docs/adr/0001-license-and-name.md`, which rules out the Mac App Store).
+- **Used by:** the store app only (`App/Store/Updates/AppUpdater.swift`, the Crosswind target in `project.yml`). `CrosswindKit` does not depend on it. The embedded `Sparkle.framework` and its XPC services and `Autoupdate` are signed by `scripts/release.sh`.
+- **Version pinned:** exact **2.10.1** in `project.yml` (`exactVersion`). Latest GitHub release: 2.10.1 (2026-10-25), checked with `gh release list -R sparkle-project/Sparkle`.
+- **License:** see the license flags above. Notices ship in the app.
+- **Last push:** 2026-10-25. **Open issues:** 11. **Recent contributors:** 14 (all-time 100+). Figures from the audit date.
+- **macOS 27 / Apple silicon:** the package builds for the macOS 27 target on arm64 and the release export passes the signature checks. An end-to-end update on macOS 27 has not been run yet.
+- **Security model:** updates are signed with an EdDSA (Ed25519) key. `SUPublicEDKey` is in `project.yml`; the private key is in the release machine's login keychain. DSA is not used (deprecated by Sparkle).
+- **Privacy:** automatic checks are on by default; `SUEnableSystemProfiling` is `NO`, so Sparkle does not send a system profile.
+- **Alternatives rejected:** Mac App Store updates (excluded by the license ADR); Sparkle 1.x (superseded; no EdDSA); DSA signing (deprecated); a hand-written updater (would have to implement signature checks, download, and safe install and relaunch itself).
+- **Replacement plan / cost:** Medium. Remove the package, `AppUpdater.swift`, the `SU*` keys, and the appcast step in `release.sh`. Users would then download new versions by hand. The EdDSA private key must be backed up: losing it stops updates for every installed copy.
 
 ### Smithay (Rust, `smithay`, git)
 
@@ -213,17 +226,6 @@ Column notes: "Last push" is GitHub `pushed_at`. "Open issues" is GitHub `open_i
 - **Alternatives rejected:** in-process X11 window manager (`X11Wm` in Smithay), kept as a fallback only if clipboard or drag-and-drop control needs it (`docs/research/guest-integration.md`).
 - **Replacement plan / cost:** Bump `XWS_TAG` deliberately and re-verify. Fractional-scale rounding in xwayland-satellite needs a host-side workaround (`docs/research/integration-areas.md`).
 
-## Planned
-
-### Sparkle (planned)
-
-- **Why:** signed auto-updates for the Developer ID build (`docs/adr/0001-license-and-name.md`).
-- **Version pinned:** not in the repo yet. Latest release is **2.10.1** (GitHub, 2026-10-25).
-- **License:** composite. The main code is MIT. Bundled third-party components use other permissive licenses (BSD-style and others). GitHub reports NOASSERTION. Compatible with AGPL-3.0-or-later, but the bundled notices must ship inside the app.
-- **Last push:** 2026-10-25. **Open issues:** 11. **Recent contributors:** 14 (all-time 100+).
-- **macOS 27 / Apple silicon:** the project supports current macOS releases. Check that 2.10.1 supports macOS 27 before adding it. Use EdDSA keys, not DSA (DSA is deprecated since 1.27.3, per `docs/research/integration-areas.md`).
-- **Alternatives rejected:** Mac App Store updates (excluded by the license ADR). Not recorded elsewhere.
-- **Replacement plan / cost:** Medium. Adds a framework, an appcast feed, and EdDSA signing keys. Keys must be stored offline.
 
 ## Guest image packages (`image/packages`)
 

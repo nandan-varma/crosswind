@@ -137,7 +137,8 @@ struct ImageStoreTests {
 
         #expect(await store.installedVersion() == "1")
         #expect(try fixture.installedContents("a.bin") == "old")
-        #expect(!FileManager.default.fileExists(atPath: fixture.paths.supportDirectory.appending(path: "Image.previous").path))
+        let previous = fixture.paths.supportDirectory.appending(path: "Image.previous")
+        #expect(!FileManager.default.fileExists(atPath: previous.path))
     }
 
     @Test("recovers on the next install after a failed attempt")

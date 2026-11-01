@@ -174,7 +174,15 @@ extension ToHost {
     }
 
     static func frame(_ window: UInt32) -> ToHost {
-        .with { $0.msg = .frame(.with { $0.window = window }) }
+        .with {
+            $0.msg = .frame(
+                .with {
+                    $0.window = window
+                    $0.width = 16
+                    $0.height = 16
+                    $0.scale120 = 120
+                })
+        }
     }
 
     static func changed(_ id: UInt32, title: String) -> ToHost {
