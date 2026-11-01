@@ -7,6 +7,7 @@ mod control;
 mod flatpak;
 mod handlers;
 mod host;
+mod limits;
 mod link;
 mod portal;
 mod render;

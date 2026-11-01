@@ -1,19 +1,22 @@
 # Roadmap
 
-Phases follow the project brief. Update this file with every milestone.
+Status as of 2026-10-31. Open work is tracked as GitHub issues (https://github.com/nandan-varma/crosswind/issues).
 
-## Done
-- Phase 0: research (docs/research/).
-- Phase 1 (partial): boot spike, Flatpak-in-guest spike, display path spike with latency measurement; ADRs 0001-0007.
+## Built (unit-tested; items marked * still need a live-guest or on-screen check)
+- VM on Virtualization.framework: direct kernel boot of an Alpine guest (erofs system disk + data disk), lazy start, idle stop, memory ballooning, resource settings, reset.
+- Guest compositor (`crosswindd`, Smithay + pixman) streaming damage over vsock; native NSWindow per Linux window; popups; double-buffered surfaces.
+- Three-process model: host agent, store, per-app stubs with own Dock tile and icon; XPC handshake + socketpair.
+- Flatpak via libflatpak (install/update/uninstall with progress, launch, logs, permissions), Flathub AppStream catalog (86% of apps have aarch64 builds), popularity, store UI (Discover, categories, search, detail, Installed, Updates, permissions editor, Settings, Diagnostics).
+- Integrations: clipboard*, audio output + opt-in microphone*, notifications*, dark mode*, open links*, shared folders + native Open/Save dialogs*, XWayland (xwayland-satellite)*, keyboard layouts*, IME*, window management*.
+- Safety: guest-hostile-input limits and rate limits, fuzz-style tests (docs/security.md).
+- Tooling: `crosswindctl` (status, install, windows, type/click injection, logs, diagnose, compat), diagnostics bundle with redaction, compatibility harness and ratings, signed release export, Sparkle, image installer with verification.
 
-## In progress
-- Phase 2/3: control channel (Flatpak ops, launch, logs), Swift control client, AppStream catalog parser, app scaffold, host agent/stub process split.
-
-## Next
-1. Walking skeleton (v0.1.0): first-run image download + checksum, boot, install one Flatpak, launch it as a native window with a Dock tile.
-2. Store UI, compatibility matrix harness, Diagnostics window and `crosswindctl`.
-3. Integration: clipboard, file dialogs (portal backend), audio, notifications, URL handlers, shared folders, IME, drag-and-drop, XWayland.
-4. Hardening: fuzzing, performance/battery pass, accessibility, notarization, Sparkle.
+## Next (see issues)
+1. Live verification pass of everything marked * (human test list in the issues).
+2. Electron apps (VSCodium), X11 window attribution, remaining compat batch.
+3. Drag and drop, tray icons, Finder file-type handlers, x86 apps via Rosetta.
+4. Release: notarization, DMG, appcast, hosted guest image, v0.1.0.
+5. Performance/battery baselines in CI, crash/hang watchdog.
 
 ## Explicit non-goals (v1)
 Guest GPU acceleration, webcams, Bluetooth, Mac App Store distribution.

@@ -56,6 +56,9 @@ impl State {
         let scale = scale_120 as f64 / 120.0;
         let pw = (geo.size.w as f64 * scale).round() as i32;
         let ph = (geo.size.h as f64 * scale).round() as i32;
+        if !crate::limits::surface_ok(pw.max(0) as u32, ph.max(0) as u32, scale_120) {
+            return;
+        }
 
         let State { renderer, windows, .. } = self;
         let win = &mut windows[idx];
@@ -130,7 +133,7 @@ impl State {
             parent,
             x,
             y,
-            title,
+            title: crate::limits::clean(&title, crate::limits::MAX_TITLE),
             app_id,
             min_width: min.w as u32,
             min_height: min.h as u32,

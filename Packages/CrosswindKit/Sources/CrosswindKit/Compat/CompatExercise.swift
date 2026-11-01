@@ -127,7 +127,7 @@ extension CompatHarness {
         .with { $0.msg = .close(.with { $0.window = window }) }
     }
 
-    /// Pointer motion to the centre, a left click, then Space and Return.
+    /// Pointer motion to the centre, a left click, then Shift.
     private static func inputSequence(window: UInt32, x: Double, y: Double) -> [ToGuest] {
         func input(_ event: Crosswind_Display_Input.OneOf_Event) -> ToGuest {
             .with {
@@ -165,8 +165,9 @@ extension CompatHarness {
                         $0.button = 0x110
                         $0.pressed = false
                     })),
-            key(57, true), key(57, false),  // Space
-            key(28, true), key(28, false),  // Return
+            // Shift only: a harmless key. Space or Return would type into a document and make it
+            // unsaved, so the close prompt would then be the app's correct behaviour, not a failure.
+            key(42, true), key(42, false),  // Left Shift
         ]
     }
 }

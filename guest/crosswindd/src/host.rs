@@ -5,7 +5,7 @@ use smithay::{
     backend::input::{Axis, AxisSource, ButtonState, InputTime, KeyState},
     desktop::{WindowSurfaceType, utils::under_from_surface_tree},
     input::{
-        keyboard::{FilterResult, Keycode},
+        keyboard::{FilterResult, Keycode, XkbConfig},
         pointer::{AxisFrame, ButtonEvent, MotionEvent},
     },
     output::{Mode, Scale},
@@ -17,8 +17,10 @@ use smithay::{
     wayland::{compositor::{with_surface_tree_downward, TraversalAction}, fractional_scale::with_fractional_scale},
 };
 use smithay::wayland::compositor::SurfaceData;
+use smithay::wayland::text_input::TextInputSeat;
 
 use crate::{
+    limits,
     pb::{self, input::Event, to_guest::Msg},
     render::geometry,
     state::{Role, State},
@@ -53,11 +55,16 @@ impl State {
                 }
             }
             Msg::Input(i) => self.input(i),
+            Msg::KeyboardLayout(l) => self.set_keyboard_layout(l),
+            Msg::TextInput(t) => self.text_input(t),
         }
     }
 
     fn set_output(&mut self, o: pb::Output) {
-        self.scale_120 = o.scale_120.max(120);
+        if o.width == 0 || o.height == 0 || o.width > limits::MAX_SIDE || o.height > limits::MAX_SIDE {
+            return;
+        }
+        self.scale_120 = o.scale_120.clamp(limits::SCALE_120_MIN.max(120), limits::SCALE_120_MAX);
         let scale = self.scale_120 as f64 / 120.0;
         let physical: Size<i32, _> = (((o.width as f64) * scale).round() as i32, ((o.height as f64) * scale).round() as i32).into();
         self.output.change_current_state(
@@ -100,6 +107,10 @@ impl State {
     }
 
     fn configure(&mut self, c: pb::Configure) {
+        if c.width > limits::MAX_SIDE || c.height > limits::MAX_SIDE {
+            return;
+        }
+        let c = pb::Configure { scale_120: c.scale_120.clamp(limits::SCALE_120_MIN, limits::SCALE_120_MAX), ..c };
         self.apply_window_scale(c.window, c.scale_120);
         let Some(win) = self.windows.iter().find(|w| w.id == c.window) else { return };
         let Role::Toplevel(t) = &win.role else { return };
@@ -121,11 +132,59 @@ impl State {
         }
     }
 
+    /// Rebuilds the seat keymap for the host's layout. Key codes are physical, so only the characters change; the
+    /// repeat rate and delay on the keyboard handle are kept.
+    fn set_keyboard_layout(&mut self, l: pb::KeyboardLayout) {
+        let Some((layout, variant)) = xkb_names(&l) else {
+            tracing::warn!("host keyboard layout refused: not an xkb name");
+            return;
+        };
+        let Some(kb) = self.seat.get_keyboard() else { return };
+        let config = XkbConfig { layout: &layout, variant: &variant, ..Default::default() };
+        if let Err(e) = kb.set_xkb_config(self, config) {
+            tracing::warn!("xkb keymap {layout}/{variant} failed: {e}");
+        }
+    }
+
+    /// Applies the host's composition result to the client that has text input focus. Dropped unless `window` is
+    /// the focused window, so a late update cannot land in another client.
+    fn text_input(&mut self, t: pb::TextInput) {
+        let text_input = self.seat.text_input().clone();
+        let Some(focus) = text_input.focus() else { return };
+        if self.win_by_surface(&focus).map(|w| w.id) != Some(t.window) {
+            tracing::debug!("text input for window {} dropped: not focused", t.window);
+            return;
+        }
+        text_input.with_active_text_input(|ti, _| {
+            if let Some(d) = &t.delete_surrounding {
+                ti.delete_surrounding_text(d.before, d.after);
+            }
+            if let Some(c) = &t.commit {
+                ti.commit_string((!c.text.is_empty()).then(|| c.text.clone()));
+            }
+            if let Some(p) = &t.preedit {
+                let text = (!p.text.is_empty()).then(|| p.text.clone());
+                let (begin, end) = preedit_cursor(&p.text, p.cursor_begin, p.cursor_end)
+                    .unwrap_or((p.text.len() as i32, p.text.len() as i32));
+                ti.preedit_string(text, begin, end);
+            }
+        });
+        text_input.done(false);
+    }
+
     fn input(&mut self, input: pb::Input) {
         tracing::debug!(?input, "input");
         let Some(win) = self.windows.iter().find(|w| w.id == input.window) else { return };
         let surface = win.surface.clone();
         let Some(event) = input.event else { return };
+        let sane = match &event {
+            Event::Motion(m) => limits::finite(m.x) && limits::finite(m.y),
+            Event::Axis(a) => limits::finite(a.dx) && limits::finite(a.dy),
+            _ => true,
+        };
+        if !sane {
+            return;
+        }
         let ptr = self.seat.get_pointer().expect("pointer");
         let kb = self.seat.get_keyboard().expect("keyboard");
         let serial = SERIAL_COUNTER.next_serial();
@@ -166,6 +225,24 @@ impl State {
     }
 }
 
+/// XKB layout and variant names from the host. Empty layout means "us". `None` when a name is not a plain XKB
+/// identifier, so the current keymap stays.
+pub fn xkb_names(l: &pb::KeyboardLayout) -> Option<(String, String)> {
+    let plain = |s: &str| s.len() <= 32 && s.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_');
+    let layout = if l.layout.is_empty() { "us" } else { l.layout.as_str() };
+    (plain(layout) && plain(&l.variant)).then(|| (layout.to_owned(), l.variant.clone()))
+}
+
+/// Preedit cursor offsets checked against the text: UTF-8 byte offsets on character boundaries with begin <= end.
+/// Both -1 means no cursor. `None` for anything else.
+pub fn preedit_cursor(text: &str, begin: i32, end: i32) -> Option<(i32, i32)> {
+    if (begin, end) == (-1, -1) {
+        return Some((-1, -1));
+    }
+    let on_boundary = |i: i32| usize::try_from(i).is_ok_and(|i| text.is_char_boundary(i));
+    (on_boundary(begin) && on_boundary(end) && begin <= end).then_some((begin, end))
+}
+
 fn set_preferred_scale_tree(root: &WlSurface, scale: f64) {
     with_surface_tree_downward(
         root,
@@ -174,4 +251,44 @@ fn set_preferred_scale_tree(root: &WlSurface, scale: f64) {
         |_, states: &SurfaceData, _| with_fractional_scale(states, |fs| fs.set_preferred_scale(scale)),
         |_, _, _| true,
     );
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn layout(layout: &str, variant: &str) -> pb::KeyboardLayout {
+        pb::KeyboardLayout { layout: layout.into(), variant: variant.into() }
+    }
+
+    #[test]
+    fn empty_layout_means_us() {
+        assert_eq!(xkb_names(&layout("", "")), Some(("us".into(), String::new())));
+    }
+
+    #[test]
+    fn layout_and_variant_pass_through() {
+        assert_eq!(xkb_names(&layout("ch", "fr")), Some(("ch".into(), "fr".into())));
+        assert_eq!(xkb_names(&layout("us", "dvorak")), Some(("us".into(), "dvorak".into())));
+    }
+
+    #[test]
+    fn non_xkb_names_are_refused() {
+        assert_eq!(xkb_names(&layout("de;rm -rf", "")), None);
+        assert_eq!(xkb_names(&layout("us", "a b")), None);
+        assert_eq!(xkb_names(&layout(&"x".repeat(33), "")), None);
+        assert_eq!(xkb_names(&layout("", "é")), None);
+    }
+
+    #[test]
+    fn preedit_cursor_accepts_boundaries_only() {
+        // "你" is three bytes in UTF-8.
+        assert_eq!(preedit_cursor("你好", 0, 3), Some((0, 3)));
+        assert_eq!(preedit_cursor("你好", 3, 6), Some((3, 6)));
+        assert_eq!(preedit_cursor("你好", 1, 3), None);
+        assert_eq!(preedit_cursor("ab", 0, 3), None);
+        assert_eq!(preedit_cursor("ab", 2, 1), None);
+        assert_eq!(preedit_cursor("ab", -1, -1), Some((-1, -1)));
+        assert_eq!(preedit_cursor("ab", -1, 1), None);
+    }
 }

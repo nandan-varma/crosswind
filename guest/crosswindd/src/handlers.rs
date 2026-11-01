@@ -28,8 +28,10 @@ use smithay::{
             XdgToplevelSurfaceData, decoration::XdgDecorationHandler,
         },
         shm::{ShmHandler, ShmState},
+        text_input::{TextInputActivation, TextInputSeat},
     },
 };
+use smithay::reexports::wayland_protocols::wp::text_input::zv3::server::zwp_text_input_v3::{ContentHint, ContentPurpose};
 use smithay::input::dnd::{DnDGrab, DndGrabHandler, GrabType, Source};
 use smithay::reexports::wayland_protocols::xdg::shell::server::xdg_toplevel::State as XdgState;
 use smithay::reexports::wayland_server::protocol::wl_output::WlOutput;
@@ -184,6 +186,20 @@ impl XdgShellHandler for State {
     }
 }
 
+impl TextInputActivation for State {
+    fn activated(&mut self, _: Option<(ContentHint, ContentPurpose)>) {
+        if let Some(surface) = self.seat.text_input().focus() {
+            self.send_text_input(&surface, true);
+        }
+    }
+
+    fn deactivated(&mut self) {
+        if let Some(surface) = self.seat.text_input().focus() {
+            self.send_text_input(&surface, false);
+        }
+    }
+}
+
 impl XdgDecorationHandler for State {
     fn new_decoration(&mut self, toplevel: ToplevelSurface) {
         // The macOS window supplies the frame.
@@ -216,6 +232,14 @@ impl SeatHandler for State {
     fn focus_changed(&mut self, seat: &Seat<Self>, focused: Option<&WlSurface>) {
         let dh = &self.display_handle;
         set_data_device_focus(dh, seat, focused.and_then(|s| dh.get_client(s.id()).ok()));
+        // Text input follows keyboard focus. Leaving the old client ends its text input; the host is told so.
+        let text_input = seat.text_input();
+        if let Some(old) = text_input.focus() {
+            self.send_text_input(&old, false);
+        }
+        text_input.leave();
+        text_input.set_focus(focused.cloned());
+        text_input.enter();
     }
 }
 

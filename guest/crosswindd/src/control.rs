@@ -286,33 +286,6 @@ impl Control {
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .process_group(0);
-        // DEBUG-TEMP (remove before finishing): dump the wrapper, profile and singleton state; Electron logging on.
-        if app_id == "com.vscodium.codium" {
-            cmd.env("ELECTRON_ENABLE_LOGGING", "1");
-            let script = "echo == wrapper; head -c 4000 /app/bin/com.vscodium.codium-wrapper; echo; ls -la /app/bin; \
-                echo == config; find ~/.var/app/com.vscodium.codium/config -maxdepth 2 2>&1 | head -40; \
-                for f in ~/.var/app/com.vscodium.codium/config/*.conf; do echo $f; cat $f; done; \
-                echo == singleton; find ~/.var/app/com.vscodium.codium -name 'Singleton*' 2>/dev/null; \
-                echo == sysctl; cat /proc/sys/user/max_user_namespaces; ls -la /dev/shm; \
-                echo == procs; for p in /proc/[0-9]*; do echo $p $(tr '\\0' ' ' < $p/cmdline 2>/dev/null | head -c 150); done | head -40; \
-                echo == env; env | grep -i 'wayland\\|ozone\\|dbus\\|xdg\\|display\\|electron'";
-            if let Ok(mut dbg) = Command::new("flatpak")
-                .args(["run", "--user", "--command=sh", app_id, "-c", script])
-                .stdin(Stdio::null())
-                .stdout(Stdio::piped())
-                .stderr(Stdio::piped())
-                .spawn()
-            {
-                let id = launch_id.clone();
-                if let Some(o) = dbg.stdout.take() {
-                    pipe_lines(o, self.notes.clone(), app_id.to_owned(), id.clone(), 6);
-                }
-                if let Some(e) = dbg.stderr.take() {
-                    pipe_lines(e, self.notes.clone(), app_id.to_owned(), id, 4);
-                }
-            }
-        }
-        // END DEBUG-TEMP
         if let Some(tz) = &self.tz {
             cmd.env("TZ", tz);
         }
