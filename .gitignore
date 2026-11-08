@@ -15,3 +15,4 @@ target/
 .env
 
 /Crosswind.xcodeproj/
+.claude/scheduled_tasks.lock
