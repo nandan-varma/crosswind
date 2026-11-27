@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Changed
+- Store design: Discover's hero takes its gradient from the app's own icon and has a page indicator; Liquid Glass buttons and badges; cards lift under the pointer; icons get a hairline and soft shadow; the sidebar's category icons carry their own colors; button state changes animate.
+- Website redesign: glass header, real store screenshot in a window frame, bento feature grid, gallery of real Linux apps, light and dark themes, reduced-motion support, previous/next and edit links in the docs.
+
 ### Added
 - Website and documentation at https://crosswind.nandan.fyi (Astro, in `site/`, published with Wrangler to Cloudflare).
 - Settings: Rosetta toggle (with install button), tray icons toggle, automatic update checks and downloads.

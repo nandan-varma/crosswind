@@ -55,20 +55,22 @@ struct StoreShell: View {
     private var sidebar: some View {
         List(selection: $section) {
             Section("Store") {
-                Label("Discover", systemImage: "sparkles")
+                tinted(Text("Discover"), symbol: "sparkles", color: .accentColor)
                     .tag(StoreSection.discover)
             }
             Section("Categories") {
                 ForEach(model.catalog.categoryCounts(), id: \.category) { entry in
-                    Label(entry.category.title, systemImage: entry.category.symbol)
-                        .badge(entry.count)
-                        .tag(StoreSection.category(entry.category))
+                    tinted(
+                        Text(verbatim: entry.category.title), symbol: entry.category.symbol, color: entry.category.tint
+                    )
+                    .badge(entry.count)
+                    .tag(StoreSection.category(entry.category))
                 }
             }
             Section("Library") {
-                Label("Installed", systemImage: "checkmark.circle")
+                tinted(Text("Installed"), symbol: "checkmark.circle", color: .green)
                     .tag(StoreSection.installed)
-                Label("Updates", systemImage: "arrow.triangle.2.circlepath")
+                tinted(Text("Updates"), symbol: "arrow.triangle.2.circlepath", color: .blue)
                     .badge(model.updatableApps.count)
                     .accessibilityValue(Text("\(model.updatableApps.count) updates available"))
                     .tag(StoreSection.updates)
@@ -76,6 +78,15 @@ struct StoreShell: View {
         }
         .listStyle(.sidebar)
         .navigationSplitViewColumnWidth(min: 200, ideal: 230)
+    }
+
+    /// A sidebar label whose icon carries the section's color.
+    private func tinted(_ title: Text, symbol: String, color: Color) -> some View {
+        Label {
+            title
+        } icon: {
+            Image(systemName: symbol).symbolRenderingMode(.hierarchical).foregroundStyle(color)
+        }
     }
 
     @ViewBuilder

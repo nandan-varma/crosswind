@@ -9,6 +9,7 @@ struct DiscoverView: View {
     let model: StoreModel
 
     @State private var popularityTimedOut = false
+    @State private var heroID: String?
 
     private var isLoadingPopularity: Bool {
         model.popularity.isEmpty && model.trending.isEmpty && !popularityTimedOut
@@ -116,17 +117,24 @@ struct DiscoverView: View {
     }
 
     private func hero(_ apps: [CatalogApp]) -> some View {
-        ScrollView(.horizontal) {
-            LazyHStack(spacing: 16) {
-                ForEach(apps) { app in
-                    HeroCard(app: app, model: model)
-                        .containerRelativeFrame(.horizontal) { length, _ in length * 0.92 }
+        VStack(spacing: 12) {
+            ScrollView(.horizontal) {
+                LazyHStack(spacing: 16) {
+                    ForEach(apps) { app in
+                        HeroCard(app: app, model: model)
+                            .containerRelativeFrame(.horizontal) { length, _ in length * 0.92 }
+                            .id(app.id)
+                    }
                 }
+                .scrollTargetLayout()
             }
-            .scrollTargetLayout()
+            .scrollPosition(id: $heroID)
+            .scrollTargetBehavior(.viewAligned)
+            .scrollIndicators(.hidden)
+            if apps.count > 1 {
+                PageDots(count: apps.count, selected: apps.firstIndex { $0.id == heroID } ?? 0)
+            }
         }
-        .scrollTargetBehavior(.viewAligned)
-        .scrollIndicators(.hidden)
     }
 
     private func appRow(_ apps: [CatalogApp]) -> some View {
@@ -150,23 +158,29 @@ struct DiscoverView: View {
     }
 }
 
-/// A large trending app with a subtle material background.
+/// A large trending app on a gradient taken from its own icon.
 private struct HeroCard: View {
     let app: CatalogApp
     let model: StoreModel
 
+    @State private var tint: Color?
+
     var body: some View {
-        HStack(alignment: .center, spacing: 24) {
+        let shape = RoundedRectangle(cornerRadius: 28, style: .continuous)
+        HStack(alignment: .center, spacing: 28) {
             NavigationLink(value: AppRoute(id: app.id)) {
-                HStack(alignment: .center, spacing: 24) {
-                    AppIconView(app: app, size: 128)
-                    VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .center, spacing: 28) {
+                    AppIconView(app: app, size: 132)
+                    VStack(alignment: .leading, spacing: 10) {
                         Text("Trending")
-                            .font(.caption.bold())
+                            .font(.caption.weight(.semibold))
                             .textCase(.uppercase)
-                            .foregroundStyle(.secondary)
+                            .tracking(0.8)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .glassEffect(.regular, in: .capsule)
                         Text(verbatim: app.name)
-                            .font(.largeTitle.bold())
+                            .font(.system(size: 38, weight: .bold, design: .rounded))
                             .lineLimit(2)
                         Text(verbatim: app.summary)
                             .font(.title3)
@@ -180,9 +194,48 @@ private struct HeroCard: View {
             }
             .buttonStyle(.plain)
             ActionButton(appID: app.id, model: model)
-                .controlSize(.large)
+                .controlSize(.extraLarge)
         }
-        .padding(28)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .padding(32)
+        .background {
+            ZStack {
+                shape.fill(.regularMaterial)
+                shape.fill(
+                    LinearGradient(
+                        colors: [(tint ?? .accentColor).opacity(0.38), (tint ?? .accentColor).opacity(0.06)],
+                        startPoint: .topLeading, endPoint: .bottomTrailing))
+            }
+        }
+        .overlay(shape.strokeBorder(.primary.opacity(0.08), lineWidth: 1))
+        .task(id: app.id) { await loadTint() }
+    }
+
+    /// The icon is fetched through `URLCache`, so this is the same request `AppIconView` makes.
+    private func loadTint() async {
+        guard let url = app.icons.max(by: { $0.width < $1.width })?.url,
+            let (data, _) = try? await URLSession.shared.data(from: url),
+            let color = IconTint.dominant(in: data)
+        else { return }
+        withAnimation(.smooth(duration: 0.4)) { tint = color }
+    }
+}
+
+/// The carousel's position: the current page is a wider capsule.
+private struct PageDots: View {
+    let count: Int
+    let selected: Int
+
+    var body: some View {
+        HStack(spacing: 6) {
+            ForEach(0..<count, id: \.self) { index in
+                Capsule()
+                    .fill(index == selected ? Color.primary.opacity(0.7) : Color.primary.opacity(0.2))
+                    .frame(width: index == selected ? 18 : 6, height: 6)
+            }
+        }
+        .animation(.smooth(duration: 0.25), value: selected)
+        .accessibilityElement()
+        .accessibilityLabel(Text("Featured apps"))
+        .accessibilityValue(Text("Page \(selected + 1) of \(count)"))
     }
 }

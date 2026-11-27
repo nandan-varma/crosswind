@@ -69,7 +69,7 @@ struct AppCard: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .topLeading)
-        .background(.quaternary, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .cardSurface()
     }
 }
 

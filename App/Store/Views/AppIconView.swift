@@ -13,16 +13,20 @@ struct AppIconView: View {
         AsyncImage(url: bestIcon?.url) { phase in
             switch phase {
             case .success(let image):
-                image.resizable().interpolation(.high).scaledToFit()
+                image.resizable().interpolation(.high).scaledToFit().transition(.opacity)
             default:
                 Image(systemName: "app.dashed")
                     .font(.system(size: size * 0.45))
                     .foregroundStyle(.secondary)
             }
         }
+        .animation(.easeOut(duration: 0.25), value: bestIcon?.url)
         .frame(width: size, height: size)
         .background(.quaternary, in: shape)
         .clipShape(shape)
+        // A hairline keeps dark icons from dissolving into a dark window; the shadow lifts the larger ones.
+        .overlay(shape.strokeBorder(.primary.opacity(0.1), lineWidth: 0.5))
+        .shadow(color: .black.opacity(size >= 64 ? 0.18 : 0), radius: size * 0.08, y: size * 0.04)
         .accessibilityHidden(true)
     }
 

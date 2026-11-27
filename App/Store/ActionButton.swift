@@ -10,24 +10,35 @@ struct ActionButton: View {
     private var name: String { model.app(appID)?.name ?? appID }
 
     var body: some View {
+        content.animation(.smooth(duration: 0.3), value: state)
+    }
+
+    /// What the button shows, so a change between states animates.
+    private var state: String {
+        if let operation = model.operations[appID], operation.failure == nil { return "working" }
+        if let installed = model.installed[appID] { return installed.updateAvailable ? "update" : "open" }
+        return "get"
+    }
+
+    @ViewBuilder private var content: some View {
         if let operation = model.operations[appID], operation.failure == nil {
             ProgressRing(name: name, fraction: operation.fraction)
                 .help(operation.detail)
         } else if let installed = model.installed[appID] {
             if installed.updateAvailable {
                 Button("Update") { Task { await model.update(appID) } }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.glassProminent)
                     .help(String(localized: "Update \(name)"))
                     .accessibilityLabel(Text("Update \(name)"))
             } else {
                 Button("Open") { Task { await model.open(appID) } }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.glass)
                     .help(String(localized: "Open \(name)"))
                     .accessibilityLabel(Text("Open \(name)"))
             }
         } else {
             Button("Get") { Task { await model.install(appID) } }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.glassProminent)
                 .help(String(localized: "Get \(name)"))
                 .accessibilityLabel(Text("Get \(name)"))
         }
@@ -44,6 +55,7 @@ private struct ProgressRing: View {
             .progressViewStyle(.circular)
             .controlSize(.small)
             .frame(width: 28, height: 28)
+            .transition(.scale.combined(with: .opacity))
             .accessibilityLabel(Text("Working on \(name)"))
             .accessibilityValue(Text("\(Int((fraction * 100).rounded())) percent"))
     }
