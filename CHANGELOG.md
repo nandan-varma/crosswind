@@ -21,6 +21,7 @@ All notable changes to this project are documented here. The format follows [Kee
 - The guest daemon logs to `/run/crosswind/crosswindd.log` (debug level in debug mode); read it with `crosswindctl exec`.
 
 ### Fixed
+- Linux apps were silent: PipeWire found only a dummy sink because the guest has no udev. The image now declares the virtio sound card as the default output ("Mac Audio Output").
 - Folders and files chosen in an app's Open dialog did not open: a newly granted folder was saved but the running VM was never told, and with the Rosetta device present the live update could target the wrong virtiofs device. The file chooser now refreshes the shares after any grant, and the device is found by its tag.
 - Copying in a Linux app never reached the Mac clipboard: the guest read the selection before smithay had installed it. It now reads once the loop iteration is done.
 - Modifier keys could stay stuck in the guest (Cmd-Tab away with Command held), and synthetic key events with modifiers lost them. The view now reconciles the guest's modifiers with every key event and releases them all when the window stops being key.
