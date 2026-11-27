@@ -32,7 +32,11 @@ extension AgentConnectError: LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .unavailable:
-            String(localized: "The background agent isn't available. Allow it in Login Items & Extensions.")
+            String(
+                localized: """
+                    Crosswind couldn't start its background agent. Make sure it is allowed in \
+                    Login Items & Extensions, then try again.
+                    """)
         case .rejected:
             String(localized: "The background agent refused the connection. Reinstall Crosswind if this continues.")
         }

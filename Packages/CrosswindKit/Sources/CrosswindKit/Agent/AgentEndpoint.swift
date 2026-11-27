@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import Foundation
+import os
 @preconcurrency import XPC
 
 public enum AgentService {
@@ -64,7 +65,13 @@ public final class AgentEndpoint: @unchecked Sendable {
 
 /// Client side: connects to the agent (launchd starts it on demand) and says who it is.
 public enum AgentClientConnector {
-    public static func connect(role: Crosswind_Agent_Role, appID: String = "") async throws -> ClientConnection {
+    /// launchd starts the agent in well under a second. A job it cannot spawn (a stale registration, for instance) is
+    /// retried with a back-off and never answers, so without a limit the caller would wait forever.
+    public static let replyTimeout: Duration = .seconds(10)
+
+    public static func connect(
+        role: Crosswind_Agent_Role, appID: String = "", timeout: Duration = replyTimeout
+    ) async throws -> ClientConnection {
         let queue = DispatchQueue(label: "dev.crosswind.client.xpc")
         let service = xpc_connection_create_mach_service(AgentService.machService, queue, 0)
         xpc_connection_set_event_handler(service) { _ in }
@@ -74,18 +81,31 @@ public enum AgentClientConnector {
         xpc_dictionary_set_int64(request, AgentService.roleKey, Int64(role.rawValue))
         xpc_dictionary_set_string(request, AgentService.appKey, appID)
 
+        // The reply and the timeout race; whichever comes first settles the continuation, once.
+        let settled = OSAllocatedUnfairLock(initialState: false)
         let fd: Int32 = try await withCheckedThrowingContinuation { continuation in
+            @Sendable func settle(_ result: Result<Int32, AgentConnectError>) {
+                let first = settled.withLock { done in
+                    defer { done = true }
+                    return !done
+                }
+                if first {
+                    continuation.resume(with: result)
+                } else if case .success(let late) = result {
+                    close(late)
+                }
+            }
+            queue.asyncAfter(deadline: .now() + Double(timeout.components.seconds)) {
+                settle(.failure(.unavailable))
+                xpc_connection_cancel(service)
+            }
             xpc_connection_send_message_with_reply(service, request, queue) { reply in
                 guard xpc_get_type(reply) == XPC_TYPE_DICTIONARY else {
-                    continuation.resume(throwing: AgentConnectError.unavailable)
+                    settle(.failure(.unavailable))
                     return
                 }
                 let fd = xpc_dictionary_dup_fd(reply, AgentService.fdKey)
-                if fd < 0 {
-                    continuation.resume(throwing: AgentConnectError.rejected)
-                } else {
-                    continuation.resume(returning: fd)
-                }
+                settle(fd < 0 ? .failure(.rejected) : .success(fd))
             }
         }
         xpc_connection_cancel(service)
