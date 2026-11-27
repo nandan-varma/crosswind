@@ -3,7 +3,8 @@ import '../styles/global.css';
 interface Props { title: string; description: string }
 const { title, description } = Astro.props;
 const here = Astro.url.pathname;
-const pageTitle = title === 'Crosswind' ? title : `${title} · Crosswind`;
+const pageTitle = title === 'Crosswind' ? 'Crosswind: Linux apps as Mac apps' : `${title} · Crosswind`;
+const image = new URL('/images/store.png', Astro.site);
 ---
 <!doctype html>
 <html lang="en">
@@ -12,23 +13,42 @@ const pageTitle = title === 'Crosswind' ? title : `${title} · Crosswind`;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
+    <meta name="theme-color" content="#0b0b0d" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#fbfbfd" media="(prefers-color-scheme: light)" />
     <link rel="canonical" href={new URL(here, Astro.site)} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Crosswind" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={new URL(here, Astro.site)} />
+    <meta property="og:image" content={image} />
+    <meta name="twitter:card" content="summary_large_image" />
   </head>
   <body>
+    <a class="skip" href="#main">Skip to content</a>
     <header class="site">
       <div class="wrap">
-        <a class="brand" href="/">Crosswind</a>
+        <a class="brand" href="/"><img src="/favicon.svg" alt="" width="26" height="26" />Crosswind</a>
         <nav aria-label="Main">
-          <a href="/docs/getting-started/" aria-current={here.startsWith('/docs') ? 'page' : undefined}>Docs</a>
-          <a href="/docs/compatibility/">Apps</a>
-          <a href="https://github.com/nandan-varma/crosswind">GitHub</a>
+          <a href="/docs/getting-started/" aria-current={here.startsWith('/docs') && !here.startsWith('/docs/compatibility') ? 'page' : undefined}>Docs</a>
+          <a href="/docs/compatibility/" aria-current={here.startsWith('/docs/compatibility') ? 'page' : undefined}>Apps</a>
+          <a href="/docs/roadmap/">Roadmap</a>
+          <a class="pill" href="https://github.com/nandan-varma/crosswind">GitHub</a>
         </nav>
       </div>
     </header>
-    <main><slot /></main>
+    <main id="main"><slot /></main>
     <footer class="site">
-      <div class="wrap">Crosswind is free software under the AGPL-3.0-or-later. Linux apps from Flathub, as native Mac windows.</div>
+      <div class="wrap cols">
+        <div>Crosswind is free software under the AGPL-3.0-or-later.<br />Linux apps from Flathub, as native Mac windows.</div>
+        <ul>
+          <li><a href="/docs/getting-started/">Docs</a></li>
+          <li><a href="/docs/security/">Security</a></li>
+          <li><a href="https://github.com/nandan-varma/crosswind/issues">Issues</a></li>
+          <li><a href="https://github.com/nandan-varma/crosswind">Source</a></li>
+        </ul>
+      </div>
     </footer>
   </body>
 </html>

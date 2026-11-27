@@ -1,35 +1,116 @@
 ---
 import Base from '../layouts/Base.astro';
+
+const showcase = [
+  { id: 'org.kde.kate', name: 'Kate', note: 'Qt, with a real terminal' },
+  { id: 'com.vscodium.codium', name: 'VSCodium', note: 'Electron' },
+  { id: 'org.gimp.GIMP', name: 'GIMP', note: 'GTK 3' },
+  { id: 'org.inkscape.Inkscape', name: 'Inkscape', note: 'Vector graphics' },
+  { id: 'org.libreoffice.LibreOffice', name: 'LibreOffice', note: 'The full office suite' },
+  { id: 'org.chromium.Chromium', name: 'Chromium', note: 'A second browser' },
+];
 ---
-<Base title="Crosswind" description="Run Linux apps from Flathub as native windows on your Mac.">
-  <div class="wrap">
-    <section class="hero">
-      <h1>Linux apps, as Mac apps.</h1>
+<Base title="Crosswind" description="Run Linux apps from Flathub as native windows on your Mac, with their own Dock icons, menus, clipboard and notifications.">
+  <section class="hero">
+    <div class="wrap">
+      <span class="eyebrow"><i></i> Public beta in preparation</span>
+      <h1>Linux apps, <em>as Mac apps.</em></h1>
       <p class="lead">
-        Crosswind runs apps from Flathub in a small Linux VM and shows each window as a native macOS window,
-        with its own Dock icon, menu bar entry and Cmd-Tab slot.
+        Crosswind runs apps from Flathub in a small, contained Linux VM and shows every window as a real macOS window,
+        with its own Dock icon, Cmd-Tab slot, clipboard and notifications.
       </p>
       <div class="cta">
         <a class="button primary" href="/docs/getting-started/">Get started</a>
         <a class="button" href="https://github.com/nandan-varma/crosswind">View on GitHub</a>
       </div>
-      <p class="note" style="margin-top:1.5rem">Public beta in preparation. Apple silicon, macOS 27 or later.</p>
-    </section>
+      <ul class="facts">
+        <li>Apple silicon</li>
+        <li>macOS 27 or later</li>
+        <li>3,100+ apps</li>
+        <li>Open source, AGPL-3.0</li>
+      </ul>
+      <div class="stage">
+        <div class="window">
+          <div class="bar"><i></i><i></i><i></i><span>Crosswind</span></div>
+          <img src="/images/store.png" width="1366" height="911" alt="The Crosswind store showing a featured app, categories in the sidebar and popular apps." fetchpriority="high" />
+        </div>
+      </div>
+    </div>
+  </section>
 
-    <section class="grid" aria-label="Highlights">
-      <div class="card"><h3>Thousands of apps</h3><p>Browse Flathub in the built-in store. Install, update and remove with one click.</p></div>
-      <div class="card"><h3>Feels native</h3><p>Real windows, the Mac clipboard, dark mode, notifications, native file dialogs and a menu bar tray.</p></div>
-      <div class="card"><h3>Contained</h3><p>Apps run inside a VM and see only the folders you share. Nothing else of your Mac is exposed.</p></div>
-      <div class="card"><h3>Open source</h3><p>AGPL-3.0-or-later, built with Virtualization.framework, Wayland and Flatpak.</p></div>
-    </section>
+  <section class="block" aria-labelledby="features">
+    <div class="wrap">
+      <h2 id="features">Everything you expect from a Mac app.</h2>
+      <p class="sub">Not a window onto a desktop: each Linux app is its own app, and behaves like one.</p>
+      <div class="bento">
+        <div class="tile wide">
+          <div class="icon c-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2.5"/><path d="M8 21h8M12 18v3"/></svg></div>
+          <h3>Native windows</h3>
+          <p>Resize, minimize, go full screen, use Mission Control and Cmd-Tab. Menus, tooltips and popups land where they should, and the Command key does what you expect.</p>
+        </div>
+        <div class="tile">
+          <div class="icon c-purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4z"/><path d="M19 15l.7 1.8 1.8.7-1.8.7L19 20l-.7-1.8-1.8-.7 1.8-.7z"/></svg></div>
+          <h3>A real store</h3>
+          <p>Browse, search and install thousands of Flathub apps. Updates and permissions in one place.</p>
+        </div>
+        <div class="tile">
+          <div class="icon c-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></div>
+          <h3>Contained</h3>
+          <p>Apps run inside a VM. They see only the folders you share, and nothing else of your Mac.</p>
+        </div>
+        <div class="tile wide">
+          <div class="icon c-orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6l1 3h3a1 1 0 011 1v9a2 2 0 01-2 2H6a2 2 0 01-2-2V8a1 1 0 011-1h3z"/><circle cx="12" cy="12.5" r="3"/></svg></div>
+          <h3>Fits into macOS</h3>
+          <p>Copy and paste both ways, dark mode, native Open and Save dialogs, Open With in Finder, notifications, links that open in your browser, and tray icons in the menu bar.</p>
+        </div>
+        <div class="tile">
+          <div class="icon c-pink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v-2a8 8 0 0116 0v2"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/></svg></div>
+          <h3>Sound and input</h3>
+          <p>Audio out, optional microphone, keyboard layouts and input methods.</p>
+        </div>
+        <div class="tile">
+          <div class="icon c-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></div>
+          <h3>Resilient</h3>
+          <p>If the Linux environment ever hangs, Crosswind notices, stops it and offers a one-click restart.</p>
+        </div>
+        <div class="tile">
+          <div class="icon c-grey"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></svg></div>
+          <h3>Open source</h3>
+          <p>AGPL-3.0-or-later, built on Virtualization.framework, Wayland and Flatpak.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
-    <section>
-      <h2>What works today</h2>
-      <p>
-        GTK, Qt and Electron apps, X11 apps, text input and input methods, audio, shared folders,
-        opening files from Finder and tray icons. See the <a href="/docs/compatibility/">tested apps</a>,
-        the <a href="/docs/features/">feature list</a> and the <a href="/docs/roadmap/">roadmap</a>.
-      </p>
-    </section>
-  </div>
+  <section class="block" aria-labelledby="apps">
+    <div class="wrap">
+      <h2 id="apps">The apps you already know.</h2>
+      <p class="sub">Captured from Crosswind running on a Mac. GTK, Qt, Electron and X11 apps all work.</p>
+      <div class="gallery">
+        {showcase.map((app) => (
+          <figure>
+            <div class="window">
+              <div class="bar"><i></i><i></i><i></i><span>{app.name}</span></div>
+              <img src={`/compat/screenshots/${app.id}.png`} alt={`${app.name} running in Crosswind`} loading="lazy" width="800" height="600" />
+            </div>
+            <figcaption>{app.name} · {app.note}</figcaption>
+          </figure>
+        ))}
+      </div>
+      <p class="sub" style="margin-top:2rem"><a href="/docs/compatibility/">See every app we tested →</a></p>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <div class="closing">
+        <h2>Bring Linux's best apps to your Mac.</h2>
+        <p>Crosswind is heading for a public beta. Follow along, read how it works, or build it yourself today.</p>
+        <div class="cta">
+          <a class="button primary" href="/docs/getting-started/">Read the docs</a>
+          <a class="button" href="/docs/roadmap/">See the roadmap</a>
+        </div>
+      </div>
+    </div>
+  </section>
 </Base>

@@ -13,6 +13,13 @@ const all = (await getCollection('docs')).sort((a, b) => a.data.order - b.data.o
 const groups = ['Use', 'Reference', 'Develop'] as const;
 const here = Astro.url.pathname;
 const href = (id: string) => `/docs/${id.replace(/^generated\//, '')}/`;
+const ordered = groups.flatMap((group) => all.filter((d) => d.data.group === group));
+const index = ordered.findIndex((d) => d.id === doc.id);
+const previous = ordered[index - 1];
+const next = ordered[index + 1];
+const synced = doc.id.startsWith('generated/');
+const sources: Record<string, string> = { development: 'DEVELOPMENT.md', security: 'security.md', roadmap: 'ROADMAP.md', compatibility: 'compat/matrix.md' };
+const source = synced ? `docs/${sources[doc.id.replace('generated/', '')]}` : `site/src/content/docs/${doc.id}.md`;
 ---
 <Base title={doc.data.title} description={doc.data.description}>
   <div class="wrap layout">
@@ -32,6 +39,11 @@ const href = (id: string) => `/docs/${id.replace(/^generated\//, '')}/`;
       <h1>{doc.data.title}</h1>
       <p class="desc">{doc.data.description}</p>
       <Content />
+      <nav class="pager" aria-label="Pages">
+        {previous && <a href={href(previous.id)}><small>Previous</small>{previous.data.title}</a>}
+        {next && <a class="next" href={href(next.id)}><small>Next</small>{next.data.title}</a>}
+      </nav>
+      <p class="edit"><a href={`https://github.com/nandan-varma/crosswind/blob/main/${source}`}>Edit this page on GitHub</a></p>
     </article>
   </div>
 </Base>
