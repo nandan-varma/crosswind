@@ -16,6 +16,10 @@ public enum Preferences {
         public static let rosettaEnabled = "rosettaEnabled"
         /// Shows Linux apps' tray icons in the menu bar. On by default; applies at once.
         public static let trayIconsEnabled = "trayIconsEnabled"
+        /// The welcome screen was passed; until then Crosswind asks macOS for nothing.
+        public static let onboardingWelcomed = "onboardingWelcomed"
+        /// First-run onboarding is done; the store opens directly from now on.
+        public static let onboardingFinished = "onboardingFinished"
         /// Virtual CPUs given to the Linux environment. Applies when it starts.
         public static let cpuCount = "cpuCount"
         /// Memory in GiB given to the Linux environment. Applies when it starts.

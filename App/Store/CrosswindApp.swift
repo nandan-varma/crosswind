@@ -9,13 +9,20 @@ struct CrosswindApp: App {
     @State private var registration = HostRegistration()
     @State private var diagnostics = DiagnosticsModel()
     @State private var updater = AppUpdater()
+    @State private var onboarding = OnboardingState()
 
     var body: some Scene {
         WindowGroup {
-            StoreRoot(model: model, registration: registration)
-                .task {
+            StoreRoot(model: model, registration: registration, onboarding: onboarding)
+                // Nothing is asked of macOS until the welcome screen is passed.
+                .task(id: onboarding.welcomed) {
+                    guard onboarding.welcomed else { return }
                     await registration.ensureEnabled()
                     await model.start()
+                    if model.agentUnavailable {
+                        await registration.repair()
+                        await model.start()
+                    }
                     await diagnostics.connect()
                 }
         }

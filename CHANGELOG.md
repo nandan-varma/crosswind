@@ -10,6 +10,7 @@ All notable changes to this project are documented here. The format follows [Kee
 - Website redesign: glass header, real store screenshot in a window frame, bento feature grid, gallery of real Linux apps, light and dark themes, reduced-motion support, previous/next and edit links in the docs.
 
 ### Added
+- First-run onboarding: a welcome screen (macOS is asked for nothing before it), a guided "allow in the background" step that advances by itself, real setup progress with rotating tips, and a "you're all set" screen with starter apps to install on the spot.
 - Website and documentation at https://crosswind.nandan.fyi (Astro, in `site/`, published with Wrangler to Cloudflare).
 - Settings: Rosetta toggle (with install button), tray icons toggle, automatic update checks and downloads.
 - Experimental Rosetta support in the guest: the Rosetta share is mounted and registered for x86_64 binaries, and Flatpak `apply_extra` works under it (see docs/KNOWLEDGE.md). Intel-only apps are not offered in the store yet.
@@ -22,6 +23,7 @@ All notable changes to this project are documented here. The format follows [Kee
 - The guest daemon logs to `/run/crosswind/crosswindd.log` (debug level in debug mode); read it with `crosswindctl exec`.
 
 ### Fixed
+- After deleting and reinstalling Crosswind, the background agent could be reported as enabled by macOS but not loaded, leaving a dead "couldn't start" screen. The app now re-registers it automatically, and "Try Again" does the same.
 - Linux apps were silent: PipeWire found only a dummy sink because the guest has no udev. The image now declares the virtio sound card as the default output ("Mac Audio Output").
 - Folders and files chosen in an app's Open dialog did not open: a newly granted folder was saved but the running VM was never told, and with the Rosetta device present the live update could target the wrong virtiofs device. The file chooser now refreshes the shares after any grant, and the device is found by its tag.
 - Copying in a Linux app never reached the Mac clipboard: the guest read the selection before smithay had installed it. It now reads once the loop iteration is done.

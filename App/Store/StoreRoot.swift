@@ -6,9 +6,28 @@ import SwiftUI
 struct StoreRoot: View {
     let model: StoreModel
     let registration: HostRegistration
+    let onboarding: OnboardingState
+
+    /// Starts the connection again. An agent macOS reports as enabled can be missing from launchd (after a
+    /// reinstall), so it is registered afresh first.
+    private func retry() {
+        Task {
+            await registration.repair()
+            await model.start()
+        }
+    }
+
+    private var onboardingStep: OnboardingStep? {
+        OnboardingFlow.step(
+            welcomed: onboarding.welcomed, finished: onboarding.finished,
+            needsApproval: registration.needsApproval, phase: model.phase)
+    }
 
     var body: some View {
-        if registration.needsApproval {
+        if let step = onboardingStep {
+            OnboardingView(
+                step: step, model: model, registration: registration, onboarding: onboarding, retry: retry)
+        } else if registration.needsApproval {
             ContentUnavailableView {
                 Label("Allow Crosswind in the background", systemImage: "checkmark.shield")
             } description: {
@@ -20,6 +39,14 @@ struct StoreRoot: View {
             } actions: {
                 Button("Open Login Items Settings") { registration.openSettings() }
                     .buttonStyle(.borderedProminent)
+            }
+        } else if let failure = registration.failure {
+            ContentUnavailableView {
+                Label("Crosswind couldn't set up its background service", systemImage: "exclamationmark.triangle")
+            } description: {
+                Text(failure)
+            } actions: {
+                Button("Open Login Items Settings") { registration.openSettings() }
             }
         } else {
             content
@@ -36,7 +63,7 @@ struct StoreRoot: View {
             } description: {
                 Text(message)
             } actions: {
-                Button("Try Again") { Task { await model.start() } }
+                Button("Try Again", action: retry)
                     .buttonStyle(.borderedProminent)
             }
         default:

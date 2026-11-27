@@ -26,6 +26,8 @@ public final class StoreModel {
     }
 
     public private(set) var phase = Phase.connecting
+    /// The last `start()` failed because the background agent could not be reached (as opposed to failing later).
+    public private(set) var agentUnavailable = false
     public private(set) var environment = Crosswind_Agent_State()
     public private(set) var catalog = CatalogIndex(apps: [])
     public private(set) var popularity: [String: Double] = [:]
@@ -59,6 +61,7 @@ public final class StoreModel {
     /// Connects, installs the guest image if needed and loads the catalog. The Linux environment is not booted
     /// here: the agent starts it when a request needs it.
     public func start() async {
+        agentUnavailable = false
         do {
             let agent = try await AgentClient.connect(role: .store)
             self.agent = agent
@@ -69,6 +72,7 @@ public final class StoreModel {
             phase = .ready
             Task { await loadPopularity() }
         } catch {
+            if case AgentConnectError.unavailable = error { agentUnavailable = true }
             phase = .failed(error.localizedDescription)
         }
     }
