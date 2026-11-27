@@ -32,3 +32,20 @@ struct StoreCommands: Commands {
         }
     }
 }
+
+/// The Help menu: the documentation, the issue tracker and the release notes, all on the website or GitHub.
+struct HelpCommands: Commands {
+    private static let site = URL(string: "https://crosswind.nandan.fyi")!
+    private static let repository = URL(string: "https://github.com/nandan-varma/crosswind")!
+
+    var body: some Commands {
+        CommandGroup(replacing: .help) {
+            Link("Crosswind Help", destination: Self.site.appending(path: "docs/getting-started/"))
+            Link("What Works: App Compatibility", destination: Self.site.appending(path: "docs/compatibility/"))
+            Divider()
+            Link("Release Notes", destination: Self.repository.appending(path: "blob/main/CHANGELOG.md"))
+            Link("Report an Issue…", destination: Self.repository.appending(path: "issues/new"))
+            Link("Crosswind on GitHub", destination: Self.repository)
+        }
+    }
+}

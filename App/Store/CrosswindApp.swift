@@ -26,6 +26,7 @@ struct CrosswindApp: App {
                     .disabled(!updater.canCheckForUpdates)
             }
             StoreCommands()
+            HelpCommands()
             DiagnosticsCommands()
         }
 
