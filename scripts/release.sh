@@ -141,7 +141,9 @@ rm -rf "$STAGE"
 
 step "Notarizing and stapling the DMG"
 asc notarization submit --file "$DMG" --wait || die "notarization of the DMG was rejected (asc notarization log --id <id>)"
-asc notarization staple --file "$DMG" --confirm
+# Stapling rewrites the DMG, which asc reports as an error even when it worked; stapler is the judge.
+asc notarization staple --file "$DMG" --confirm || echo "asc reported the stapling quirk; validating with stapler"
+xcrun stapler validate "$DMG" || die "the DMG has no valid notarization ticket"
 
 step "Verifying the release"
 helpers sign verify "$DMG"
