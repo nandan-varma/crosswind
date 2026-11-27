@@ -20,8 +20,9 @@ final class StatusItemController: NSObject {
         self.session = session
         super.init()
 
-        item.button?.image = NSImage(
-            systemSymbolName: "shippingbox", accessibilityDescription: String(localized: "Crosswind Host"))
+        // The template glyph adapts to light, dark and tinted menu bars.
+        item.button?.image = NSImage(named: "MenuBarIcon")
+        item.button?.image?.accessibilityDescription = String(localized: "Crosswind Host")
         item.button?.setAccessibilityLabel(String(localized: "Crosswind Host"))
         item.menu = buildMenu()
         render(session.state)
