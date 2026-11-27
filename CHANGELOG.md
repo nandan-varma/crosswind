@@ -5,6 +5,7 @@ All notable changes to this project are documented here. The format follows [Kee
 ## [Unreleased]
 
 ### Changed
+- Window title bars take the color of the app's own header bar (GNOME apps draw one), so the Mac title bar and the app's bar read as one surface; light or dark appearance follows the color.
 - Store design: Discover's hero takes its gradient from the app's own icon and has a page indicator; Liquid Glass buttons and badges; cards lift under the pointer; icons get a hairline and soft shadow; the sidebar's category icons carry their own colors; button state changes animate.
 - Website redesign: glass header, real store screenshot in a window frame, bento feature grid, gallery of real Linux apps, light and dark themes, reduced-motion support, previous/next and edit links in the docs.
 

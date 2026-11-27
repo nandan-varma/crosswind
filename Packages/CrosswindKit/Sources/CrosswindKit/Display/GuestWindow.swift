@@ -16,7 +16,7 @@ final class GuestWindow: NSObject, NSWindowDelegate {
     private(set) var window: NSWindow?
     private var buffers: [IOSurface] = []
     private var frontIndex = 0
-    private var previousDamage: [DamageRect] = []
+    var previousDamage: [DamageRect] = []
     private var scale: CGFloat = 1
     private var popupOffset: CGPoint = .zero
     private weak var parent: GuestWindow?
@@ -29,6 +29,9 @@ final class GuestWindow: NSObject, NSWindowDelegate {
     var send: ((ToGuest.OneOf_Msg) -> Void)?
     /// Called when this window loses key status (the DisplayServer dismisses the popups it owns).
     var onResignKey: (() -> Void)?
+    /// The color the title bar currently has, from the top edge of the app's frames.
+    private var tint: TitlebarTint.Color?
+    var hasTint: Bool { tint != nil }
 
     var parentID: UInt32? { parent?.id }
 
@@ -126,23 +129,7 @@ final class GuestWindow: NSObject, NSWindowDelegate {
 
         // Core Animation only re-reads a layer's IOSurface when it is handed a different one, so frames alternate
         // between two surfaces. The back surface is one frame stale: carry over last frame's damage first.
-        let front = buffers[frontIndex]
-        let back = buffers[1 - frontIndex]
-        front.lock(options: .readOnly, seed: nil)
-        back.lock(options: [], seed: nil)
-        let stride = back.bytesPerRow
-        for rect in previousDamage {
-            for row in Int(rect.y)..<Int(rect.y + rect.height) {
-                let offset = row * stride + Int(rect.x) * 4
-                memcpy(back.baseAddress + offset, front.baseAddress + offset, Int(rect.width) * 4)
-            }
-        }
-        var applied: [DamageRect] = []
-        for rect in frame.damage where Self.decode(rect, into: back.baseAddress, stride: stride) {
-            applied.append(rect)
-        }
-        back.unlock(options: [], seed: nil)
-        front.unlock(options: .readOnly, seed: nil)
+        let (applied, sampled) = compose(frame, front: buffers[frontIndex], back: buffers[1 - frontIndex])
         previousDamage = applied
         frontIndex = 1 - frontIndex
         let surface = buffers[frontIndex]
@@ -156,28 +143,20 @@ final class GuestWindow: NSObject, NSWindowDelegate {
             guestDrivenResize = false
         }
         view.show(surface, scale: scale)
+        if let sampled { applyTint(sampled) }
 
         pendingAck = frame.seq
         startDisplayLink()
     }
 
-    /// Copies one damage rect into the surface. Returns false (and draws nothing) if its pixels do not decode to
-    /// exactly the rect's size.
-    @discardableResult
-    private static func decode(_ rect: DamageRect, into base: UnsafeMutableRawPointer, stride: Int) -> Bool {
-        guard let packed = RectCodec.unpack(width: rect.width, height: rect.height, pixels: rect.pixels) else {
-            if DisplayLimits.violationLog.allow() {
-                Log.display.warning("damage rect refused: payload does not decode")
-            }
-            return false
-        }
-        let w = Int(rect.width)
-        packed.withUnsafeBytes { src in
-            for row in 0..<Int(rect.height) {
-                memcpy(base + (Int(rect.y) + row) * stride + Int(rect.x) * 4, src.baseAddress! + row * w * 4, w * 4)
-            }
-        }
-        return true
+    /// Colors the title bar like the top of the app's window. Small changes are ignored so an animating header does
+    /// not make the title bar flicker.
+    private func applyTint(_ color: TitlebarTint.Color) {
+        guard kind == .toplevel, let window, !window.styleMask.contains(.fullScreen) else { return }
+        if let tint, tint.isClose(to: color) { return }
+        tint = color
+        window.backgroundColor = color.nsColor
+        window.appearance = NSAppearance(named: color.isDark ? .darkAqua : .aqua)
     }
 
     /// The guest is told a frame was presented on the next display refresh, which paces its rendering to the screen.
@@ -226,6 +205,7 @@ final class GuestWindow: NSObject, NSWindowDelegate {
             window.collectionBehavior = [.fullScreenPrimary]
             // The app's frame is restored by our autosave name, not by AppKit's state restoration.
             window.isRestorable = false
+            window.titlebarAppearsTransparent = true
         }
         window.isReleasedWhenClosed = false
         window.delegate = self
