@@ -2,6 +2,7 @@
 
 Thanks for looking at Crosswind. It is early, so please open an issue before starting large changes.
 
+- Set up and debug against a live guest with [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md); the manual pre-release checks are in [docs/beta-checklist.md](docs/beta-checklist.md).
 - Run `make build test lint` before you open a pull request. CI runs the same checks.
 - Keep changes small and focused. No dead code or speculative abstractions.
 - Match the existing style: four-space indentation, lines up to 120 columns, `swift-format` and SwiftLint clean.
