@@ -71,5 +71,5 @@ dev-image: ## Install the image from ~/.cache/crosswind-img into the app's suppo
 release: ## Archive, Developer ID export, notarize and package build/release/ (NOTARIZE=0: signed app only)
 	sh scripts/release.sh
 
-install-local: ## Install a signed, un-notarized build into /Applications with the guest image, then open it
+install-local: ## Install a notarized build into /Applications with the guest image, then open it
 	sh scripts/install-local.sh

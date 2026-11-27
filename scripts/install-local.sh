@@ -1,5 +1,6 @@
 #!/bin/sh
-# Builds a Developer ID signed Release of Crosswind (not notarized), replaces /Applications/Crosswind.app,
+# Builds a notarized Developer ID Release of Crosswind (macOS does not launch the background agent of an
+# unnotarized build), replaces /Applications/Crosswind.app,
 # installs the guest image from ~/.cache/crosswind-img and opens the app.
 # usage: scripts/install-local.sh   (run `make image` first if ~/.cache/crosswind-img is empty)
 set -eu
@@ -18,8 +19,8 @@ die() { echo "error: $*" >&2; exit 1; }
 
 [ -f "$IMG_CACHE/SHA256SUMS" ] || die "no guest image in $IMG_CACHE (run 'make image' first)"
 
-step "Building the signed Release (no notarization)"
-NOTARIZE=0 sh scripts/release.sh
+step "Building and notarizing the Release"
+NOTARIZE=1 sh scripts/release.sh
 [ -d "$APP" ] || die "build did not produce $APP"
 
 step "Quitting running Crosswind and CrosswindHost"
