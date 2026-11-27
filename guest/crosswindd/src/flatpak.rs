@@ -215,6 +215,17 @@ fn s<E: std::fmt::Display>(e: E) -> String {
     e.to_string()
 }
 
+/// The sandboxed processes of `app_id`: the main process of every running instance (an app can have several, and
+/// outlive the `flatpak run` that started it, like an editor whose launcher hands off to a detached main process).
+pub fn instance_pids(app_id: &str) -> Vec<i32> {
+    Instance::all()
+        .into_iter()
+        .filter(|i| i.is_running() && i.app().is_some_and(|a| a == app_id))
+        .map(|i| i.child_pid())
+        .filter(|&pid| pid > 0)
+        .collect()
+}
+
 /// The user installation, opened on the calling thread.
 pub fn user_installation() -> Result<Installation, String> {
     Installation::new_user(None::<&gio::Cancellable>).map_err(s)

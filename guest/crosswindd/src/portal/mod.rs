@@ -11,9 +11,7 @@ pub mod open_url;
 pub mod settings;
 
 use std::{
-    process::{Command, Stdio},
     sync::{Arc, Mutex, mpsc},
-    thread,
     time::{Duration, Instant},
 };
 
@@ -22,6 +20,8 @@ use zbus::{Connection, connection::Builder};
 
 use crate::control_pb::{self as pb, call};
 
+/// The desktop name (`XDG_CURRENT_DESKTOP`) that selects our backends in `crosswind-portals.conf`.
+pub const DESKTOP: &str = "crosswind";
 pub const BUS_NAME: &str = "org.freedesktop.impl.portal.desktop.crosswind";
 pub const OBJECT_PATH: &str = "/org/freedesktop/portal/desktop";
 /// How long a guest-initiated call waits for the host's reply.
@@ -125,25 +125,6 @@ impl Portal {
                 tracing::warn!(key, "SettingChanged not emitted: {e}");
             }
         }
-    }
-}
-
-/// Starts the xdg-desktop-portal frontend on the same bus. It routes `org.freedesktop.portal.*`
-/// calls to our backend (see `crosswind-portals.conf`). Its exit is only logged.
-pub fn spawn_frontend(address: &str) {
-    let child = Command::new("xdg-desktop-portal")
-        .env("DBUS_SESSION_BUS_ADDRESS", address)
-        .env("XDG_CURRENT_DESKTOP", "crosswind")
-        .stdin(Stdio::null())
-        .spawn();
-    match child {
-        Ok(mut child) => {
-            thread::spawn(move || match child.wait() {
-                Ok(status) => tracing::warn!(?status, "xdg-desktop-portal exited"),
-                Err(e) => tracing::warn!("xdg-desktop-portal wait: {e}"),
-            });
-        }
-        Err(e) => tracing::warn!("xdg-desktop-portal not started: {e}"),
     }
 }
 

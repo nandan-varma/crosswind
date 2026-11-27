@@ -61,6 +61,8 @@ message WindowChanged {
   optional bool fullscreen = 8;
   optional bool maximized = 9;
   optional bool minimized = 10;
+  // The app asked to be brought to the front (xdg-activation): restore it if minimized and make it key.
+  optional bool activate = 11;
 }
 
 message WindowClosed {

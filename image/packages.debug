@@ -1,0 +1,4 @@
+# Development-only guest tools, added by `make image DEBUG_TOOLS=1`. Not part of release images.
+strace
+lsof
+procps-ng

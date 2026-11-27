@@ -4,6 +4,7 @@
 mod audio;
 mod clipboard;
 mod control;
+mod debug;
 mod flatpak;
 mod handlers;
 mod host;
@@ -14,6 +15,8 @@ mod render;
 mod satellite;
 mod state;
 mod supervisor;
+mod tray;
+mod x11;
 
 pub mod pb {
     include!(concat!(env!("OUT_DIR"), "/crosswind.display.rs"));

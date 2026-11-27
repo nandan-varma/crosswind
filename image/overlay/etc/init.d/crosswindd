@@ -6,8 +6,11 @@ command_background=true
 command_user=crosswind:crosswind
 export HOME=/home/crosswind
 export XDG_RUNTIME_DIR=/run/crosswind
+export FLATPAK_BWRAP=/usr/libexec/crosswind/flatpak-bwrap  # see the script: x86_64 extra-data apps
+# Development builds (the kernel command line has crosswind.debug=1) log at debug level.
+if grep -q 'crosswind.debug=1' /proc/cmdline; then export RUST_LOG="${RUST_LOG:-crosswindd=debug,info}"; fi
 pidfile=/run/crosswind/crosswindd.pid
-output_log=/dev/console
-error_log=/dev/console
+# Read it with `crosswindctl exec -- cat /run/crosswind/crosswindd.log` (debug mode).
+output_log=/run/crosswind/crosswindd.log
+error_log=/run/crosswind/crosswindd.log
 depend() { need dbus crosswind-data; }
-start_pre() { chmod 622 /dev/console; }  # dev: let the daemon log to the VM console

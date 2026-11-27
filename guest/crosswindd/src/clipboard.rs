@@ -19,9 +19,8 @@ use std::{
 use smithay::{
     input::Seat,
     reexports::calloop::channel,
-    wayland::selection::{
-        SelectionSource,
-        data_device::{clear_data_device_selection, request_data_device_client_selection, set_data_device_selection},
+    wayland::selection::data_device::{
+        clear_data_device_selection, request_data_device_client_selection, set_data_device_selection,
     },
 };
 
@@ -128,10 +127,12 @@ pub fn paste(state: &mut State, seat: &Seat<State>, mime: String, fd: OwnedFd) {
     });
 }
 
-/// A guest app copied: read the offered types on worker threads and send them to the host as one event.
+/// A guest app copied (call after smithay has installed the new selection, see `State::flush`): read the offered
+/// types on worker threads and send them to the host as one event.
 /// Nothing is sent when no type could be read, so the host keeps its clipboard.
-pub fn copy(seat: &Seat<State>, source: &SelectionSource, notes: channel::Sender<Note>) {
-    let items = pick_items(&source.mime_types());
+pub fn copy(seat: &Seat<State>, offered: &[String], notes: channel::Sender<Note>) {
+    let items = pick_items(offered);
+    tracing::debug!(?offered, picked = items.len(), "guest copied");
     if items.is_empty() {
         return;
     }
@@ -166,8 +167,10 @@ pub fn copy(seat: &Seat<State>, source: &SelectionSource, notes: channel::Sender
             }
         }
         if got.is_empty() {
+            tracing::debug!("guest copy: no type could be read in time");
             return;
         }
+        tracing::debug!(types = got.len(), "guest copy sent to the host");
         got.sort_by_key(|(index, _)| *index);
         let items = got.into_iter().map(|(_, data)| data).collect();
         let body = pb::event::Body::ClipboardChanged(pb::ClipboardChanged { items });

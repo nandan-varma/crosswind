@@ -110,9 +110,7 @@ impl State {
             Role::Toplevel(_) => None,
         };
         let parent = parent_surface.and_then(|s| self.windows.iter().find(|w| w.surface == s)).map_or(0, |w| w.id);
-        let (flatpak_id, launch_id) = self.owner_of(&self.windows[idx].surface).unwrap_or_default();
-        let win = &mut self.windows[idx];
-        win.announced = true;
+        let win = &self.windows[idx];
         let (kind, x, y, title, app_id) = match &win.role {
             Role::Toplevel(t) => {
                 let data = toplevel_data(t.wl_surface());
@@ -123,6 +121,15 @@ impl State {
                 (pb::WindowKind::Popup, g.loc.x, g.loc.y, String::new(), String::new())
             }
         };
+        // A popup belongs to whatever its parent belongs to (for an X11 popup the X server cannot tell them apart).
+        let owner = match parent {
+            0 => self.resolve_owner(&self.windows[idx].surface, &app_id, &title),
+            id => self.win_by_id(id).and_then(|w| w.owner.clone()),
+        };
+        let (flatpak_id, launch_id) = owner.clone().unwrap_or_default();
+        let win = &mut self.windows[idx];
+        win.announced = true;
+        win.owner = owner;
         let (min, max) = with_states(&win.surface, |s| {
             let mut c = s.cached_state.get::<SurfaceCachedState>();
             (c.current().min_size, c.current().max_size)
@@ -145,11 +152,19 @@ impl State {
         self.send(pb::to_host::Msg::Opened(opened));
     }
 
-    /// The Flatpak app and launch behind a Wayland client, from its process.
+    /// The Flatpak app and launch behind `surface`, as resolved when its window was announced.
     pub fn owner_of(&self, surface: &WlSurface) -> Option<(String, String)> {
+        self.windows.iter().find(|w| &w.surface == surface).and_then(|w| w.owner.clone())
+    }
+
+    /// The Flatpak app and launch behind a Wayland client, from its process. An X11 window's client is the
+    /// compositor's own `xwayland-satellite`, so for those the X server names the process (see `x11`).
+    /// `app_id` and `title` identify the window to the X server.
+    fn resolve_owner(&self, surface: &WlSurface, app_id: &str, title: &str) -> Option<(String, String)> {
         let client = self.display_handle.get_client(surface.id()).ok()?;
         let pid = client.get_credentials(&self.display_handle).ok()?.pid;
-        self.control.owner_of(pid).map(|(app, launch)| (app.to_owned(), launch.to_owned()))
+        let owner = self.control.owner_of(pid).or_else(|| self.control.owner_of(crate::x11::owner_pid(app_id, title)?));
+        owner.map(|(app, launch)| (app.to_owned(), launch.to_owned()))
     }
 
     /// The host presented a frame: let the client draw the next one and flush anything queued.

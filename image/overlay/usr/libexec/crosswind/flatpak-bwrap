@@ -1,0 +1,20 @@
+#!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Flatpak runs bubblewrap through this wrapper (FLATPAK_BWRAP, set in /etc/init.d/crosswindd). Flatpak's sandbox for an
+# app's `apply_extra` step (unpacking extra data such as Slack's or Spotify's download) mounts no /proc, and Rosetta,
+# which runs the x86_64 apply_extra scripts, needs /proc/self/exe. Add a /proc for that step only; every other
+# sandbox is started exactly as Flatpak built it.
+last=
+for a; do last=$a; done
+if [ "$last" = /app/bin/apply_extra ]; then
+    n=$#; i=1; prev=
+    # Copy every option except the command and the "--" Flatpak puts before it.
+    for a; do
+        [ $i -lt $n ] && { [ -n "$prev" ] && set -- "$@" "$prev"; prev=$a; }
+        i=$((i + 1))
+    done
+    shift $n
+    [ "$prev" = -- ] || set -- "$@" "$prev"
+    exec /usr/bin/bwrap "$@" --proc /proc -- "$last"
+fi
+exec /usr/bin/bwrap "$@"

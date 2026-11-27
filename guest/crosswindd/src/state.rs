@@ -45,6 +45,8 @@ pub struct Win {
     pub role: Role,
     pub surface: WlSurface,
     pub announced: bool,
+    /// The Flatpak app and launch behind the window, resolved when it is announced.
+    pub owner: Option<(String, String)>,
     pub dirty: bool,
     /// A frame is on the wire and not yet acknowledged by the host.
     pub in_flight: bool,
@@ -74,9 +76,13 @@ pub struct State {
     // Held for their globals; never read after construction.
     #[allow(dead_code)]
     pub xdg_decoration_state: XdgDecorationState,
+    #[allow(dead_code)]
+    pub xdg_activation_state: smithay::wayland::xdg_activation::XdgActivationState,
     pub shm_state: ShmState,
     #[allow(dead_code)]
     pub output_manager_state: OutputManagerState,
+    /// MIME types of a guest copy waiting to be read (see `SelectionHandler::new_selection`).
+    pub guest_copy: Option<Vec<String>>,
     pub seat_state: SeatState<State>,
     pub data_device_state: DataDeviceState,
     #[allow(dead_code)]
@@ -178,7 +184,9 @@ impl State {
             ("XDG_RUNTIME_DIR".to_owned(), runtime_dir),
             ("DBUS_SESSION_BUS_ADDRESS".to_owned(), session_bus.clone()),
             ("DISPLAY".to_owned(), crate::satellite::DISPLAY.to_owned()),
-            ("XDG_CURRENT_DESKTOP".to_owned(), "crosswind".to_owned()),
+            ("XDG_CURRENT_DESKTOP".to_owned(), portal::DESKTOP.to_owned()),
+            // Launchers such as the Electron IDE wrappers pick Wayland only when this says so, else they use X11.
+            ("XDG_SESSION_TYPE".to_owned(), "wayland".to_owned()),
         ];
         // Portal backends: guest-initiated host calls go through `calls_rx` on this loop.
         let (calls_tx, calls_rx) = channel::channel::<portal::CallRequest>();
@@ -195,9 +203,12 @@ impl State {
         match portal::Portal::start(&session_bus, bridge.clone(), Default::default()) {
             Ok(p) => {
                 control.portal = Some(p);
-                portal::spawn_frontend(&session_bus);
             }
             Err(e) => tracing::warn!("portal backends not started: {e}"),
+        }
+        match crate::tray::Tray::start(&session_bus, control.notes_sender()) {
+            Ok(tray) => control.tray = Some(tray),
+            Err(e) => tracing::warn!("tray watcher not started: {e}"),
         }
         if let Err(e) = portal::open_url::listen(&loop_handle, bridge) {
             tracing::warn!("open-url socket not started: {e}");
@@ -209,7 +220,9 @@ impl State {
             loop_signal: event_loop.get_signal(),
             compositor_state: CompositorState::new::<Self>(&dh),
             xdg_shell_state: XdgShellState::new::<Self>(&dh),
+            guest_copy: None,
             xdg_decoration_state: XdgDecorationState::new::<Self>(&dh),
+            xdg_activation_state: smithay::wayland::xdg_activation::XdgActivationState::new::<Self>(&dh),
             shm_state: ShmState::new::<Self>(&dh, vec![]),
             output_manager_state: OutputManagerState::new_with_xdg_output::<Self>(&dh),
             data_device_state: DataDeviceState::new::<Self>(&dh),
@@ -245,6 +258,9 @@ impl State {
 
     /// Called once per loop iteration: push queued bytes to the host and release clients.
     pub fn flush(&mut self) {
+        if let Some(offered) = self.guest_copy.take() {
+            crate::clipboard::copy(&self.seat.clone(), &offered, self.control.notes_sender());
+        }
         if self.link.flush().is_err() {
             link_lost(self);
         }

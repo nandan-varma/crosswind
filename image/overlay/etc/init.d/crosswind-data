@@ -13,6 +13,9 @@ start() {
     mkdir -p /mnt/mac && mount -t virtiofs mac /mnt/mac || ewarn 'shared folders not mounted'
     mkdir -p /data/flatpak /data/home /var/lib/flatpak /home
     mount --bind /data/flatpak /var/lib/flatpak
+    # Apps install per user, but the Flatpak portal starts sandboxes with a plain `flatpak run`, which also opens the
+    # system installation and fails (exit 1) when it has no repository. Root creates the empty repository once.
+    flatpak --system remotes >/dev/null 2>&1 || ewarn 'flatpak system installation not initialized'
     mount --bind /data/home /home
     # The daemon runs as crosswind (uid 1000): its home persists on the data disk, its runtime dir is tmpfs.
     install -d -o 1000 -g 1000 -m 700 /data/home/crosswind /run/crosswind

@@ -18,7 +18,10 @@ mkdir -p "$ROOT/etc/apk"
 cp -a /etc/apk/keys "$ROOT/etc/apk/keys"
 printf '%s\n' "https://dl-cdn.alpinelinux.org/alpine/$ALPINE_BRANCH/main" \
                "https://dl-cdn.alpinelinux.org/alpine/$ALPINE_BRANCH/community" > "$ROOT/etc/apk/repositories"
-apk --root "$ROOT" --initdb --update-cache --no-cache add $(grep -v '^#' "$HERE/packages" | tr '\n' ' ')
+# Debugging tools (strace and friends) ship only when asked for: `make image DEBUG_TOOLS=1`. Never in a release image.
+PACKAGE_LISTS="$HERE/packages"
+[ -n "${DEBUG_TOOLS:-}" ] && PACKAGE_LISTS="$PACKAGE_LISTS $HERE/packages.debug"
+apk --root "$ROOT" --initdb --update-cache --no-cache add $(cat $PACKAGE_LISTS | grep -v '^#' | tr '\n' ' ')
 
 cp -a "$HERE/overlay/." "$ROOT/"
 [ -x "${CROSSWINDD:-}" ] && install -Dm755 "$CROSSWINDD" "$ROOT/usr/bin/crosswindd"
@@ -27,9 +30,9 @@ cp -a "$HERE/overlay/." "$ROOT/"
 # xwayland-satellite (built from a pinned tag by image/build-xwayland-satellite.sh); crosswindd runs it as /usr/bin/xwayland-satellite.
 [ -x "${XWAYLAND_SATELLITE:-}" ] && install -Dm755 "$XWAYLAND_SATELLITE" "$ROOT/usr/bin/xwayland-satellite"
 
-# Unprivileged account for the daemon (uid 1000). Appended, not overlaid, so the base databases stay intact.
+# Unprivileged account for the daemon (uid 1000). Its shell is what terminal apps (Kate, Konsole) start; nothing in the guest offers a login. Appended, not overlaid, so the base databases stay intact.
 grep -q '^crosswind:' "$ROOT/etc/group" || echo 'crosswind:x:1000:' >> "$ROOT/etc/group"
-grep -q '^crosswind:' "$ROOT/etc/passwd" || echo 'crosswind:x:1000:1000:Crosswind:/home/crosswind:/sbin/nologin' >> "$ROOT/etc/passwd"
+grep -q '^crosswind:' "$ROOT/etc/passwd" || echo 'crosswind:x:1000:1000:Crosswind:/home/crosswind:/bin/sh' >> "$ROOT/etc/passwd"
 grep -q '^crosswind:' "$ROOT/etc/shadow" || echo 'crosswind:!:19000:0:99999:7:::' >> "$ROOT/etc/shadow"
 # The daemon's audio stack opens /dev/snd, which belongs to group audio (crosswind-data sets the mode at boot).
 grep -q '^audio:' "$ROOT/etc/group" || echo 'audio:x:29:' >> "$ROOT/etc/group"
@@ -47,7 +50,7 @@ done
 # OpenRC runlevels: only what a headless Wayland host needs.
 link() { mkdir -p "$ROOT/etc/runlevels/$1"; ln -sf "/etc/init.d/$2" "$ROOT/etc/runlevels/$1/$2"; }
 for s in devfs dmesg; do link sysinit "$s"; done
-for s in hostname sysctl modules bootmisc crosswind-data networking; do link boot "$s"; done
+for s in hostname sysctl modules bootmisc crosswind-data crosswind-rosetta networking; do link boot "$s"; done
 for s in dbus crosswindd; do link default "$s"; done
 echo crosswind > "$ROOT/etc/hostname"
 printf 'auto lo\niface lo inet loopback\nauto eth0\niface eth0 inet dhcp\n' > "$ROOT/etc/network/interfaces"

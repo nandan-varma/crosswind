@@ -30,6 +30,8 @@ use crate::{
 /// vsock port the host listens on for the control channel.
 pub const CONTROL_PORT: u32 = 5001;
 const KILL_GRACE: Duration = Duration::from_secs(5);
+/// How often the watcher of an exited launcher looks for the app's remaining processes.
+const INSTANCE_POLL: Duration = Duration::from_secs(1);
 
 /// Messages from worker threads and watchers to the loop thread.
 pub enum Note {
@@ -78,6 +80,8 @@ pub struct Control {
     procs: HashMap<String, Proc>,
     /// Settings/Notification backends; told about every appearance change.
     pub portal: Option<crate::portal::Portal>,
+    /// Tray icon watcher; clicks from the host go to the apps through it.
+    pub tray: Option<crate::tray::Tray>,
     /// Latest `OfferClipboard` from the host, applied by the loop after the batch.
     pub clipboard_offer: Option<Vec<String>>,
 }
@@ -100,6 +104,7 @@ impl Control {
             next_op: 1,
             procs: HashMap::new(),
             portal: None,
+            tray: None,
             clipboard_offer: None,
         }
     }
@@ -233,6 +238,24 @@ impl Control {
                 self.clipboard_offer = Some(mimes);
                 self.reply(id, response::Result::Ok(pb::Ok {}));
             }
+            request::Body::TrayActivate(r) => {
+                match (&self.tray, pb::tray_activate::Kind::try_from(r.kind)) {
+                    (Some(tray), Ok(kind)) => {
+                        tray.activate(&r.id, kind, r.x, r.y);
+                        self.reply(id, response::Result::Ok(pb::Ok {}));
+                    }
+                    _ => self.error(id, "tray icons are not available"),
+                }
+            }
+            request::Body::DebugExec(r) => {
+                if !crate::debug::enabled() {
+                    return self.error(id, "debug exec is disabled (boot with crosswind.debug=1)");
+                }
+                let env = self.env.clone();  // the environment app launches get: Wayland, session bus, display
+                self.reply_later(id, move || {
+                    Ok(response::Result::DebugExec(crate::debug::exec(&r.argv, r.timeout_secs, &env)))
+                });
+            }
             request::Body::Shutdown(_) => {
                 self.reply(id, response::Result::Ok(pb::Ok {}));
                 self.shutdown = true;
@@ -310,6 +333,11 @@ impl Control {
                 Ok(status) => status.code().unwrap_or_else(|| 128 + status.signal().unwrap_or(0)),
                 Err(_) => -1,
             };
+            // The launcher may be done while the app is not (a launcher that hands off to a detached main process,
+            // like VS Code's). The app has quit when its instance has no processes left.
+            while !flatpak::instance_pids(&watch_app).is_empty() {
+                thread::sleep(INSTANCE_POLL);
+            }
             let _ = notes.send(Note::Exited { launch_id: watch_id, app_id: watch_app, code });
         });
         self.event(pb::event::Body::AppStarted(pb::AppStarted {
@@ -331,12 +359,23 @@ impl Control {
         if targets.is_empty() {
             return Err(format!("{app_id} is not running"));
         }
+        // The launch's process group, and the app's own processes, which can be outside it (see `launch`).
+        let app = app_id.to_owned();
+        for pid in flatpak::instance_pids(&app) {
+            // SAFETY: plain kill(2) on a pid libflatpak reported; a stale pid fails with ESRCH.
+            unsafe { libc::kill(pid, libc::SIGTERM) };
+        }
         for (pgid, exited) in targets {
             signal_group(pgid, libc::SIGTERM);
+            let app = app.clone();
             thread::spawn(move || {
                 thread::sleep(KILL_GRACE);
                 if !exited.load(Ordering::SeqCst) {
                     signal_group(pgid, libc::SIGKILL);
+                    for pid in flatpak::instance_pids(&app) {
+                        // SAFETY: as above.
+                        unsafe { libc::kill(pid, libc::SIGKILL) };
+                    }
                 }
             });
         }
@@ -396,6 +435,7 @@ pub fn validate(body: &request::Body) -> Result<(), String> {
             }
             Ok(())
         }
+        request::Body::TrayActivate(r) if r.id.len() > limits::MAX_TRAY_ID => Err("tray id too long".to_owned()),
         request::Body::Stop(r) => app_id(&r.app_id),
         request::Body::GetPermissions(r) => app_id(&r.app_id),
         request::Body::SetPermissions(r) => app_id(&r.app_id),
@@ -495,7 +535,12 @@ pub fn session_bus() -> io::Result<String> {
     {
         return Ok(addr);
     }
-    let out = Command::new("dbus-daemon").args(["--session", "--fork", "--print-address"]).output()?;
+    // Services the bus starts (xdg-desktop-portal above all) inherit this environment. The portal frontend reads
+    // the desktop name at startup to choose its backends, and the bus may start it before anything else does.
+    let out = Command::new("dbus-daemon")
+        .args(["--session", "--fork", "--print-address"])
+        .env("XDG_CURRENT_DESKTOP", crate::portal::DESKTOP)
+        .output()?;
     if !out.status.success() {
         return Err(io::Error::other("dbus-daemon --session failed"));
     }

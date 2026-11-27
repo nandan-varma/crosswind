@@ -25,6 +25,10 @@ pub const MAX_FILTERS: usize = 64;
 pub const MAX_PATTERN: usize = 256;
 pub const MAX_FIELD: usize = 256;
 pub const MAX_FILES: usize = 256;
+/// Tray icons a guest may show at once, the longest id, and the largest icon side (pixels).
+pub const MAX_TRAY_ITEMS: usize = 32;
+pub const MAX_TRAY_ID: usize = 512;
+pub const MAX_TRAY_ICON_SIDE: u32 = 256;
 
 /// Whether a surface of `width` x `height` physical pixels at `scale_120` is one the host will accept.
 pub fn surface_ok(width: u32, height: u32, scale_120: u32) -> bool {

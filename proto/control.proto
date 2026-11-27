@@ -29,6 +29,8 @@ message Request {
     SetAppearance set_appearance = 16;
     CallReply call_reply = 17;       // answer to a guest-initiated Call
     OfferClipboard offer_clipboard = 18;
+    TrayActivate tray_activate = 20; // a click on a tray icon in the Mac menu bar
+    DebugExec debug_exec = 19;       // development only: refused unless the guest booted with crosswind.debug=1
   }
 }
 
@@ -198,6 +200,7 @@ message Response {
     Catalog catalog = 6;
     Operation operation = 7;
     Permissions permissions = 8;
+    DebugExecResult debug_exec = 9;
   }
 }
 
@@ -247,6 +250,8 @@ message Event {
     AppExited app_exited = 4;
     LogLine log = 5;
     ClipboardChanged clipboard_changed = 6;
+    TrayItemChanged tray_item_changed = 7;
+    TrayItemRemoved tray_item_removed = 8;
   }
 }
 
@@ -290,4 +295,46 @@ message LogLine {
   int32 level = 3;            // syslog severity: 3 error, 4 warning, 6 info, 7 debug
   string text = 4;
   int64 unix_time_ms = 5;
+}
+
+// Runs a command in the guest as the daemon's user and returns its combined stdout and stderr (the newest 256 KiB).
+// Development only; the guest refuses it unless its kernel command line has crosswind.debug=1.
+message DebugExec {
+  repeated string argv = 1;
+  uint32 timeout_secs = 2;    // 0 = 30
+}
+
+message DebugExecResult {
+  int32 exit_code = 1;        // -1 when the command timed out or was killed by a signal
+  bool timed_out = 2;
+  bytes output = 3;
+}
+
+// ---- tray icons (StatusNotifierItem) ----
+
+// A guest app added or changed its tray icon. `id` is stable for the life of the item. The icon is straight RGBA, at
+// most 256 x 256; empty when the app only names a themed icon (the host then shows the app's own icon).
+message TrayItemChanged {
+  string id = 1;
+  string title = 2;
+  uint32 icon_width = 3;
+  uint32 icon_height = 4;
+  bytes icon_rgba = 5;
+  bool passive = 6;           // the app asked to hide the icon
+}
+
+message TrayItemRemoved {
+  string id = 1;
+}
+
+message TrayActivate {
+  enum Kind {
+    PRIMARY = 0;              // left click: Activate
+    SECONDARY = 1;            // middle click: SecondaryActivate
+    CONTEXT_MENU = 2;         // right click: ContextMenu (the app shows its own menu)
+  }
+  string id = 1;
+  Kind kind = 2;
+  sint32 x = 3;               // screen position of the click, in points
+  sint32 y = 4;
 }

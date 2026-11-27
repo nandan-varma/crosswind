@@ -1,0 +1,22 @@
+#!/sbin/openrc-run
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Makes x86_64 programs runnable: mounts the host's Rosetta share (virtiofs tag `rosetta`, present only when Rosetta
+# is installed and enabled on the Mac) and registers it as the handler for x86_64 ELF binaries.
+description="Rosetta for x86_64 programs"
+depend() { need localmount; after modules; }
+start() {
+    modprobe -q virtiofs
+    mkdir -p /run/rosetta
+    mount -t virtiofs rosetta /run/rosetta 2>/dev/null || return 0  # no share: nothing to translate with
+    modprobe -q binfmt_misc
+    mountpoint -q /proc/sys/fs/binfmt_misc || mount -t binfmt_misc binfmt_misc /proc/sys/fs/binfmt_misc || return 1
+    [ -e /proc/sys/fs/binfmt_misc/rosetta ] && return 0
+    # x86_64 ELF magic and mask. F: open the interpreter now, so it also works inside Flatpak's mount namespaces.
+    printf '%s' ':rosetta:M::\x7fELF\x02\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x3e\x00:\xff\xff\xff\xff\xff\xfe\xfe\x00\xff\xff\xff\xff\xff\xff\xff\xff\xfe\xff\xff\xff:/run/rosetta/rosetta:CF' \
+        > /proc/sys/fs/binfmt_misc/register
+}
+stop() {
+    [ -e /proc/sys/fs/binfmt_misc/rosetta ] && echo -1 > /proc/sys/fs/binfmt_misc/rosetta
+    umount /run/rosetta 2>/dev/null
+    return 0
+}

@@ -37,3 +37,5 @@ weston-clients
 flatpak-libs
 xcb-util-cursor
 fuse3
+# getent and the other libc utilities Flatpak host commands rely on (Konsole asks the host for the user's shell).
+musl-utils

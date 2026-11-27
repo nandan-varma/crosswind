@@ -17,6 +17,8 @@ libflatpak = "0.7"
 libc = "0.2"
 futures-channel = "0.3"
 zbus = "6"
+futures-util = { version = "0.3", default-features = false, features = ["std"] }
+x11rb = { version = "0.13", features = ["res"] }
 
 [dependencies.smithay]
 git = "https://github.com/Smithay/smithay"

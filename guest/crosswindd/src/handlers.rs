@@ -186,6 +186,22 @@ impl XdgShellHandler for State {
     }
 }
 
+/// An app asks to be raised (Telegram's tray icon, a clicked notification, a second launch): the host does it.
+impl smithay::wayland::xdg_activation::XdgActivationHandler for State {
+    fn activation_state(&mut self) -> &mut smithay::wayland::xdg_activation::XdgActivationState {
+        &mut self.xdg_activation_state
+    }
+
+    fn request_activation(
+        &mut self,
+        _token: smithay::wayland::xdg_activation::XdgActivationToken,
+        _token_data: smithay::wayland::xdg_activation::XdgActivationTokenData,
+        surface: WlSurface,
+    ) {
+        self.send_changed(&surface, |c, _| c.activate = Some(true));
+    }
+}
+
 impl TextInputActivation for State {
     fn activated(&mut self, _: Option<(ContentHint, ContentPurpose)>) {
         if let Some(surface) = self.seat.text_input().focus() {
@@ -246,13 +262,15 @@ impl SeatHandler for State {
 impl SelectionHandler for State {
     type SelectionUserData = clipboard::Offered;
 
-    fn new_selection(&mut self, ty: SelectionTarget, source: Option<SelectionSource>, seat: Seat<Self>) {
+    fn new_selection(&mut self, ty: SelectionTarget, source: Option<SelectionSource>, _seat: Seat<Self>) {
         // Only client-set clipboard selections reach here; clearing (None) and primary are not forwarded.
         if ty != SelectionTarget::Clipboard {
             return;
         }
         let Some(source) = source else { return };
-        clipboard::copy(&seat, &source, self.control.notes_sender());
+        // smithay announces a copy before it makes it the seat's selection, so reading now would get the previous one.
+        // `State::flush` reads it once the loop iteration is done.
+        self.guest_copy = Some(source.mime_types());
     }
 
     fn send_selection(&mut self, _: SelectionTarget, mime_type: String, fd: OwnedFd, seat: Seat<Self>, _: &clipboard::Offered) {
@@ -287,6 +305,7 @@ impl State {
             role,
             surface,
             announced: false,
+            owner: None,
             dirty: false,
             in_flight: false,
             seq: 0,
