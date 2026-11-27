@@ -94,13 +94,6 @@ public struct StubInstaller: Sendable {
 
     public func bundleURL(for appID: String) -> URL? { existingStub(for: appID) }
 
-    /// Whether the stub for `appID` exists and has an icon, so a stub made without one can be made again with it.
-    public func hasIcon(appID: String) -> Bool {
-        guard let bundle = existingStub(for: appID) else { return false }
-        let plist = NSDictionary(contentsOf: bundle.appending(path: "Contents/Info.plist"))
-        return plist?["CFBundleIconFile"] != nil
-    }
-
     // MARK: Private
 
     private func stubs() -> [(appID: String, url: URL)] {

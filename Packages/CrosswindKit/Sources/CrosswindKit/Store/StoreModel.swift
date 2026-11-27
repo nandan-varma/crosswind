@@ -215,9 +215,9 @@ public final class StoreModel {
         }
     }
 
-    /// The app's Mac wrapper (Dock tile, Spotlight and Open With entry), made when it is missing or has no icon.
+    /// The app's Mac wrapper (Dock tile, Spotlight and Open With entry), made when it is missing.
     private func ensureStub(_ appID: String) async throws -> URL {
-        if let existing = stubs.bundleURL(for: appID), stubs.hasIcon(appID: appID) { return existing }
+        if let existing = stubs.bundleURL(for: appID) { return existing }
         let entry = app(appID)
         let name = entry?.name ?? installed[appID]?.name ?? appID
         let version = installed[appID]?.version ?? "1"
@@ -237,11 +237,9 @@ public final class StoreModel {
     }
 
     /// Gives every installed app a wrapper, so it shows in Spotlight, Launchpad and Open With without having been
-    /// opened first. Covers installs made before this existed too.
+    /// opened first.
     private func syncStubs() async {
-        for appID in installed.keys.sorted() where stubs.bundleURL(for: appID) == nil {
-            _ = try? await ensureStub(appID)
-        }
+        for appID in installed.keys.sorted() { _ = try? await ensureStub(appID) }
     }
 
     public func clearFailure(_ appID: String) {
