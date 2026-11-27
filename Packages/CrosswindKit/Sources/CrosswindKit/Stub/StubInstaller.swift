@@ -60,6 +60,14 @@ public struct StubInstaller: Sendable {
                 ]
             ]
         }
+        let schemes = Self.urlSchemes(for: mediaTypes)
+        if !schemes.isEmpty {
+            // Links like tg:// or magnet: open in the app. A scheme another app already handles (http, mailto)
+            // stays with it until the user picks this app in System Settings.
+            plist["CFBundleURLTypes"] = [
+                ["CFBundleURLName": appID, "CFBundleTypeRole": "Viewer", "CFBundleURLSchemes": schemes]
+            ]
+        }
         if let icns {
             let resources = bundle.appending(path: "Contents/Resources", directoryHint: .isDirectory)
             try fileManager.createDirectory(at: resources, withIntermediateDirectories: true)
@@ -117,8 +125,17 @@ public struct StubInstaller: Sendable {
     /// The type identifiers for the MIME types an app opens. Types macOS does not know are skipped.
     static func contentTypes(for mediaTypes: [String]) -> [String] {
         var seen = Set<String>()
-        return mediaTypes.compactMap { UTType(mimeType: $0) }.filter { !$0.isDynamic }.map(\.identifier)
+        return mediaTypes.filter { !$0.hasPrefix("x-scheme-handler/") }.compactMap { UTType(mimeType: $0) }.filter {
+            !$0.isDynamic
+        }.map(\.identifier)
             .filter { seen.insert($0).inserted }
+    }
+
+    /// The URL schemes an app handles, from `x-scheme-handler/<scheme>` media types. Sorted and unique.
+    static func urlSchemes(for mediaTypes: [String]) -> [String] {
+        let prefix = "x-scheme-handler/"
+        let schemes = mediaTypes.filter { $0.hasPrefix(prefix) }.map { String($0.dropFirst(prefix.count)) }
+        return Array(Set(schemes.filter { !$0.isEmpty })).sorted()
     }
 
     /// Renders the PNG to an .iconset and compiles it to .icns. The scratch directory is always removed.

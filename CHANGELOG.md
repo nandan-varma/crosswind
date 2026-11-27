@@ -10,6 +10,9 @@ All notable changes to this project are documented here. The format follows [Kee
 - Website redesign: glass header, real store screenshot in a window frame, bento feature grid, gallery of real Linux apps, light and dark themes, reduced-motion support, previous/next and edit links in the docs.
 
 ### Added
+- Every installed app gets its Mac wrapper at install time (and installs made earlier get theirs the next time the store connects), so it appears in Spotlight, Launchpad and Finder's Open With without having been opened first.
+- Linux apps register the URL schemes they handle (`tg://`, `magnet:`…); links open in the app. A scheme another app already handles stays with it until you choose otherwise in System Settings. Default apps for file types are set in macOS (Get Info > Open with > Change All); Crosswind does not change them.
+- The guest declares the microphone as a PipeWire source (verified once the setting is on; issue 20).
 - First-run onboarding: a welcome screen (macOS is asked for nothing before it), a guided "allow in the background" step that advances by itself, real setup progress with rotating tips, and a "you're all set" screen with starter apps to install on the spot.
 - Website and documentation at https://crosswind.nandan.fyi (Astro, in `site/`, published with Wrangler to Cloudflare).
 - Settings: Rosetta toggle (with install button), tray icons toggle, automatic update checks and downloads.

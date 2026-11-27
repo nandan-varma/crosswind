@@ -332,6 +332,10 @@ extension AgentCoreTests {
         for _ in 0..<DisplayLimits.maxUnackedFrames { _ = await stub.nextDisplay() }
 
         stub.send(display: .with { $0.ack = .with { $0.window = 1 } })
+        // The ack and the next frame travel on different connections; wait until the agent has handled the ack.
+        for _ in 0..<500 where harness.core.windows[1]?.unackedFrames != 0 {
+            try await Task.sleep(for: .milliseconds(10))
+        }
         display.send(.frame(1))
         #expect(await stub.nextDisplay() == ToHost.frame(1))
     }

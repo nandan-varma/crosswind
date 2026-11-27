@@ -22,8 +22,8 @@ final class StubDelegate: NSObject, NSApplicationDelegate {
     private var client: AgentClient?
     private var server: DisplayServer?
     private let fileChooser = FileChooserHandler()
-    /// Files Finder handed over before the app started; they go on its command line.
-    private var pendingFiles: [URL] = []
+    /// Files and links macOS handed over before the app started; they go on its command line.
+    private var pendingURLs: [URL] = []
     private var started = false
 
     func applicationWillFinishLaunching(_ notification: Notification) {
@@ -40,14 +40,14 @@ final class StubDelegate: NSObject, NSApplicationDelegate {
                     messages: client.display, send: { message in Task { await client.send(display: message) } })
                 watchForExit(client)
                 answerCalls(client)
-                let paths = await fileChooser.guestPaths(forOpening: pendingFiles)
-                pendingFiles = []
+                let args = await fileChooser.arguments(forOpening: pendingURLs)
+                pendingURLs = []
                 started = true
                 _ = try await client.command(
                     .launchApp(
                         .with {
                             $0.appID = appID
-                            $0.args = paths
+                            $0.args = args
                         }))
             } catch {
                 present(error)
@@ -55,20 +55,20 @@ final class StubDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// Files opened with this app from Finder: on its command line when it starts, else passed to the running app
+    /// Files and links opened with this app: on its command line when it starts, else passed to the running app
     /// by a second launch (Flatpak forwards it to the first instance).
     func application(_ application: NSApplication, open urls: [URL]) {
         guard started, let client else {
-            pendingFiles += urls
+            pendingURLs += urls
             return
         }
         Task {
-            let paths = await fileChooser.guestPaths(forOpening: urls)
+            let args = await fileChooser.arguments(forOpening: urls)
             _ = try? await client.command(
                 .launchApp(
                     .with {
                         $0.appID = appID
-                        $0.args = paths
+                        $0.args = args
                     }))
         }
     }

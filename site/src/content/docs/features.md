@@ -14,7 +14,7 @@ order: 2
 | Toolkits | GTK 3 and 4, Qt, Electron and X11 apps. X11 apps run through a rootless XWayland. |
 | Input | Keyboard layouts, dead keys and input methods; Command acts as Control; mouse, scroll and cursors. |
 | Clipboard | Text, images and HTML in both directions, while a Crosswind app is in front. |
-| Files | Shared folders you grant, native Open and Save dialogs, opening files from Finder, drops on the Dock icon. |
+| Files and links | Shared folders you grant, native Open and Save dialogs, opening files from Finder (Open With, drops on the Dock icon), and links such as `tg://` or `magnet:` that open in the Linux app. |
 | Appearance | Follows light and dark mode. |
 | Notifications | Linux notifications appear as Mac notifications from the app. |
 | Links | Links in Linux apps open in your Mac browser. |

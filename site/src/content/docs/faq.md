@@ -25,6 +25,10 @@ The Linux environment has no GPU acceleration yet, so apps that depend on OpenGL
 
 Linux apps only see the folders you share. Add one under Settings > Shared Folders, or pick the file in the app's dialog and choose to share it.
 
+## Can I make a Linux app my default, like VLC for videos?
+
+Yes, with macOS's own setting. Select a video in Finder, choose Get Info, pick VLC under **Open with** and click **Change All**. Every installed Linux app appears in Open With for the file types it supports. Crosswind never changes your defaults itself.
+
 ## What is the terminal in Kate or other apps?
 
 A shell inside the Linux environment, not on your Mac. It sees the Linux apps and the shared folders only.

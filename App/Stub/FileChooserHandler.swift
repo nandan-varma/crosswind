@@ -100,17 +100,19 @@ final class FileChooserHandler {
         return paths.isEmpty ? cancelled : chosen(paths)
     }
 
-    /// Guest paths for files the user handed to the app from Finder (Dock drop, Open With). Unlike a file dialog, the
-    /// user has already chosen the files, so nothing is asked: a file in a granted folder is used in place and any
-    /// other is cloned into the staging directory (a snapshot the guest can read).
-    func guestPaths(forOpening urls: [URL]) async -> [String] {
+    /// The Linux app's command line for what Finder or a link handed the stub (Open With, a Dock drop, `tg://`).
+    /// Unlike a file dialog, the user has already chosen the files, so nothing is asked: a file in a granted folder is
+    /// used in place and any other is cloned into the staging directory (a snapshot the guest can read). Other URLs
+    /// are passed on as they are.
+    func arguments(forOpening urls: [URL]) async -> [String] {
         sharesChanged = false
         let folders = currentFolders()
-        let paths = urls.compactMap { url in
-            folders.guestPath(forHostPath: url.path) ?? (try? cloneIntoStaging(url))
+        var mapped: [URL: String] = [:]
+        for url in urls where url.isFileURL {
+            mapped[url] = folders.guestPath(forHostPath: url.path) ?? (try? cloneIntoStaging(url))
         }
         if sharesChanged { await refreshShares?() }
-        return paths
+        return OpenArguments.make(from: urls) { mapped[$0] }
     }
 
     // MARK: Save

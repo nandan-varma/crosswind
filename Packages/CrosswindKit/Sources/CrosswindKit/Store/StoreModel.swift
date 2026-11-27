@@ -205,36 +205,42 @@ public final class StoreModel {
         if installed[appID] == nil { try? stubs.remove(appID: appID) }
     }
 
-    /// Creates the app's stub on first use, then opens it; the stub starts the app and hosts its windows.
+    /// Opens the app through its stub; the stub starts the app and hosts its windows.
     public func open(_ appID: String) async {
-        let name = app(appID)?.name ?? installed[appID]?.name ?? appID
         do {
-            let version = installed[appID]?.version ?? "1"
-            let bundle: URL
-            if let existing = stubs.bundleURL(for: appID), stubs.hasIcon(appID: appID) {
-                bundle = existing
-            } else {
-                // The icon is optional: a failed download or undecodable image installs the stub without one.
-                var iconPNG: Data?
-                if let icon = app(appID)?.icons.max(by: { $0.width * $0.height < $1.width * $1.height }) {
-                    var request = URLRequest(url: icon.url)
-                    request.timeoutInterval = 10
-                    iconPNG = try? await URLSession.shared.data(for: request).0
-                }
-                do {
-                    bundle = try stubs.install(
-                        appID: appID, name: name, version: version, iconPNG: iconPNG,
-                        mediaTypes: app(appID)?.mediaTypes ?? [])
-                } catch  where iconPNG != nil {
-                    bundle = try stubs.install(
-                        appID: appID, name: name, version: version, iconPNG: nil,
-                        mediaTypes: app(appID)?.mediaTypes ?? [])
-                }
-            }
-            try await opener(bundle)
+            try await opener(try await ensureStub(appID))
         } catch {
             operations[appID] = AppOperation(
                 kind: .install, fraction: 0, detail: "", failure: error.localizedDescription)
+        }
+    }
+
+    /// The app's Mac wrapper (Dock tile, Spotlight and Open With entry), made when it is missing or has no icon.
+    private func ensureStub(_ appID: String) async throws -> URL {
+        if let existing = stubs.bundleURL(for: appID), stubs.hasIcon(appID: appID) { return existing }
+        let entry = app(appID)
+        let name = entry?.name ?? installed[appID]?.name ?? appID
+        let version = installed[appID]?.version ?? "1"
+        // The icon is optional: a failed download or undecodable image makes the stub without one.
+        var iconPNG: Data?
+        if let icon = entry?.icons.max(by: { $0.width * $0.height < $1.width * $1.height }) {
+            var request = URLRequest(url: icon.url)
+            request.timeoutInterval = 10
+            iconPNG = try? await URLSession.shared.data(for: request).0
+        }
+        let types = entry?.mediaTypes ?? []
+        do {
+            return try stubs.install(appID: appID, name: name, version: version, iconPNG: iconPNG, mediaTypes: types)
+        } catch  where iconPNG != nil {
+            return try stubs.install(appID: appID, name: name, version: version, iconPNG: nil, mediaTypes: types)
+        }
+    }
+
+    /// Gives every installed app a wrapper, so it shows in Spotlight, Launchpad and Open With without having been
+    /// opened first. Covers installs made before this existed too.
+    private func syncStubs() async {
+        for appID in installed.keys.sorted() where stubs.bundleURL(for: appID) == nil {
+            _ = try? await ensureStub(appID)
         }
     }
 
@@ -304,5 +310,6 @@ public final class StoreModel {
     public func refreshInstalled() async {
         guard let list = try? await agent?.control.installed() else { return }
         installed = Dictionary(uniqueKeysWithValues: list.map { ($0.appID, $0) })
+        await syncStubs()
     }
 }

@@ -27,7 +27,7 @@ Crosswind is in preparation for a public beta, so there is no download yet. Unti
 
 1. Browse **Discover**, pick a category or search.
 2. Open an app's page and choose **Install**. Flathub apps are downloaded into the Linux environment.
-3. Choose **Open**. Crosswind creates a Mac app for it in `~/Applications/Crosswind`, with its own Dock icon, and starts it.
+3. Crosswind creates a Mac app for it in `~/Applications/Crosswind` as soon as it is installed, with its own Dock icon, so you can also open it from Spotlight or Launchpad. Choose **Open** to start it.
 
 The Linux environment starts when you open an app and stops after a while without apps. You can change that in [Settings](/docs/settings/).
 

@@ -19,6 +19,7 @@ Status as of 2026-11-26. Open work is tracked as GitHub issues (https://github.c
 - Open files from Finder (issue 10), standard stub menus, xdg-activation (raise requests), Konsole/terminal apps, portal frontend fix, detached-launcher apps (issue 19).
 - Rosetta spike (issue 11): share, binfmt, `apply_extra` shim and x86_64 installs work; store integration and Electron stability remain.
 - Website and docs (crosswind.nandan.fyi) in `site/`.
+- Wrappers at install, URL scheme handlers and the microphone source declared (issues 10 and 20 follow-ups); defaults stay a macOS choice.
 - VM watchdog: heartbeat, hang detection, forced stop and a Restart item in the menu bar (issue 15).
 - Development tooling: `crosswindctl exec` (debug mode only), `scripts/ctl.sh`, `make image DEBUG_TOOLS=1`, docs/DEVELOPMENT.md.
 
