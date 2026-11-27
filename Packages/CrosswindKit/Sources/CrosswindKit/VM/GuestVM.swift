@@ -73,8 +73,10 @@ public final class GuestVM: NSObject {
 
     /// Replaces the shared folders while the VM runs. The guest sees the change at once.
     public func updateSharedFolders(_ folders: SharedFolders) {
-        guard let device = machine?.directorySharingDevices.first as? VZVirtioFileSystemDevice else { return }
-        device.share = ShareLayout.share(for: folders)
+        // By tag, not position: the Rosetta share is a second virtiofs device.
+        let device = machine?.directorySharingDevices.lazy.compactMap { $0 as? VZVirtioFileSystemDevice }
+            .first { $0.tag == SharedFolders.mountTag }
+        device?.share = ShareLayout.share(for: folders)
     }
 
     public func stop() async throws {
@@ -121,7 +123,6 @@ public final class GuestVM: NSObject {
         try FileManager.default.createDirectory(at: Staging.root, withIntermediateDirectories: true)
         let shares = VZVirtioFileSystemDeviceConfiguration(tag: SharedFolders.mountTag)
         shares.share = ShareLayout.share(for: try SharedFolders.load(from: SharedFolders.defaultFile))
-        // The shared folders device stays first: `updateSharedFolders` addresses it by position.
         config.directorySharingDevices = [shares] + [RosettaShare.device()].compactMap { $0 }
 
         let serial = VZVirtioConsoleDeviceSerialPortConfiguration()

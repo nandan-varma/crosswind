@@ -15,8 +15,8 @@ final class FileChooserHandler {
     private var syncs: [StagedFileSync] = []
     /// Tells the agent to re-read the shares. Set by the stub once it is connected.
     var refreshShares: (() async -> Void)?
-    /// Set when the current call used the staging directory.
-    private var stagedThisCall = false
+    /// Set when the current call changed what the VM must share: a new granted folder or a staged file.
+    private var sharesChanged = false
 
     private enum OutsideChoice {
         case shareFolder
@@ -26,9 +26,9 @@ final class FileChooserHandler {
 
     /// Answers one call. A call that used staging asks the agent to refresh the share before the app gets the path.
     func handle(_ request: Crosswind_Control_FileChooser) async -> Crosswind_Control_CallReply.OneOf_Result {
-        stagedThisCall = false
+        sharesChanged = false
         let result = await answer(request)
-        if stagedThisCall { await refreshShares?() }
+        if sharesChanged { await refreshShares?() }
         return result
     }
 
@@ -104,12 +104,12 @@ final class FileChooserHandler {
     /// user has already chosen the files, so nothing is asked: a file in a granted folder is used in place and any
     /// other is cloned into the staging directory (a snapshot the guest can read).
     func guestPaths(forOpening urls: [URL]) async -> [String] {
-        stagedThisCall = false
+        sharesChanged = false
         let folders = currentFolders()
         let paths = urls.compactMap { url in
             folders.guestPath(forHostPath: url.path) ?? (try? cloneIntoStaging(url))
         }
-        if stagedThisCall { await refreshShares?() }
+        if sharesChanged { await refreshShares?() }
         return paths
     }
 
@@ -185,7 +185,7 @@ final class FileChooserHandler {
 
     /// The session directory, created on first use.
     private func currentSession() throws -> URL {
-        stagedThisCall = true
+        sharesChanged = true
         if let session { return session }
         let created = try Staging.makeSession()
         session = created
@@ -205,6 +205,7 @@ final class FileChooserHandler {
     private func persist(_ folders: SharedFolders) -> Bool {
         do {
             try folders.save(to: SharedFolders.defaultFile)
+            sharesChanged = true  // the running VM only learns of the grant when the agent re-reads it
             return true
         } catch {
             return false
