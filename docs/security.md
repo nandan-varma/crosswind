@@ -68,6 +68,13 @@ Messages that fail a check are dropped, never crash the process. Logs for refusa
 - **Not reviewed in this pass:** shared folders and staging (`SharedFolders`, `Staging`), the image store, the portal settings backend, and the stub's file chooser path handling.
 - **Shared fixtures depend on the Mac pasteboard.** `AgentCore` reads the real `NSPasteboard`, so tests see `OfferClipboard` requests; `FakeGuest` skips them, which hides any real clipboard bug from those tests.
 
+## Added surfaces (2026-11)
+- **Tray icons.** A guest app can ask the Mac menu bar to show an icon and title. The host agent validates every item (`TrayItem`: id length, icon at most 256 x 256 with exactly width x height x 4 bytes, title cut to 1 KiB); the guest also caps registered items at 32. Clicks are sent back only for ids the host has seen. Risk: a malicious app can mimic another app's icon or title (see "App identity is trusted from the guest").
+- **Window activation.** Apps may ask to be raised (xdg-activation). The host raises that app's own stub window and activates the stub; a guest cannot raise or focus another app's windows because requests are routed by the window's owner.
+- **Files from Finder.** Files dropped on an app's Dock tile or opened with "Open With" go to that app only: files inside a granted shared folder are used in place, others are cloned into the staging share (a snapshot, read-only for the guest in effect, never written back). The user has chosen the file, so there is no prompt.
+- **Debug exec (development only).** `crosswindctl exec` runs commands in the guest. The guest accepts the request only when its kernel command line has `crosswind.debug=1`, which the host agent sets only when started with `CROSSWIND_DEBUG=1` (set by `scripts/dev-agent.sh`, never by a shipped build), and the agent forwards it only from `crosswindctl` connections. A release agent therefore cannot be made to run guest commands.
+- **A shell in the VM.** Terminal apps (Kate, Konsole) get `/bin/sh` as the guest user. That is a shell inside the VM, not on the Mac; the guest's boundary (no shared folders beyond grants, NAT network) applies as for any app.
+
 ## Host-side privileges
 - Entitlements: `com.apple.security.virtualization` only. No sandbox (required for LaunchAgent, generated app stubs and VM disk access; verify the sandbox alternative before release).
 - Hardened runtime on, notarized, Developer ID signed. Generated per-app stubs are ad-hoc signed locally on the user's machine.

@@ -6,19 +6,37 @@ How the tests run: each app is installed from Flathub on an arm64 guest, launche
 
 ## Summary
 
-- Works: 1
-- Works with caveats: 2
+- Works: 10
+- Works with caveats: 10
 - Known issues: 1
-- No ARM build: 0
-- Not yet tested: 2
+- No ARM build: 3
+- Not yet tested: 0
 
 ## Results
 
 | Status | App | ID | Window | Renders | Input | Clean exit | Tested | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Works | [Calculator](screenshots/org.gnome.Calculator.png) | `org.gnome.Calculator` | yes | yes | yes | yes | 2026-10-31T23:35:19Z |  |
-| Works with caveats | [Clocks](screenshots/org.gnome.clocks.png) | `org.gnome.clocks` | yes | yes | yes | no | 2026-10-31T23:35:52Z | did not exit within 10 s of a close request; stopping it |
-| Works with caveats | [Text Editor](screenshots/org.gnome.TextEditor.png) | `org.gnome.TextEditor` | yes | yes | yes | no | 2026-10-31T23:35:34Z | did not exit within 10 s of a close request; stopping it |
-| Known issues | VSCodium | `com.vscodium.codium` | no | - | - | - | 2026-10-31T23:38:00Z | no window within 90.0 seconds |
-| Not yet tested | org.kde.kate | `org.kde.kate` | - | - | - | - | 2026-10-31T23:35:52Z | Not run: the catalog lists this app as org.kde.kcalc.desktop, which the first harness build did not match. Fixed in the harness; rerun needed. |
-| Not yet tested | org.kde.kcalc | `org.kde.kcalc` | - | - | - | - | 2026-10-31T23:35:52Z | Not run: the catalog lists this app as org.kde.kcalc.desktop, which the first harness build did not match. Fixed in the harness; rerun needed. |
+| Works | [Calculator](screenshots/org.gnome.Calculator.png) | `org.gnome.Calculator` | yes | yes | yes | yes | 2026-11-27T07:55:32Z |  |
+| Works | [Chromium Web Browser](screenshots/org.chromium.Chromium.png) | `org.chromium.Chromium` | yes | yes | yes | yes | 2026-11-27T07:52:34Z |  |
+| Works | [Dolphin](screenshots/org.kde.dolphin.png) | `org.kde.dolphin` | yes | yes | yes | yes | 2026-11-27T07:55:42Z |  |
+| Works | [gedit](screenshots/org.gnome.gedit.png) | `org.gnome.gedit` | yes | yes | yes | yes | 2026-11-27T07:54:54Z |  |
+| Works | [GNU Image Manipulation Program](screenshots/org.gimp.GIMP.png) | `org.gimp.GIMP` | yes | yes | yes | yes | 2026-11-27T06:30:49Z |  |
+| Works | [Kate](screenshots/org.kde.kate.png) | `org.kde.kate` | yes | yes | yes | yes | 2026-11-27T06:22:56Z |  |
+| Works | [KCalc](screenshots/org.kde.kcalc.png) | `org.kde.kcalc` | yes | yes | yes | yes | 2026-11-27T06:22:46Z |  |
+| Works | [Obsidian](screenshots/md.obsidian.Obsidian.png) | `md.obsidian.Obsidian` | yes | yes | yes | yes | 2026-11-27T07:52:48Z |  |
+| Works | [Telegram](screenshots/org.telegram.desktop.png) | `org.telegram.desktop` | yes | yes | yes | yes | 2026-11-27T07:54:02Z |  |
+| Works | [Web](screenshots/org.gnome.Epiphany.png) | `org.gnome.Epiphany` | yes | yes | yes | yes | 2026-11-27T07:54:18Z |  |
+| Works with caveats | [Audacity](screenshots/org.audacityteam.Audacity.png) | `org.audacityteam.Audacity` | yes | yes | unknown | no | 2026-11-27T06:20:29Z | did not exit within 10 s of a close request; stopping it |
+| Works with caveats | [Clocks](screenshots/org.gnome.clocks.png) | `org.gnome.clocks` | yes | yes | unknown | no | 2026-11-27T07:55:14Z | did not exit within 10 s of a close request; stopping it |
+| Works with caveats | [Element](screenshots/im.riot.Riot.png) | `im.riot.Riot` | yes | yes | unknown | yes | 2026-11-27T07:53:57Z | [im.riot.Riot] [3:1126/235352.297126:ERROR:ui/ozone/platform/wayland/common/drm_render_node_path_finder.cc:45] drmGetDevices2() has not found any devices: No... |
+| Works with caveats | [FileZilla](screenshots/org.filezillaproject.Filezilla.png) | `org.filezillaproject.Filezilla` | yes | yes | yes | no | 2026-11-27T07:54:42Z | did not exit within 10 s of a close request; stopping it |
+| Works with caveats | [Image Viewer](screenshots/org.gnome.Loupe.png) | `org.gnome.Loupe` | yes | yes | unknown | yes | 2026-11-27T07:55:51Z | [org.gnome.Loupe] MESA-EGL: warning: failed to get driver name for fd -1 |
+| Works with caveats | [Inkscape](screenshots/org.inkscape.Inkscape.png) | `org.inkscape.Inkscape` | yes | yes | unknown | no | 2026-11-27T07:53:44Z | did not exit within 10 s of a close request; stopping it |
+| Works with caveats | [KeePassXC](screenshots/org.keepassxc.KeePassXC.png) | `org.keepassxc.KeePassXC` | yes | yes | unknown | yes | 2026-11-27T07:54:25Z | [org.keepassxc.KeePassXC] XDG Remote Desktop portal is not available, Auto-Type disabled |
+| Works with caveats | [LibreOffice](screenshots/org.libreoffice.LibreOffice.png) | `org.libreoffice.LibreOffice` | yes | yes | unknown | no | 2026-11-27T07:53:22Z | did not exit within 10 s of a close request; stopping it |
+| Works with caveats | [Text Editor](screenshots/org.gnome.TextEditor.png) | `org.gnome.TextEditor` | yes | yes | yes | no | 2026-11-27T07:55:28Z | did not exit within 10 s of a close request; stopping it |
+| Works with caveats | [VLC](screenshots/org.videolan.VLC.png) | `org.videolan.VLC` | yes | yes | unknown | no | 2026-11-27T06:31:10Z | did not exit within 10 s of a close request; stopping it |
+| Known issues | [VSCodium](screenshots/com.vscodium.codium.png) | `com.vscodium.codium` | yes | yes | yes | - | 2026-11-27T06:30:41Z | exited before close |
+| No ARM build | io.dbeader.DBeaverCommunity | `io.dbeader.DBeaverCommunity` | - | - | - | - | 2026-11-27T07:54:42Z | not in the Flathub catalog |
+| No ARM build | org.gnome.Nautilus | `org.gnome.Nautilus` | - | - | - | - | 2026-11-27T07:54:42Z | not in the Flathub catalog |
+| No ARM build | org.mozilla.Thunderbird | `org.mozilla.Thunderbird` | - | - | - | - | 2026-11-27T07:53:44Z | not in the Flathub catalog |

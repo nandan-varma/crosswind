@@ -1,162 +1,597 @@
 {
-  "apps": [
+  "apps" : [
     {
-      "appID": "com.vscodium.codium",
-      "appVersion": "1.140.06880",
-      "arch": "aarch64",
-      "checks": {
-        "cleanExit": "skipped",
-        "inputWorks": "skipped",
-        "needsX11": false,
-        "noCrash": "fail",
-        "renders": "skipped",
-        "windowAppears": "fail"
+      "appID" : "com.vscodium.codium",
+      "appVersion" : "1.143.17232",
+      "arch" : "aarch64",
+      "checks" : {
+        "cleanExit" : "skipped",
+        "inputWorks" : "pass",
+        "needsX11" : false,
+        "noCrash" : "fail",
+        "renders" : "pass",
+        "windowAppears" : "pass"
       },
-      "guestImageVersion": "dev-1793486068",
-      "name": "VSCodium",
-      "notes": [
-        "no window within 90.0 seconds",
-        "[com.vscodium.codium] F: Can't get document portal: GDBus.Error:org.freedesktop.portal.Error.Failed: Can't mount path /run/crosswind/doc",
+      "guestImageVersion" : "dev-1795761009",
+      "name" : "VSCodium",
+      "notes" : [
+        "exited before close",
         "[com.vscodium.codium] com.vscodium.codium-wrapper: Setting up NPM packages",
         "[com.vscodium.codium] com.vscodium.codium-wrapper: Setting up Cargo packages",
         "[com.vscodium.codium] com.vscodium.codium-wrapper: Setting up Python packages",
-        "[com.vscodium.codium] com.vscodium.codium-wrapper: 'ruby' is not available"
+        "[com.vscodium.codium] com.vscodium.codium-wrapper: 'ruby' is not available",
+        "[com.vscodium.codium] Warning: 'enable-wayland-ime' is not in the list of known options, but still passed to Electron\/Chromium.",
+        "[com.vscodium.codium] Warning: 'enable-features' is not in the list of known options, but still passed to Electron\/Chromium.",
+        "[com.vscodium.codium] Warning: 'wayland-text-input-version' is not in the list of known options, but still passed to Electron\/Chromium."
       ],
-      "status": "broken",
-      "testedAt": "2026-10-31T23:38:00Z"
+      "screenshot" : "screenshots\/com.vscodium.codium.png",
+      "status" : "broken",
+      "testedAt" : "2026-11-27T06:30:41Z"
     },
     {
-      "appID": "org.gnome.Calculator",
-      "appVersion": "51.1",
-      "arch": "aarch64",
-      "checks": {
-        "cleanExit": "pass",
-        "inputWorks": "pass",
-        "needsX11": false,
-        "noCrash": "pass",
-        "renders": "pass",
-        "windowAppears": "pass"
+      "appID" : "im.riot.Riot",
+      "appVersion" : "1.12.36",
+      "arch" : "aarch64",
+      "checks" : {
+        "cleanExit" : "pass",
+        "inputWorks" : "unknown",
+        "needsX11" : false,
+        "noCrash" : "pass",
+        "renders" : "pass",
+        "windowAppears" : "pass"
       },
-      "guestImageVersion": "dev-1793486068",
-      "name": "Calculator",
-      "notes": [],
-      "screenshot": "screenshots/org.gnome.Calculator.png",
-      "status": "works",
-      "testedAt": "2026-10-31T23:35:19Z"
+      "guestImageVersion" : "dev-1795764958",
+      "name" : "Element",
+      "notes" : [
+        "[im.riot.Riot] [3:1126\/235352.297126:ERROR:ui\/ozone\/platform\/wayland\/common\/drm_render_node_path_finder.cc:45] drmGetDevices2() has not found any devices: No such file or directory (2)",
+        "[im.riot.Riot] [3:1126\/235352.356514:ERROR:dbus\/bus.cc:406] Failed to connect to the bus: Failed to connect to socket \/run\/dbus\/system_bus_socket: No such file or directory",
+        "[im.riot.Riot] Unable to read protocol store, starting with empty store:  Error: ENOENT: no such file or directory, open '\/home\/crosswind\/.var\/app\/im.riot.Riot\/config\/Element\/sso-sessions.json'",
+        "[im.riot.Riot]     at Object.readFileSync (node:fs:483:20)",
+        "[im.riot.Riot]     at Object.readFileSync (node:electron\/js2c\/node_init:1:12479)",
+        "[im.riot.Riot]     at ProtocolHandler.readStore (file:\/\/\/app\/Element\/resources\/app.asar\/lib\/protocol.js:93:26)",
+        "[im.riot.Riot]     at new ProtocolHandler (file:\/\/\/app\/Element\/resources\/app.asar\/lib\/protocol.js:41:27)",
+        "[im.riot.Riot]     at file:\/\/\/app\/Element\/resources\/app.asar\/lib\/electron-main.js:42:25",
+        "[im.riot.Riot]     at process.processTicksAndRejections (node:internal\/process\/task_queues:104:5) {",
+        "[im.riot.Riot]   errno: -2,",
+        "[im.riot.Riot]   code: 'ENOENT',",
+        "[im.riot.Riot]   syscall: 'open',",
+        "[im.riot.Riot]   path: '\/home\/crosswind\/.var\/app\/im.riot.Riot\/config\/Element\/sso-sessions.json'",
+        "[im.riot.Riot] }",
+        "[im.riot.Riot] \/home\/crosswind\/.var\/app\/im.riot.Riot\/config\/Element exists: no",
+        "[im.riot.Riot] \/home\/crosswind\/.var\/app\/im.riot.Riot\/config\/Riot exists: no",
+        "[im.riot.Riot] Loading app config: \/app\/Element\/resources\/webapp.asar\/config.json",
+        "[im.riot.Riot] Loading local config: \/home\/crosswind\/.var\/app\/im.riot.Riot\/config\/Element\/config.json",
+        "[im.riot.Riot] Skipping nonexistent file: \/home\/crosswind\/.var\/app\/im.riot.Riot\/config\/Element\/config.json",
+        "[im.riot.Riot] [3:1126\/235352.613370:ERROR:dbus\/bus.cc:406] Failed to connect to the bus: Failed to connect to socket \/run\/dbus\/system_bus_socket: No such file or directory",
+        "[im.riot.Riot] [3:1126\/235352.613562:ERROR:dbus\/bus.cc:406] Failed to connect to the bus: Failed to connect to socket \/run\/dbus\/system_bus_socket: No such file or directory",
+        "[im.riot.Riot] [48:1126\/235352.616575:ERROR:ui\/ozone\/platform\/wayland\/common\/drm_render_node_path_finder.cc:45] drmGetDevices2() has not found any devices: No such file or directory (2)",
+        "[im.riot.Riot] Reached Electron ready state",
+        "[im.riot.Riot] Auto update not supported on this platform",
+        "[im.riot.Riot] Fetching translation json for locale: en_EN",
+        "[im.riot.Riot] Resetting the UI components after locale change",
+        "[im.riot.Riot] Opening main window",
+        "[im.riot.Riot] Ensuring storage is ready",
+        "[im.riot.Riot] (node:3) [DEP0044] DeprecationWarning: The `util.isArray` API is deprecated. Please use `Array.isArray()` instead.",
+        "[im.riot.Riot] (Use `element-desktop --trace-deprecation ...` to show where the warning was created)",
+        "[im.riot.Riot] [3:1126\/235356.763605:ERROR:content\/browser\/browser_main_loop.cc:279] GLib-GObject: ..\/gobject\/gsignal.c:2723: instance '0x2c000d6200' has no handler with id '1620'",
+        "[im.riot.Riot] Error: safeStorage backend basic_text and user rejected it",
+        "[im.riot.Riot]     at Store.consultUserConsentDegradedMode (file:\/\/\/app\/Element\/resources\/app.asar\/lib\/store.js:440:23)",
+        "[im.riot.Riot]     at async Store.reallyPrepareSafeStorage (file:\/\/\/app\/Element\/resources\/app.asar\/lib\/store.js:353:17)",
+        "[im.riot.Riot]     at async EventEmitter.<anonymous> (file:\/\/\/app\/Element\/resources\/app.asar\/lib\/electron-main.js:238:15)",
+        "[im.riot.Riot] (node:3) UnhandledPromiseRejectionWarning: TypeError: Object has been destroyed",
+        "[im.riot.Riot]     at BrowserWindow.loadURL (node:electron\/js2c\/browser_init:1:19256)",
+        "[im.riot.Riot]     at EventEmitter.<anonymous> (file:\/\/\/app\/Element\/resources\/app.asar\/lib\/electron-main.js:248:32)",
+        "[im.riot.Riot] (node:3) UnhandledPromiseRejectionWarning: Unhandled promise rejection. This error originated either by throwing inside of an async function without a catch block, or by rejecting a promise which was not handled with .catch(). To terminate the node process on unhandled promise rejection, use the CLI flag `--unhandled-rejections=strict` (see https:\/\/nodejs.org\/api\/cli.html#cli_unhandled_rejections_mode). (rejection id: 1)"
+      ],
+      "screenshot" : "screenshots\/im.riot.Riot.png",
+      "status" : "caveats",
+      "testedAt" : "2026-11-27T07:53:57Z"
     },
     {
-      "appID": "org.gnome.TextEditor",
-      "appVersion": "51.0",
-      "arch": "aarch64",
-      "checks": {
-        "cleanExit": "fail",
-        "inputWorks": "pass",
-        "needsX11": false,
-        "noCrash": "pass",
-        "renders": "pass",
-        "windowAppears": "pass"
+      "appID" : "io.dbeader.DBeaverCommunity",
+      "appVersion" : "",
+      "arch" : "aarch64",
+      "checks" : {
+        "cleanExit" : "skipped",
+        "inputWorks" : "skipped",
+        "needsX11" : false,
+        "noCrash" : "skipped",
+        "renders" : "skipped",
+        "windowAppears" : "skipped"
       },
-      "guestImageVersion": "dev-1793486068",
-      "name": "Text Editor",
-      "notes": [
+      "guestImageVersion" : "dev-1795764958",
+      "name" : "io.dbeader.DBeaverCommunity",
+      "notes" : [
+        "not in the Flathub catalog"
+      ],
+      "status" : "no-arm-build",
+      "testedAt" : "2026-11-27T07:54:42Z"
+    },
+    {
+      "appID" : "md.obsidian.Obsidian",
+      "appVersion" : "1.15.1",
+      "arch" : "aarch64",
+      "checks" : {
+        "cleanExit" : "pass",
+        "inputWorks" : "pass",
+        "needsX11" : false,
+        "noCrash" : "pass",
+        "renders" : "pass",
+        "windowAppears" : "pass"
+      },
+      "guestImageVersion" : "dev-1795764958",
+      "name" : "Obsidian",
+      "notes" : [
+
+      ],
+      "screenshot" : "screenshots\/md.obsidian.Obsidian.png",
+      "status" : "works",
+      "testedAt" : "2026-11-27T07:52:48Z"
+    },
+    {
+      "appID" : "org.audacityteam.Audacity",
+      "appVersion" : "3.7.8",
+      "arch" : "aarch64",
+      "checks" : {
+        "cleanExit" : "fail",
+        "inputWorks" : "unknown",
+        "needsX11" : false,
+        "noCrash" : "pass",
+        "renders" : "pass",
+        "windowAppears" : "pass"
+      },
+      "guestImageVersion" : "dev-1795760340",
+      "name" : "Audacity",
+      "notes" : [
+        "did not exit within 10 s of a close request; stopping it",
+        "needed SIGTERM (exit 143)"
+      ],
+      "screenshot" : "screenshots\/org.audacityteam.Audacity.png",
+      "status" : "caveats",
+      "testedAt" : "2026-11-27T06:20:29Z"
+    },
+    {
+      "appID" : "org.chromium.Chromium",
+      "appVersion" : "158.0.8127.88",
+      "arch" : "aarch64",
+      "checks" : {
+        "cleanExit" : "pass",
+        "inputWorks" : "pass",
+        "needsX11" : false,
+        "noCrash" : "pass",
+        "renders" : "pass",
+        "windowAppears" : "pass"
+      },
+      "guestImageVersion" : "dev-1795764958",
+      "name" : "Chromium Web Browser",
+      "notes" : [
+
+      ],
+      "screenshot" : "screenshots\/org.chromium.Chromium.png",
+      "status" : "works",
+      "testedAt" : "2026-11-27T07:52:34Z"
+    },
+    {
+      "appID" : "org.filezillaproject.Filezilla",
+      "appVersion" : "3.72.1",
+      "arch" : "aarch64",
+      "checks" : {
+        "cleanExit" : "fail",
+        "inputWorks" : "pass",
+        "needsX11" : false,
+        "noCrash" : "pass",
+        "renders" : "pass",
+        "windowAppears" : "pass"
+      },
+      "guestImageVersion" : "dev-1795764958",
+      "name" : "FileZilla",
+      "notes" : [
+        "did not exit within 10 s of a close request; stopping it",
+        "needed SIGTERM (exit 143)"
+      ],
+      "screenshot" : "screenshots\/org.filezillaproject.Filezilla.png",
+      "status" : "caveats",
+      "testedAt" : "2026-11-27T07:54:42Z"
+    },
+    {
+      "appID" : "org.gimp.GIMP",
+      "appVersion" : "3.2.8",
+      "arch" : "aarch64",
+      "checks" : {
+        "cleanExit" : "pass",
+        "inputWorks" : "pass",
+        "needsX11" : false,
+        "noCrash" : "pass",
+        "renders" : "pass",
+        "windowAppears" : "pass"
+      },
+      "guestImageVersion" : "dev-1795761009",
+      "name" : "GNU Image Manipulation Program",
+      "notes" : [
+
+      ],
+      "screenshot" : "screenshots\/org.gimp.GIMP.png",
+      "status" : "works",
+      "testedAt" : "2026-11-27T06:30:49Z"
+    },
+    {
+      "appID" : "org.gnome.Calculator",
+      "appVersion" : "51.1",
+      "arch" : "aarch64",
+      "checks" : {
+        "cleanExit" : "pass",
+        "inputWorks" : "pass",
+        "needsX11" : false,
+        "noCrash" : "pass",
+        "renders" : "pass",
+        "windowAppears" : "pass"
+      },
+      "guestImageVersion" : "dev-1795764958",
+      "name" : "Calculator",
+      "notes" : [
+
+      ],
+      "screenshot" : "screenshots\/org.gnome.Calculator.png",
+      "status" : "works",
+      "testedAt" : "2026-11-27T07:55:32Z"
+    },
+    {
+      "appID" : "org.gnome.Epiphany",
+      "appVersion" : "51.3",
+      "arch" : "aarch64",
+      "checks" : {
+        "cleanExit" : "pass",
+        "inputWorks" : "pass",
+        "needsX11" : false,
+        "noCrash" : "pass",
+        "renders" : "pass",
+        "windowAppears" : "pass"
+      },
+      "guestImageVersion" : "dev-1795764958",
+      "name" : "Web",
+      "notes" : [
+
+      ],
+      "screenshot" : "screenshots\/org.gnome.Epiphany.png",
+      "status" : "works",
+      "testedAt" : "2026-11-27T07:54:18Z"
+    },
+    {
+      "appID" : "org.gnome.Loupe",
+      "appVersion" : "51.2",
+      "arch" : "aarch64",
+      "checks" : {
+        "cleanExit" : "pass",
+        "inputWorks" : "unknown",
+        "needsX11" : false,
+        "noCrash" : "pass",
+        "renders" : "pass",
+        "windowAppears" : "pass"
+      },
+      "guestImageVersion" : "dev-1795764958",
+      "name" : "Image Viewer",
+      "notes" : [
+        "[org.gnome.Loupe] MESA-EGL: warning: failed to get driver name for fd -1",
+        "[org.gnome.Loupe] MESA-EGL: warning: MESA-LOADER: failed to retrieve device information",
+        "[org.gnome.Loupe] MESA-EGL: warning: failed to get driver name for fd -1",
+        "[org.gnome.Loupe] MESA: error: ZINK: failed to choose pdev",
+        "[org.gnome.Loupe] MESA-EGL: warning: egl: failed to create dri2 screen",
+        "[org.gnome.Loupe] ",
+        "[org.gnome.Loupe] (loupe:2): Gtk-WARNING **: 23:55:46.021: Creating a portal monitor failed: GDBus.Error:org.freedesktop.DBus.Error.UnknownMethod: No such interface “org.freedesktop.portal.Inhibit” on object at path \/org\/freedesktop\/portal\/desktop"
+      ],
+      "screenshot" : "screenshots\/org.gnome.Loupe.png",
+      "status" : "caveats",
+      "testedAt" : "2026-11-27T07:55:51Z"
+    },
+    {
+      "appID" : "org.gnome.Nautilus",
+      "appVersion" : "",
+      "arch" : "aarch64",
+      "checks" : {
+        "cleanExit" : "skipped",
+        "inputWorks" : "skipped",
+        "needsX11" : false,
+        "noCrash" : "skipped",
+        "renders" : "skipped",
+        "windowAppears" : "skipped"
+      },
+      "guestImageVersion" : "dev-1795764958",
+      "name" : "org.gnome.Nautilus",
+      "notes" : [
+        "not in the Flathub catalog"
+      ],
+      "status" : "no-arm-build",
+      "testedAt" : "2026-11-27T07:54:42Z"
+    },
+    {
+      "appID" : "org.gnome.TextEditor",
+      "appVersion" : "51.0",
+      "arch" : "aarch64",
+      "checks" : {
+        "cleanExit" : "fail",
+        "inputWorks" : "pass",
+        "needsX11" : false,
+        "noCrash" : "pass",
+        "renders" : "pass",
+        "windowAppears" : "pass"
+      },
+      "guestImageVersion" : "dev-1795764958",
+      "name" : "Text Editor",
+      "notes" : [
         "did not exit within 10 s of a close request; stopping it",
         "needed SIGTERM (exit 143)",
-        "[org.gnome.TextEditor] F: Can't get document portal: GDBus.Error:org.freedesktop.DBus.Error.NoReply: Message recipient disconnected from message bus without replying",
         "[org.gnome.TextEditor] ",
-        "[org.gnome.TextEditor] (gnome-text-editor:2): Gdk-WARNING **: 16:35:21.501: Failed to read portal settings: GDBus.Error:org.freedesktop.DBus.Error.UnknownMethod: No such interface \u201corg.freedesktop.portal.Settings\u201d on object at path /org/freedesktop/portal/desktop",
-        "[org.gnome.TextEditor] ",
-        "[org.gnome.TextEditor] (gnome-text-editor:2): Gtk-WARNING **: 16:35:21.533: Creating a portal monitor failed: GDBus.Error:org.freedesktop.DBus.Error.UnknownMethod: No such interface \u201corg.freedesktop.portal.Inhibit\u201d on object at path /org/freedesktop/portal/desktop",
+        "[org.gnome.TextEditor] (gnome-text-editor:2): Gtk-WARNING **: 23:55:15.264: Creating a portal monitor failed: GDBus.Error:org.freedesktop.DBus.Error.UnknownMethod: No such interface “org.freedesktop.portal.Inhibit” on object at path \/org\/freedesktop\/portal\/desktop",
         "[org.gnome.TextEditor] MESA-EGL: warning: failed to get driver name for fd -1",
         "[org.gnome.TextEditor] MESA-EGL: warning: MESA-LOADER: failed to retrieve device information",
         "[org.gnome.TextEditor] MESA-EGL: warning: failed to get driver name for fd -1",
         "[org.gnome.TextEditor] MESA: error: ZINK: failed to choose pdev",
         "[org.gnome.TextEditor] MESA-EGL: warning: egl: failed to create dri2 screen",
         "[org.gnome.TextEditor] ",
-        "[org.gnome.TextEditor] (gnome-text-editor:2): Gtk-WARNING **: 16:35:24.241: Calling org.freedesktop.portal.Inhibit.Inhibit failed: GDBus.Error:org.freedesktop.DBus.Error.UnknownMethod: No such interface \u201corg.freedesktop.portal.Inhibit\u201d on object at path /org/freedesktop/portal/desktop",
+        "[org.gnome.TextEditor] (gnome-text-editor:2): Gtk-WARNING **: 23:55:15.558: Calling org.freedesktop.portal.Inhibit.Inhibit failed: GDBus.Error:org.freedesktop.DBus.Error.UnknownMethod: No such interface “org.freedesktop.portal.Inhibit” on object at path \/org\/freedesktop\/portal\/desktop",
         "[org.gnome.TextEditor] ",
-        "[org.gnome.TextEditor] (gnome-text-editor:2): GLib-GIO-CRITICAL **: 16:35:24.498: g_file_new_for_path: assertion 'path != NULL' failed",
+        "[org.gnome.TextEditor] (gnome-text-editor:2): GLib-GIO-CRITICAL **: 23:55:17.517: g_file_new_for_path: assertion 'path != NULL' failed",
         "[org.gnome.TextEditor] ",
-        "[org.gnome.TextEditor] (gnome-text-editor:2): editor-document-WARNING **: 16:35:24.498: Your system has an improperly configured XDG_DOCUMENTS_DIR. Using $HOME instead."
+        "[org.gnome.TextEditor] (gnome-text-editor:2): editor-document-WARNING **: 23:55:17.518: Your system has an improperly configured XDG_DOCUMENTS_DIR. Using $HOME instead."
       ],
-      "screenshot": "screenshots/org.gnome.TextEditor.png",
-      "status": "caveats",
-      "testedAt": "2026-10-31T23:35:34Z"
+      "screenshot" : "screenshots\/org.gnome.TextEditor.png",
+      "status" : "caveats",
+      "testedAt" : "2026-11-27T07:55:28Z"
     },
     {
-      "appID": "org.gnome.clocks",
-      "appVersion": "51.0",
-      "arch": "aarch64",
-      "checks": {
-        "cleanExit": "fail",
-        "inputWorks": "pass",
-        "needsX11": false,
-        "noCrash": "pass",
-        "renders": "pass",
-        "windowAppears": "pass"
+      "appID" : "org.gnome.clocks",
+      "appVersion" : "51.0",
+      "arch" : "aarch64",
+      "checks" : {
+        "cleanExit" : "fail",
+        "inputWorks" : "unknown",
+        "needsX11" : false,
+        "noCrash" : "pass",
+        "renders" : "pass",
+        "windowAppears" : "pass"
       },
-      "guestImageVersion": "dev-1793486068",
-      "name": "Clocks",
-      "notes": [
+      "guestImageVersion" : "dev-1795764958",
+      "name" : "Clocks",
+      "notes" : [
         "did not exit within 10 s of a close request; stopping it",
         "needed SIGTERM (exit 143)",
-        "[org.gnome.clocks] F: Can't get document portal: GDBus.Error:org.freedesktop.portal.Error.Failed: Can't mount path /run/crosswind/doc",
         "[org.gnome.clocks] ",
-        "[org.gnome.clocks] (org.gnome.clocks:2): Gdk-WARNING **: 16:35:39.389: Failed to read portal settings: GDBus.Error:org.freedesktop.DBus.Error.UnknownMethod: No such interface \u201corg.freedesktop.portal.Settings\u201d on object at path /org/freedesktop/portal/desktop",
-        "[org.gnome.clocks] ",
-        "[org.gnome.clocks] ** (org.gnome.clocks:2): WARNING **: 16:35:39.420: utils.vala:147: Failed to get clock format from portal, fallback to GSettings.",
+        "[org.gnome.clocks] ** (org.gnome.clocks:2): WARNING **: 23:54:58.865: utils.vala:147: Failed to get clock format from portal, fallback to GSettings.",
         "[org.gnome.clocks] MESA-EGL: warning: failed to get driver name for fd -1",
         "[org.gnome.clocks] MESA-EGL: warning: MESA-LOADER: failed to retrieve device information",
         "[org.gnome.clocks] MESA-EGL: warning: failed to get driver name for fd -1",
         "[org.gnome.clocks] MESA: error: ZINK: failed to choose pdev",
         "[org.gnome.clocks] MESA-EGL: warning: egl: failed to create dri2 screen",
         "[org.gnome.clocks] ",
-        "[org.gnome.clocks] (org.gnome.clocks:2): Gtk-WARNING **: 16:35:39.514: Creating a portal monitor failed: GDBus.Error:org.freedesktop.DBus.Error.UnknownMethod: No such interface \u201corg.freedesktop.portal.Inhibit\u201d on object at path /org/freedesktop/portal/desktop",
+        "[org.gnome.clocks] (org.gnome.clocks:2): Gtk-WARNING **: 23:54:58.989: Creating a portal monitor failed: GDBus.Error:org.freedesktop.DBus.Error.UnknownMethod: No such interface “org.freedesktop.portal.Inhibit” on object at path \/org\/freedesktop\/portal\/desktop",
         "[org.gnome.clocks] ",
-        "[org.gnome.clocks] (org.gnome.clocks:2): org.gnome.Clocks-WARNING **: 16:35:39.960: geocoding.vala:42: Failed to connect to GeoClue2 service: GDBus.Error:org.freedesktop.DBus.Error.UnknownMethod: No such interface \u201corg.freedesktop.portal.Location\u201d on object at path /org/freedesktop/portal/desktop"
+        "[org.gnome.clocks] (org.gnome.clocks:2): org.gnome.Clocks-WARNING **: 23:54:59.379: geocoding.vala:42: Failed to connect to GeoClue2 service: GDBus.Error:org.freedesktop.DBus.Error.UnknownMethod: No such interface “org.freedesktop.portal.Location” on object at path \/org\/freedesktop\/portal\/desktop"
       ],
-      "screenshot": "screenshots/org.gnome.clocks.png",
-      "status": "caveats",
-      "testedAt": "2026-10-31T23:35:52Z"
+      "screenshot" : "screenshots\/org.gnome.clocks.png",
+      "status" : "caveats",
+      "testedAt" : "2026-11-27T07:55:14Z"
     },
     {
-      "appID": "org.kde.kate",
-      "appVersion": "",
-      "arch": "aarch64",
-      "checks": {
-        "cleanExit": "skipped",
-        "inputWorks": "skipped",
-        "needsX11": false,
-        "noCrash": "skipped",
-        "renders": "skipped",
-        "windowAppears": "skipped"
+      "appID" : "org.gnome.gedit",
+      "appVersion" : "51.1",
+      "arch" : "aarch64",
+      "checks" : {
+        "cleanExit" : "pass",
+        "inputWorks" : "pass",
+        "needsX11" : false,
+        "noCrash" : "pass",
+        "renders" : "pass",
+        "windowAppears" : "pass"
       },
-      "guestImageVersion": "dev-1793486068",
-      "name": "org.kde.kate",
-      "notes": [
-        "Not run: the catalog lists this app as org.kde.kcalc.desktop, which the first harness build did not match. Fixed in the harness; rerun needed."
+      "guestImageVersion" : "dev-1795764958",
+      "name" : "gedit",
+      "notes" : [
+
       ],
-      "status": "untested",
-      "testedAt": "2026-10-31T23:35:52Z"
+      "screenshot" : "screenshots\/org.gnome.gedit.png",
+      "status" : "works",
+      "testedAt" : "2026-11-27T07:54:54Z"
     },
     {
-      "appID": "org.kde.kcalc",
-      "appVersion": "",
-      "arch": "aarch64",
-      "checks": {
-        "cleanExit": "skipped",
-        "inputWorks": "skipped",
-        "needsX11": false,
-        "noCrash": "skipped",
-        "renders": "skipped",
-        "windowAppears": "skipped"
+      "appID" : "org.inkscape.Inkscape",
+      "appVersion" : "1.4.4",
+      "arch" : "aarch64",
+      "checks" : {
+        "cleanExit" : "fail",
+        "inputWorks" : "unknown",
+        "needsX11" : false,
+        "noCrash" : "pass",
+        "renders" : "pass",
+        "windowAppears" : "pass"
       },
-      "guestImageVersion": "dev-1793486068",
-      "name": "org.kde.kcalc",
-      "notes": [
-        "Not run: the catalog lists this app as org.kde.kcalc.desktop, which the first harness build did not match. Fixed in the harness; rerun needed."
+      "guestImageVersion" : "dev-1795764958",
+      "name" : "Inkscape",
+      "notes" : [
+        "did not exit within 10 s of a close request; stopping it",
+        "needed SIGTERM (exit 143)",
+        "[org.inkscape.Inkscape] ",
+        "[org.inkscape.Inkscape] (org.inkscape.Inkscape:2): Gtk-WARNING **: 23:53:29.298: Creating a portal monitor failed: GDBus.Error:org.freedesktop.DBus.Error.UnknownMethod: No such interface “org.freedesktop.portal.Inhibit” on object at path \/org\/freedesktop\/portal\/desktop"
       ],
-      "status": "untested",
-      "testedAt": "2026-10-31T23:35:52Z"
+      "screenshot" : "screenshots\/org.inkscape.Inkscape.png",
+      "status" : "caveats",
+      "testedAt" : "2026-11-27T07:53:44Z"
+    },
+    {
+      "appID" : "org.kde.dolphin",
+      "appVersion" : "26.08.3",
+      "arch" : "aarch64",
+      "checks" : {
+        "cleanExit" : "pass",
+        "inputWorks" : "pass",
+        "needsX11" : false,
+        "noCrash" : "pass",
+        "renders" : "pass",
+        "windowAppears" : "pass"
+      },
+      "guestImageVersion" : "dev-1795764958",
+      "name" : "Dolphin",
+      "notes" : [
+
+      ],
+      "screenshot" : "screenshots\/org.kde.dolphin.png",
+      "status" : "works",
+      "testedAt" : "2026-11-27T07:55:42Z"
+    },
+    {
+      "appID" : "org.kde.kate",
+      "appVersion" : "26.08.3",
+      "arch" : "aarch64",
+      "checks" : {
+        "cleanExit" : "pass",
+        "inputWorks" : "pass",
+        "needsX11" : false,
+        "noCrash" : "pass",
+        "renders" : "pass",
+        "windowAppears" : "pass"
+      },
+      "guestImageVersion" : "dev-1795760340",
+      "name" : "Kate",
+      "notes" : [
+
+      ],
+      "screenshot" : "screenshots\/org.kde.kate.png",
+      "status" : "works",
+      "testedAt" : "2026-11-27T06:22:56Z"
+    },
+    {
+      "appID" : "org.kde.kcalc",
+      "appVersion" : "26.08.3",
+      "arch" : "aarch64",
+      "checks" : {
+        "cleanExit" : "pass",
+        "inputWorks" : "pass",
+        "needsX11" : false,
+        "noCrash" : "pass",
+        "renders" : "pass",
+        "windowAppears" : "pass"
+      },
+      "guestImageVersion" : "dev-1795760340",
+      "name" : "KCalc",
+      "notes" : [
+
+      ],
+      "screenshot" : "screenshots\/org.kde.kcalc.png",
+      "status" : "works",
+      "testedAt" : "2026-11-27T06:22:46Z"
+    },
+    {
+      "appID" : "org.keepassxc.KeePassXC",
+      "appVersion" : "2.8.0",
+      "arch" : "aarch64",
+      "checks" : {
+        "cleanExit" : "pass",
+        "inputWorks" : "unknown",
+        "needsX11" : true,
+        "noCrash" : "pass",
+        "renders" : "pass",
+        "windowAppears" : "pass"
+      },
+      "guestImageVersion" : "dev-1795764958",
+      "name" : "KeePassXC",
+      "notes" : [
+        "[org.keepassxc.KeePassXC] XDG Remote Desktop portal is not available, Auto-Type disabled",
+        "[org.keepassxc.KeePassXC] Unable to initialize an available auto-type platform.",
+        "[org.keepassxc.KeePassXC] qt.qpa.wayland.textinput: virtual void QtWaylandClient::QWaylandTextInputv3::disableSurface(wl_surface*) Trying to disable 0xaaaacdc80ef0 but 0x0 is focused",
+        "[org.keepassxc.KeePassXC] qt.qpa.wayland.textinput: virtual void QtWaylandClient::QWaylandTextInputv3::disableSurface(wl_surface*) Trying to disable 0xaaaacdc80ef0 but 0x0 is focused"
+      ],
+      "screenshot" : "screenshots\/org.keepassxc.KeePassXC.png",
+      "status" : "caveats",
+      "testedAt" : "2026-11-27T07:54:25Z"
+    },
+    {
+      "appID" : "org.libreoffice.LibreOffice",
+      "appVersion" : "26.8.3.1",
+      "arch" : "aarch64",
+      "checks" : {
+        "cleanExit" : "fail",
+        "inputWorks" : "unknown",
+        "needsX11" : false,
+        "noCrash" : "pass",
+        "renders" : "pass",
+        "windowAppears" : "pass"
+      },
+      "guestImageVersion" : "dev-1795764958",
+      "name" : "LibreOffice",
+      "notes" : [
+        "did not exit within 10 s of a close request; stopping it",
+        "needed SIGTERM (exit 143)",
+        "[org.libreoffice.LibreOffice] Failed to open display"
+      ],
+      "screenshot" : "screenshots\/org.libreoffice.LibreOffice.png",
+      "status" : "caveats",
+      "testedAt" : "2026-11-27T07:53:22Z"
+    },
+    {
+      "appID" : "org.mozilla.Thunderbird",
+      "appVersion" : "",
+      "arch" : "aarch64",
+      "checks" : {
+        "cleanExit" : "skipped",
+        "inputWorks" : "skipped",
+        "needsX11" : false,
+        "noCrash" : "skipped",
+        "renders" : "skipped",
+        "windowAppears" : "skipped"
+      },
+      "guestImageVersion" : "dev-1795764958",
+      "name" : "org.mozilla.Thunderbird",
+      "notes" : [
+        "not in the Flathub catalog"
+      ],
+      "status" : "no-arm-build",
+      "testedAt" : "2026-11-27T07:53:44Z"
+    },
+    {
+      "appID" : "org.telegram.desktop",
+      "appVersion" : "7.4.4",
+      "arch" : "aarch64",
+      "checks" : {
+        "cleanExit" : "pass",
+        "inputWorks" : "pass",
+        "needsX11" : false,
+        "noCrash" : "pass",
+        "renders" : "pass",
+        "windowAppears" : "pass"
+      },
+      "guestImageVersion" : "dev-1795764958",
+      "name" : "Telegram",
+      "notes" : [
+
+      ],
+      "screenshot" : "screenshots\/org.telegram.desktop.png",
+      "status" : "works",
+      "testedAt" : "2026-11-27T07:54:02Z"
+    },
+    {
+      "appID" : "org.videolan.VLC",
+      "appVersion" : "3.0.24",
+      "arch" : "aarch64",
+      "checks" : {
+        "cleanExit" : "fail",
+        "inputWorks" : "unknown",
+        "needsX11" : false,
+        "noCrash" : "pass",
+        "renders" : "pass",
+        "windowAppears" : "pass"
+      },
+      "guestImageVersion" : "dev-1795761009",
+      "name" : "VLC",
+      "notes" : [
+        "did not exit within 10 s of a close request; stopping it",
+        "needed SIGTERM (exit 143)",
+        "[org.videolan.VLC] [0000aaaafebec720] main libvlc: Running vlc with the default interface. Use 'cvlc' to use vlc without interface.",
+        "[org.videolan.VLC] MESA-EGL: warning: DRI3 error: Could not get DRI3 device",
+        "[org.videolan.VLC] MESA-EGL: warning: Ensure your X server supports DRI3 to get accelerated rendering",
+        "[org.videolan.VLC] [0000aaaafec808f0] main playlist: playlist is empty"
+      ],
+      "screenshot" : "screenshots\/org.videolan.VLC.png",
+      "status" : "caveats",
+      "testedAt" : "2026-11-27T06:31:10Z"
     }
   ]
 }
