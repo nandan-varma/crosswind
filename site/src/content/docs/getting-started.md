@@ -1,0 +1,42 @@
+---
+title: Getting started
+description: Install Crosswind, add your first Linux app and learn the basics.
+group: Use
+order: 1
+---
+
+Crosswind runs Linux apps from [Flathub](https://flathub.org) on your Mac. Each app opens in its own native window.
+
+## Requirements
+
+- A Mac with Apple silicon.
+- macOS 27 or later.
+- About 2 GB of free disk space for the Linux environment, plus room for the apps you install.
+
+## Install Crosswind
+
+Crosswind is in preparation for a public beta, so there is no download yet. Until then you can build it from source; the [development guide](/docs/development/) walks through it. Watch the [GitHub repository](https://github.com/nandan-varma/crosswind) for the first release.
+
+## First launch
+
+1. Open **Crosswind**. The first time, macOS asks you to allow its background item under **System Settings > General > Login Items & Extensions**. The background item runs the Linux environment; without it nothing can start.
+2. Crosswind downloads the Linux environment image and checks its signature. This happens once.
+3. The store opens.
+
+## Install and open an app
+
+1. Browse **Discover**, pick a category or search.
+2. Open an app's page and choose **Install**. Flathub apps are downloaded into the Linux environment.
+3. Choose **Open**. Crosswind creates a Mac app for it in `~/Applications/Crosswind`, with its own Dock icon, and starts it.
+
+The Linux environment starts when you open an app and stops after a while without apps. You can change that in [Settings](/docs/settings/).
+
+## Everyday use
+
+- **Windows** behave like Mac windows: resize, minimize, full screen, Cmd-Tab, Mission Control.
+- **Shortcuts:** the Command key acts as Control, so Cmd-C, Cmd-V and Cmd-Z work in Linux apps. Cmd-Q quits an app, Cmd-H hides it.
+- **Clipboard:** copy and paste work in both directions while a Crosswind app is in front.
+- **Files:** to give an app access to a folder, add it under **Settings > Shared Folders**, or pick a file in the app's open dialog and Crosswind asks once. To open a file with an app, use **Open With** in Finder or drop it on the app's Dock icon.
+- **Menu bar:** apps with a tray icon, such as chat clients, show it in your menu bar.
+
+If something misbehaves, [the FAQ](/docs/faq/) lists the usual causes.

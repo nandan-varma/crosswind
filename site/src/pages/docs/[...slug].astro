@@ -1,0 +1,37 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+
+export async function getStaticPaths() {
+  const docs = await getCollection('docs');
+  return docs.map((doc) => ({ params: { slug: doc.id.replace(/^generated\//, '') }, props: { doc } }));
+}
+
+const { doc } = Astro.props;
+const { Content } = await render(doc);
+const all = (await getCollection('docs')).sort((a, b) => a.data.order - b.data.order);
+const groups = ['Use', 'Reference', 'Develop'] as const;
+const here = Astro.url.pathname;
+const href = (id: string) => `/docs/${id.replace(/^generated\//, '')}/`;
+---
+<Base title={doc.data.title} description={doc.data.description}>
+  <div class="wrap layout">
+    <nav class="sidebar" aria-label="Documentation">
+      {groups.map((group) => (
+        <>
+          <h4>{group}</h4>
+          <ul>
+            {all.filter((d) => d.data.group === group).map((d) => (
+              <li><a href={href(d.id)} aria-current={here === href(d.id) ? 'page' : undefined}>{d.data.title}</a></li>
+            ))}
+          </ul>
+        </>
+      ))}
+    </nav>
+    <article class="doc">
+      <h1>{doc.data.title}</h1>
+      <p class="desc">{doc.data.description}</p>
+      <Content />
+    </article>
+  </div>
+</Base>

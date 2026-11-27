@@ -1,0 +1,35 @@
+---
+import Base from '../layouts/Base.astro';
+---
+<Base title="Crosswind" description="Run Linux apps from Flathub as native windows on your Mac.">
+  <div class="wrap">
+    <section class="hero">
+      <h1>Linux apps, as Mac apps.</h1>
+      <p class="lead">
+        Crosswind runs apps from Flathub in a small Linux VM and shows each window as a native macOS window,
+        with its own Dock icon, menu bar entry and Cmd-Tab slot.
+      </p>
+      <div class="cta">
+        <a class="button primary" href="/docs/getting-started/">Get started</a>
+        <a class="button" href="https://github.com/nandan-varma/crosswind">View on GitHub</a>
+      </div>
+      <p class="note" style="margin-top:1.5rem">Public beta in preparation. Apple silicon, macOS 27 or later.</p>
+    </section>
+
+    <section class="grid" aria-label="Highlights">
+      <div class="card"><h3>Thousands of apps</h3><p>Browse Flathub in the built-in store. Install, update and remove with one click.</p></div>
+      <div class="card"><h3>Feels native</h3><p>Real windows, the Mac clipboard, dark mode, notifications, native file dialogs and a menu bar tray.</p></div>
+      <div class="card"><h3>Contained</h3><p>Apps run inside a VM and see only the folders you share. Nothing else of your Mac is exposed.</p></div>
+      <div class="card"><h3>Open source</h3><p>AGPL-3.0-or-later, built with Virtualization.framework, Wayland and Flatpak.</p></div>
+    </section>
+
+    <section>
+      <h2>What works today</h2>
+      <p>
+        GTK, Qt and Electron apps, X11 apps, text input and input methods, audio, shared folders,
+        opening files from Finder and tray icons. See the <a href="/docs/compatibility/">tested apps</a>,
+        the <a href="/docs/features/">feature list</a> and the <a href="/docs/roadmap/">roadmap</a>.
+      </p>
+    </section>
+  </div>
+</Base>
