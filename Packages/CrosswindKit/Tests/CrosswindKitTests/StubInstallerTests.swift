@@ -25,6 +25,7 @@ import UniformTypeIdentifiers
             "CFBundleIdentifier": "dev.crosswind.template",
             "CFBundlePackageType": "APPL",
             "CFBundleShortVersionString": "0",
+            "CFBundleIconName": "AppIcon",
         ]
         let data = try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
         try data.write(to: template.appending(path: "Contents/Info.plist"))
@@ -81,6 +82,7 @@ import UniformTypeIdentifiers
         #expect(FileManager.default.fileExists(atPath: icns.path))
         #expect(try Data(contentsOf: icns).count > 0)
         #expect(try plist(of: bundle)["CFBundleIconFile"] as? String == "AppIcon")
+        #expect(try plist(of: bundle)["CFBundleIconName"] == nil)
     }
 
     @Test func lookupsReflectInstalledStubs() throws {

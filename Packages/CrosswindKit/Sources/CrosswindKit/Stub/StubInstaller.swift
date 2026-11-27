@@ -73,6 +73,8 @@ public struct StubInstaller: Sendable {
             try fileManager.createDirectory(at: resources, withIntermediateDirectories: true)
             try icns.write(to: resources.appending(path: "AppIcon.icns"))
             plist["CFBundleIconFile"] = "AppIcon"
+            // The template names its asset-catalog icon (Crosswind's); macOS prefers that over the file above.
+            plist["CFBundleIconName"] = nil
         }
         try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0).write(to: plistURL)
 

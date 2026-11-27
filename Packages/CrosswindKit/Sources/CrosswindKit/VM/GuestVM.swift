@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
+import AVFoundation
 import Foundation
 import Virtualization
 
@@ -39,7 +40,8 @@ public final class GuestVM: NSObject {
         defer { Log.signposter.endInterval("vm.boot", interval) }
 
         try createDataDiskIfNeeded()
-        let config = try makeConfiguration()
+        let microphone = await Self.microphoneAllowed()
+        let config = try makeConfiguration(microphone: microphone)
         try config.validate()
         let machine = VZVirtualMachine(configuration: config)
 
@@ -94,7 +96,7 @@ public final class GuestVM: NSObject {
         try handle.close()
     }
 
-    private func makeConfiguration() throws -> VZVirtualMachineConfiguration {
+    private func makeConfiguration(microphone: Bool) throws -> VZVirtualMachineConfiguration {
         let boot = VZLinuxBootLoader(kernelURL: imageDirectory.appending(path: "Image"))
         boot.initialRamdiskURL = imageDirectory.appending(path: "initramfs")
         boot.commandLine = "console=hvc0 root=/dev/vda ro quiet"
@@ -132,16 +134,27 @@ public final class GuestVM: NSObject {
         )
         config.serialPorts = [serial]
 
-        config.audioDevices = [makeSoundDevice()]
+        config.audioDevices = [makeSoundDevice(microphone: microphone)]
         return config
     }
 
-    /// Output always goes to the Mac's default output. Input (the Mac's microphone) is added only when enabled.
-    private func makeSoundDevice() -> VZVirtioSoundDeviceConfiguration {
+    /// Whether the microphone is enabled in settings and macOS lets Crosswind use it. Without permission the stream
+    /// would deliver silence, so it is left out; the first time, macOS asks.
+    private static func microphoneAllowed() async -> Bool {
+        guard Preferences.microphoneEnabled else { return false }
+        switch AVCaptureDevice.authorizationStatus(for: .audio) {
+        case .authorized: return true
+        case .notDetermined: return await AVCaptureDevice.requestAccess(for: .audio)
+        default: return false
+        }
+    }
+
+    /// Output always goes to the Mac's default output. Input (the Mac's microphone) is added only when allowed.
+    private func makeSoundDevice(microphone: Bool) -> VZVirtioSoundDeviceConfiguration {
         let output = VZVirtioSoundDeviceOutputStreamConfiguration()
         output.sink = VZHostAudioOutputStreamSink()
         var streams: [VZVirtioSoundDeviceStreamConfiguration] = [output]
-        if Preferences.microphoneEnabled {
+        if microphone {
             let input = VZVirtioSoundDeviceInputStreamConfiguration()
             input.source = VZHostAudioInputStreamSource()
             streams.append(input)
