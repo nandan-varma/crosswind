@@ -68,31 +68,43 @@ This runs Sparkle's `generate_appcast` on a copy of the DMG in `build/appcast/`.
 
 ## Publishing on GitHub
 
-Not automated. The steps are manual:
+Not automated; each step publishes something, so it is run by hand. A beta uses the tag `v<version>-beta.<n>`
+(`v0.1.0-beta.1`), marked as a pre-release. The tag must match the `IMAGE_BASE_URL` the app was built with, because
+the app downloads the guest image from `<IMAGE_BASE_URL>/<file>`.
 
 ```sh
-IMAGE_DIR=~/.cache/crosswind-img IMAGE_BASE_URL=<base-url> make release   # or NOTARIZE=0 sh scripts/release.sh
-scripts/appcast.sh build/release/Crosswind-0.1.0.dmg <previous-appcast.xml>
-git tag v0.1.0 && git push origin v0.1.0
-gh release create v0.1.0 build/release/Crosswind-0.1.0.dmg build/appcast/appcast.xml \
-  --title "Crosswind 0.1.0" --notes-file <notes.md>
-helpers sign verify <owner>/<repo>@v0.1.0    # checks the release assets as users get them
+make image                                    # a clean guest image: no DEBUG_TOOLS
+TAG=v0.1.0-beta.1
+IMAGE_DIR=~/.cache/crosswind-img IMAGE_BASE_URL=https://github.com/nandan-varma/crosswind/releases/download/$TAG make release
+RELEASE_TAG=$TAG scripts/appcast.sh build/release/Crosswind-0.1.0.dmg <previous-appcast.xml>
+git tag $TAG && git push origin $TAG
+gh release create $TAG --prerelease --title "Crosswind 0.1.0 beta 1" --notes-file <notes.md> \
+  build/release/Crosswind-0.1.0.dmg build/appcast/appcast.xml \
+  ~/.cache/crosswind-img/{Image,initramfs,system.erofs,SHA256SUMS}
+helpers sign verify nandan-varma/crosswind@$TAG    # checks the release assets as users get them
 ```
 
-Attach the guest image files as release assets too when `IMAGE_BASE_URL` points at this release. `appcast.xml` must be an asset of the release marked as latest, because `SUFeedURL` resolves through `releases/latest`.
+The guest image files are release assets: the app's embedded `GuestImage.json` points at them. `appcast.xml` must be an
+asset of the release marked as latest, because `SUFeedURL` resolves through `releases/latest`; a pre-release is not
+"latest", so publish the appcast on the first non-pre-release, or point `SUFeedURL` at a fixed URL before then.
 
 ## Notarization
 
-`helpers sign notarize` submits with the App Store Connect API key (`ASC_KEY_PATH`, `ASC_KEY_ID`, `ASC_ISSUER_ID`) and waits for Apple. It staples the ticket when Apple accepts it. Apple's issues are printed when it rejects a submission. The common causes are a missing timestamp, a missing hardened runtime, unsigned nested code and `get-task-allow`. A disk image is unsigned by design. What counts is its stapled ticket and the app inside it.
+`scripts/release.sh` notarizes with the App Store Connect profile that `asc` uses (`asc notarization submit --wait`) and
+staples the ticket with `asc notarization staple`. For the DMG it then validates with `xcrun stapler validate`, because
+`asc` reports an error after stapling a DMG even when it worked. Apple's issues are printed when it rejects a submission
+(`asc notarization log --id <id>`). The common causes are a missing timestamp, a missing hardened runtime, unsigned
+nested code and `get-task-allow`. A disk image is unsigned by design. What counts is its stapled ticket and the app
+inside it (`helpers sign verify <dmg>`).
 
 ## Not automated yet
 
 - Bumping `CURRENT_PROJECT_VERSION` and tagging.
-- Bundling the guest image and `GuestImage.json` into the app at `Contents/Resources`.
 - Creating the GitHub release, its notes and its assets.
 - A CI workflow (`helpers sign guide ci` describes one).
 - Signing and publishing the appcast: `scripts/appcast.sh` only writes it.
-- Release-time testing of the installed app. The checks above are signing and notarization checks only.
+- Release-time testing of the installed app beyond signing and notarization checks. The manual checklist is
+  `docs/beta-checklist.md`.
 
 ## Archive gotcha: SKIP_INSTALL
 

@@ -3,7 +3,7 @@
 # EdDSA private key that Sparkle's generate_keys stored in the login keychain (the key is never read into this script
 # or printed). It publishes nothing: upload the output as a release asset yourself.
 #
-# usage: scripts/appcast.sh <Crosswind-X.Y.Z.dmg> [previous-appcast.xml]
+# usage: [RELEASE_TAG=v0.1.0-beta.1] scripts/appcast.sh <Crosswind-X.Y.Z.dmg> [previous-appcast.xml]
 #   previous-appcast.xml  the appcast of the last published release. Passing it keeps earlier entries; the new
 #                         entry is added to it. Without it the appcast lists only this DMG.
 # output: build/appcast/appcast.xml
@@ -26,6 +26,8 @@ SPARKLE_BIN=${SPARKLE_BIN:-$(find "$HOME/Library/Developer/Xcode/DerivedData" /t
 [ -x "$SPARKLE_BIN/generate_appcast" ] || die "generate_appcast not found; set SPARKLE_BIN to Sparkle's bin directory"
 
 VERSION=$(awk -F'"' '/MARKETING_VERSION:/ { print $2; exit }' "$ROOT/project.yml")
+# The release's git tag. It is v<version> unless RELEASE_TAG says otherwise (a beta is v0.1.0-beta.1).
+TAG=${RELEASE_TAG:-v$VERSION}
 DIR="$ROOT/build/appcast"
 rm -rf "$DIR"
 mkdir -p "$DIR"
@@ -34,7 +36,7 @@ cp "$DMG" "$DIR/"
 
 # The enclosures are served from the GitHub release tagged v<version>, as documented in docs/release.md.
 "$SPARKLE_BIN/generate_appcast" \
-    --download-url-prefix "https://github.com/nandan-varma/crosswind/releases/download/v$VERSION/" \
+    --download-url-prefix "https://github.com/nandan-varma/crosswind/releases/download/$TAG/" \
     "$DIR"
 
 [ -f "$DIR/appcast.xml" ] || die "generate_appcast wrote no appcast.xml"
