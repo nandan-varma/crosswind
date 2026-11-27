@@ -17,6 +17,8 @@ const image = new URL('/images/store.png', Astro.site);
     <meta name="theme-color" content="#fbfbfd" media="(prefers-color-scheme: light)" />
     <link rel="canonical" href={new URL(here, Astro.site)} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Crosswind" />
     <meta property="og:title" content={pageTitle} />
@@ -29,7 +31,7 @@ const image = new URL('/images/store.png', Astro.site);
     <a class="skip" href="#main">Skip to content</a>
     <header class="site">
       <div class="wrap">
-        <a class="brand" href="/"><img src="/favicon.svg" alt="" width="26" height="26" />Crosswind</a>
+        <a class="brand" href="/"><img src="/apple-touch-icon.png" alt="" width="26" height="26" />Crosswind</a>
         <nav aria-label="Main">
           <a href="/docs/getting-started/" aria-current={here.startsWith('/docs') && !here.startsWith('/docs/compatibility') ? 'page' : undefined}>Docs</a>
           <a href="/docs/compatibility/" aria-current={here.startsWith('/docs/compatibility') ? 'page' : undefined}>Apps</a>
