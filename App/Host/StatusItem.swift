@@ -13,6 +13,8 @@ final class StatusItemController: NSObject {
     private let stateItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
     private let runningItem = NSMenuItem(title: String(localized: "Running Apps"), action: nil, keyEquivalent: "")
     private let runningMenu = NSMenu(title: String(localized: "Running Apps"))
+    private let restartItem = NSMenuItem(
+        title: String(localized: "Restart Linux Environment"), action: #selector(restart), keyEquivalent: "")
 
     init(session: GuestSession) {
         self.session = session
@@ -34,6 +36,9 @@ final class StatusItemController: NSObject {
         stateItem.isEnabled = false
         menu.addItem(stateItem)
 
+        restartItem.target = self
+        menu.addItem(restartItem)
+
         runningItem.submenu = runningMenu
         menu.addItem(runningItem)
 
@@ -53,6 +58,7 @@ final class StatusItemController: NSObject {
 
     private func render(_ state: Crosswind_Agent_State) {
         stateItem.title = String(localized: "Linux environment: \(Self.phaseName(state))")
+        restartItem.isHidden = state.phase != .failed
 
         runningMenu.removeAllItems()
         if state.runningApps.isEmpty {
@@ -84,6 +90,11 @@ final class StatusItemController: NSObject {
         let configuration = NSWorkspace.OpenConfiguration()
         configuration.activates = true
         Task { _ = try? await NSWorkspace.shared.openApplication(at: url, configuration: configuration) }
+    }
+
+    /// Starts the environment again after a crash or hang.
+    @objc private func restart() {
+        Task { try? await session.restart() }
     }
 
     /// Terminating the agent stops the VM first (see `HostDelegate.applicationShouldTerminate`).

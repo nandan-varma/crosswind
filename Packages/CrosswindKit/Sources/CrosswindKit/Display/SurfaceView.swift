@@ -18,6 +18,7 @@ final class SurfaceView: NSView {
     private(set) var textInputEnabled = false
     /// Key codes whose press went to the input method; their release is swallowed too.
     private var consumedKeys = Set<UInt16>()
+    private var modifiers = ModifierTracker()
 
     override var isFlipped: Bool { true }
     override var acceptsFirstResponder: Bool { true }
@@ -120,6 +121,7 @@ final class SurfaceView: NSView {
 
     override func keyDown(with event: NSEvent) {
         guard !event.isARepeat else { return }  // clients repeat keys themselves from wl_keyboard.repeat_info
+        syncModifiers(with: event)
         // Command shortcuts stay with the Mac menus and the Cmd->Ctrl mapping; they never go through the IME.
         if textInputEnabled && !event.modifierFlags.contains(.command) {
             keyConsumedByText = false
@@ -133,6 +135,7 @@ final class SurfaceView: NSView {
     }
 
     override func keyUp(with event: NSEvent) {
+        syncModifiers(with: event)
         if consumedKeys.remove(event.keyCode) != nil { return }
         key(event.keyCode, pressed: false, time: ms(event))
     }
@@ -148,8 +151,23 @@ final class SurfaceView: NSView {
             key(code, pressed: true, time: ms(event))
             key(code, pressed: false, time: ms(event))
         } else if let mask = KeyMap.modifierMask(forMacKeyCode: code) {
-            key(code, pressed: event.modifierFlags.rawValue & mask != 0, time: ms(event))
+            let pressed = event.modifierFlags.rawValue & mask != 0
+            modifiers.record(code: code, pressed: pressed)
+            key(code, pressed: pressed, time: ms(event))
         }
+    }
+
+    /// Makes the guest's idea of the held modifiers match this event's, before the key itself is sent.
+    private func syncModifiers(with event: NSEvent) {
+        for transition in modifiers.reconcile(with: event.modifierFlags) {
+            key(transition.code, pressed: transition.pressed, time: ms(event))
+        }
+    }
+
+    /// The window stopped being key: modifiers released from now on would never be reported, so release them all.
+    func releaseModifiers() {
+        let now = UInt32(truncatingIfNeeded: Int(ProcessInfo.processInfo.systemUptime * 1000))
+        for transition in modifiers.releaseAll() { key(transition.code, pressed: false, time: now) }
     }
 
     private func key(_ macCode: UInt16, pressed: Bool, time: UInt32) {

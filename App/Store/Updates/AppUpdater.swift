@@ -21,6 +21,17 @@ final class AppUpdater {
         }
     }
 
+    /// Sparkle keeps these in the app's defaults; the settings screen reads and writes them here.
+    var automaticallyChecks: Bool {
+        get { controller.updater.automaticallyChecksForUpdates }
+        set { controller.updater.automaticallyChecksForUpdates = newValue }
+    }
+
+    var automaticallyDownloads: Bool {
+        get { controller.updater.automaticallyDownloadsUpdates }
+        set { controller.updater.automaticallyDownloadsUpdates = newValue }
+    }
+
     func checkForUpdates() {
         controller.checkForUpdates(nil)
     }

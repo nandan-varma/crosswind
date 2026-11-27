@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
+import CoreServices
 import Foundation
+import UniformTypeIdentifiers
 
 public enum StubError: Error {
     case invalidTemplate
@@ -27,7 +29,9 @@ public struct StubInstaller: Sendable {
     /// Creates or refreshes the stub for `appID` and returns its bundle URL. `iconPNG` is any image; it is
     /// converted to an .icns before the template is copied, so a bad image fails without leaving a stub behind.
     @discardableResult
-    public func install(appID: String, name: String, version: String, iconPNG: Data? = nil) throws -> URL {
+    public func install(
+        appID: String, name: String, version: String, iconPNG: Data? = nil, mediaTypes: [String] = []
+    ) throws -> URL {
         let fileManager = FileManager.default
         let icns = try iconPNG.map(makeICNS)
         try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -44,6 +48,18 @@ public struct StubInstaller: Sendable {
         plist["CFBundleIdentifier"] = "dev.crosswind.app." + appID.lowercased()
         plist["CFBundleShortVersionString"] = version
         plist[Self.idKey] = appID
+        let contentTypes = Self.contentTypes(for: mediaTypes)
+        if !contentTypes.isEmpty {
+            // Finder lists the app under "Open With" for these types, and files dropped on its Dock tile open in it.
+            plist["CFBundleDocumentTypes"] = [
+                [
+                    "CFBundleTypeName": "Document",
+                    "CFBundleTypeRole": "Viewer",
+                    "LSHandlerRank": "Alternate",
+                    "LSItemContentTypes": contentTypes,
+                ]
+            ]
+        }
         if let icns {
             let resources = bundle.appending(path: "Contents/Resources", directoryHint: .isDirectory)
             try fileManager.createDirectory(at: resources, withIntermediateDirectories: true)
@@ -53,6 +69,9 @@ public struct StubInstaller: Sendable {
         try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0).write(to: plistURL)
 
         try sign(bundle)
+        // A stub replaces an earlier bundle at the same path, and LaunchServices keeps showing the old icon and
+        // document types until told the bundle changed.
+        LSRegisterURL(bundle as CFURL, true)
         return bundle
     }
 
@@ -66,6 +85,13 @@ public struct StubInstaller: Sendable {
     }
 
     public func bundleURL(for appID: String) -> URL? { existingStub(for: appID) }
+
+    /// Whether the stub for `appID` exists and has an icon, so a stub made without one can be made again with it.
+    public func hasIcon(appID: String) -> Bool {
+        guard let bundle = existingStub(for: appID) else { return false }
+        let plist = NSDictionary(contentsOf: bundle.appending(path: "Contents/Info.plist"))
+        return plist?["CFBundleIconFile"] != nil
+    }
 
     // MARK: Private
 
@@ -86,6 +112,13 @@ public struct StubInstaller: Sendable {
         let safe = name.replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ":", with: "-")
         let taken = FileManager.default.fileExists(atPath: directory.appending(path: "\(safe).app").path)
         return taken ? "\(safe) (\(appID))" : safe
+    }
+
+    /// The type identifiers for the MIME types an app opens. Types macOS does not know are skipped.
+    static func contentTypes(for mediaTypes: [String]) -> [String] {
+        var seen = Set<String>()
+        return mediaTypes.compactMap { UTType(mimeType: $0) }.filter { !$0.isDynamic }.map(\.identifier)
+            .filter { seen.insert($0).inserted }
     }
 
     /// Renders the PNG to an .iconset and compiles it to .icns. The scratch directory is always removed.

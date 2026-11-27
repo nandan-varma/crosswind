@@ -11,6 +11,7 @@ final class HostDelegate: NSObject, NSApplicationDelegate {
     private var endpoint: AgentEndpoint?
     private var appearanceObservation: NSKeyValueObservation?
     private var statusItem: StatusItemController?
+    private var tray: TrayController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let core = AgentCore(
@@ -21,6 +22,9 @@ final class HostDelegate: NSObject, NSApplicationDelegate {
             Task { @MainActor in core.appearanceChanged() }
         }
         statusItem = StatusItemController(session: session)
+        let tray = TrayController { [weak core] id, kind, x, y in core?.trayClicked(id: id, kind: kind, x: x, y: y) }
+        core.onTray = { tray.apply($0) }
+        self.tray = tray
         let endpoint = AgentEndpoint { connection, role, appID in
             Task { @MainActor in core.accept(connection, role: role, appID: appID) }
         }

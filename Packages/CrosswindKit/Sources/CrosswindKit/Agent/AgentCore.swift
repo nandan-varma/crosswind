@@ -51,6 +51,10 @@ public final class AgentCore {
     }
     var displayToGuest: DisplayConnection?
     var controlToGuest: ControlConnection?
+    /// Tray icons currently shown, so a click is only sent for one that exists and all can be removed with the guest.
+    var trayIDs: Set<String> = []
+    /// Called on every change to the tray icons; the host agent shows them in the menu bar.
+    public var onTray: (@MainActor (TrayChange) -> Void)?
     private var inflight: [UInt64: ForwardedRequest] = [:] {
         didSet { session.requestsInFlight = inflight.count }
     }
@@ -78,6 +82,7 @@ public final class AgentCore {
         session.onDisplay = { [weak self] in self?.attach(display: $0) }
         session.onControl = { [weak self] in self?.attach(control: $0) }
         session.onReady = { [weak self] in try await self?.greetGuest() }
+        session.heartbeat = { [weak self] in await self?.pingGuest() ?? false }
         clipboard = ClipboardBridge(
             pasteboard: SystemPasteboard(), frontmost: SystemFrontmost(), timer: SystemTimer(),
             isEnabled: { Preferences.clipboardSync },
@@ -136,12 +141,16 @@ public final class AgentCore {
         Task { [weak self] in
             for await message in connection.messages { self?.route(guest: message) }
             self?.controlToGuest = nil
+            self?.clearTray()
             self?.session.guestEnded()
         }
     }
 
     /// Forwards a client's request. The VM boots first if it is stopped (never started, or idled out).
     private func forward(_ request: Crosswind_Control_Request, from client: Client) {
+        if case .debugExec? = request.body, !(client.role == .ctl && DebugMode.isEnabled) {
+            return  // development only: crosswindctl, and only against a debug agent
+        }
         if case .callReply(let reply)? = request.body {  // answers a guest call; the guest does not respond to it
             gate.finished(call: reply.id)
             controlToGuest?.send(request)
@@ -207,6 +216,7 @@ public final class AgentCore {
             client.connection.send(.with { $0.guest = .with { $0.response = response } })
         case .event(let event)?:
             if case .clipboardChanged(let changed)? = event.body { return clipboard.guestCopied(changed.items) }
+            if let change = trayChange(from: event) { return publish(tray: change) }
             if case .log(let line)? = event.body {
                 guard logLimiter.allow() else { return }
                 guestLogs.append(line)

@@ -6,8 +6,10 @@ import Testing
 
 @Suite("Catalog index")
 struct CatalogIndexTests {
-    private static func app(_ id: String, name: String, summary: String = "", keywords: [String] = [],
-                            categories: [String] = [], description: String = "") -> CatalogApp {
+    private static func app(
+        _ id: String, name: String, summary: String = "", keywords: [String] = [],
+        categories: [String] = [], description: String = ""
+    ) -> CatalogApp {
         var app = CatalogApp()
         app.id = id
         app.name = name
@@ -27,9 +29,10 @@ struct CatalogIndexTests {
             Self.app("d.Prefix", name: "Darktable Viewer"),
             Self.app("e.Exact", name: "darktable"),
         ])
-        #expect(index.search("darktable").map(\.id) == [
-            "e.Exact", "d.Prefix", "c.Word", "b.Summary", "a.Description",
-        ])
+        #expect(
+            index.search("darktable").map(\.id) == [
+                "e.Exact", "d.Prefix", "c.Word", "b.Summary", "a.Description",
+            ])
     }
 
     @Test("matches keywords and IDs")

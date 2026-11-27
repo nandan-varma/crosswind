@@ -60,9 +60,9 @@ struct GuestCallGateTests {
             $0.id = 1
             $0.appID = "org.a"
             $0.notify = .with {
-            $0.notificationID = "n"
-            $0.title = "t"
-            $0.body = String(repeating: "b", count: 10_000)
+                $0.notificationID = "n"
+                $0.title = "t"
+                $0.body = String(repeating: "b", count: 10_000)
                 $0.iconPng = Data(count: GuestCallGate.maxIconBytes + 1)
             }
         }
@@ -163,7 +163,12 @@ struct FramedConnectionFuzzTests {
 
     @Test("a valid message decodes; garbage after it ends the stream without a crash")
     func validThenGarbage() async throws {
-        let valid = try ToHost.with { $0.opened = .with { $0.id = 3; $0.title = "ok" } }.serializedData()
+        let valid = try ToHost.with {
+            $0.opened = .with {
+                $0.id = 3
+                $0.title = "ok"
+            }
+        }.serializedData()
         var garbage = SplitMix64(seed: 1)
         let out = await decode(frame([UInt8](valid)) + garbage.bytes(300))
         guard case .opened(let opened)? = out.first?.msg else {

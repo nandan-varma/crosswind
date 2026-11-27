@@ -63,26 +63,41 @@ final class GuestWindow: NSObject, NSWindowDelegate {
     /// only when the window actually changes, so a round trip settles without looping.
     func update(_ changed: Crosswind_Display_WindowChanged) {
         if changed.hasTitle { window?.title = changed.title }
-        if changed.hasMinWidth || changed.hasMinHeight || changed.hasMaxWidth || changed.hasMaxHeight {
-            limits = WindowPolicy.SizeLimits(
-                minWidth: changed.hasMinWidth ? changed.minWidth : limits.minWidth,
-                minHeight: changed.hasMinHeight ? changed.minHeight : limits.minHeight,
-                maxWidth: changed.hasMaxWidth ? changed.maxWidth : limits.maxWidth,
-                maxHeight: changed.hasMaxHeight ? changed.maxHeight : limits.maxHeight)
-            if kind == .toplevel, let window { WindowPlacement.apply(limits, to: window) }
-        }
+        applyLimits(changed)
         guard kind == .toplevel, let window else { return }
         if changed.hasMaximized, !limits.isFixed, window.isZoomed != changed.maximized { window.zoom(nil) }
         if changed.hasFullscreen, window.styleMask.contains(.fullScreen) != changed.fullscreen {
             window.toggleFullScreen(nil)
         }
-        if changed.hasMinimized {
-            if changed.minimized, !window.isMiniaturized {
-                window.miniaturize(nil)
-            } else if !changed.minimized, window.isMiniaturized {
-                window.deminiaturize(nil)
-            }
+        if changed.hasMinimized { setMiniaturized(changed.minimized, window) }
+        if changed.hasActivate, changed.activate { bringToFront(window) }
+    }
+
+    private func applyLimits(_ changed: Crosswind_Display_WindowChanged) {
+        guard changed.hasMinWidth || changed.hasMinHeight || changed.hasMaxWidth || changed.hasMaxHeight else {
+            return
         }
+        limits = WindowPolicy.SizeLimits(
+            minWidth: changed.hasMinWidth ? changed.minWidth : limits.minWidth,
+            minHeight: changed.hasMinHeight ? changed.minHeight : limits.minHeight,
+            maxWidth: changed.hasMaxWidth ? changed.maxWidth : limits.maxWidth,
+            maxHeight: changed.hasMaxHeight ? changed.maxHeight : limits.maxHeight)
+        if kind == .toplevel, let window { WindowPlacement.apply(limits, to: window) }
+    }
+
+    private func setMiniaturized(_ minimized: Bool, _ window: NSWindow) {
+        if minimized, !window.isMiniaturized {
+            window.miniaturize(nil)
+        } else if !minimized, window.isMiniaturized {
+            window.deminiaturize(nil)
+        }
+    }
+
+    /// The app asked to be shown (xdg-activation): restore the window if needed and make it key.
+    private func bringToFront(_ window: NSWindow) {
+        if window.isMiniaturized { window.deminiaturize(nil) }
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate()
     }
 
     // MARK: Frames
@@ -259,6 +274,7 @@ final class GuestWindow: NSObject, NSWindowDelegate {
     func windowDidResize(_ notification: Notification) { configure() }
     func windowDidBecomeKey(_ notification: Notification) { configure() }
     func windowDidResignKey(_ notification: Notification) {
+        view.releaseModifiers()
         configure()
         onResignKey?()
     }

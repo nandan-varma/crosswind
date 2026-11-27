@@ -8,9 +8,9 @@ import Testing
 @Suite("Compatibility canvas")
 struct CompatCanvasTests {
     /// An LZ4_RAW rectangle filled with one BGRA colour.
-    private static func rect(x: UInt32, y: UInt32, width: UInt32, height: UInt32, bgra: [UInt8])
-        -> Crosswind_Display_Rect
-    {
+    private static func rect(
+        x: UInt32, y: UInt32, width: UInt32, height: UInt32, bgra: [UInt8]
+    ) -> Crosswind_Display_Rect {
         let raw = (0..<Int(width * height)).flatMap { _ in bgra }
         var packed = [UInt8](repeating: 0, count: raw.count + 64)
         let size = packed.withUnsafeMutableBytes { output in
@@ -29,9 +29,9 @@ struct CompatCanvasTests {
         }
     }
 
-    private static func frame(width: UInt32, height: UInt32, damage: [Crosswind_Display_Rect])
-        -> Crosswind_Display_Frame
-    {
+    private static func frame(
+        width: UInt32, height: UInt32, damage: [Crosswind_Display_Rect]
+    ) -> Crosswind_Display_Frame {
         .with {
             $0.width = width
             $0.height = height

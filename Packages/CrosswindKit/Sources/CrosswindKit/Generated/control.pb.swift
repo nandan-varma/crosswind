@@ -178,6 +178,24 @@ public nonisolated struct Crosswind_Control_Request: Sendable {
     set {body = .offerClipboard(newValue)}
   }
 
+  /// a click on a tray icon in the Mac menu bar
+  public var trayActivate: Crosswind_Control_TrayActivate {
+    get {
+      if case .trayActivate(let v)? = body {return v}
+      return Crosswind_Control_TrayActivate()
+    }
+    set {body = .trayActivate(newValue)}
+  }
+
+  /// development only: refused unless the guest booted with crosswind.debug=1
+  public var debugExec: Crosswind_Control_DebugExec {
+    get {
+      if case .debugExec(let v)? = body {return v}
+      return Crosswind_Control_DebugExec()
+    }
+    set {body = .debugExec(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public nonisolated enum OneOf_Body: Equatable, Sendable {
@@ -199,6 +217,10 @@ public nonisolated struct Crosswind_Control_Request: Sendable {
     /// answer to a guest-initiated Call
     case callReply(Crosswind_Control_CallReply)
     case offerClipboard(Crosswind_Control_OfferClipboard)
+    /// a click on a tray icon in the Mac menu bar
+    case trayActivate(Crosswind_Control_TrayActivate)
+    /// development only: refused unless the guest booted with crosswind.debug=1
+    case debugExec(Crosswind_Control_DebugExec)
 
   }
 
@@ -838,6 +860,14 @@ public nonisolated struct Crosswind_Control_Response: Sendable {
     set {result = .permissions(newValue)}
   }
 
+  public var debugExec: Crosswind_Control_DebugExecResult {
+    get {
+      if case .debugExec(let v)? = result {return v}
+      return Crosswind_Control_DebugExecResult()
+    }
+    set {result = .debugExec(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public nonisolated enum OneOf_Result: Equatable, Sendable {
@@ -848,6 +878,7 @@ public nonisolated struct Crosswind_Control_Response: Sendable {
     case catalog(Crosswind_Control_Catalog)
     case operation(Crosswind_Control_Operation)
     case permissions(Crosswind_Control_Permissions)
+    case debugExec(Crosswind_Control_DebugExecResult)
 
   }
 
@@ -1018,6 +1049,22 @@ public nonisolated struct Crosswind_Control_Event: Sendable {
     set {body = .clipboardChanged(newValue)}
   }
 
+  public var trayItemChanged: Crosswind_Control_TrayItemChanged {
+    get {
+      if case .trayItemChanged(let v)? = body {return v}
+      return Crosswind_Control_TrayItemChanged()
+    }
+    set {body = .trayItemChanged(newValue)}
+  }
+
+  public var trayItemRemoved: Crosswind_Control_TrayItemRemoved {
+    get {
+      if case .trayItemRemoved(let v)? = body {return v}
+      return Crosswind_Control_TrayItemRemoved()
+    }
+    set {body = .trayItemRemoved(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public nonisolated enum OneOf_Body: Equatable, Sendable {
@@ -1027,6 +1074,8 @@ public nonisolated struct Crosswind_Control_Event: Sendable {
     case appExited(Crosswind_Control_AppExited)
     case log(Crosswind_Control_LogLine)
     case clipboardChanged(Crosswind_Control_ClipboardChanged)
+    case trayItemChanged(Crosswind_Control_TrayItemChanged)
+    case trayItemRemoved(Crosswind_Control_TrayItemRemoved)
 
   }
 
@@ -1156,13 +1205,147 @@ public nonisolated struct Crosswind_Control_LogLine: Sendable {
   public init() {}
 }
 
+/// Runs a command in the guest as the daemon's user and returns its combined stdout and stderr (the newest 256 KiB).
+/// Development only; the guest refuses it unless its kernel command line has crosswind.debug=1.
+public nonisolated struct Crosswind_Control_DebugExec: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var argv: [String] = []
+
+  /// 0 = 30
+  public var timeoutSecs: UInt32 = 0
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public nonisolated struct Crosswind_Control_DebugExecResult: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// -1 when the command timed out or was killed by a signal
+  public var exitCode: Int32 = 0
+
+  public var timedOut: Bool = false
+
+  public var output: Data = Data()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+/// A guest app added or changed its tray icon. `id` is stable for the life of the item. The icon is straight RGBA, at
+/// most 256 x 256; empty when the app only names a themed icon (the host then shows the app's own icon).
+public nonisolated struct Crosswind_Control_TrayItemChanged: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var id: String = String()
+
+  public var title: String = String()
+
+  public var iconWidth: UInt32 = 0
+
+  public var iconHeight: UInt32 = 0
+
+  public var iconRgba: Data = Data()
+
+  /// the app asked to hide the icon
+  public var passive: Bool = false
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public nonisolated struct Crosswind_Control_TrayItemRemoved: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var id: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public nonisolated struct Crosswind_Control_TrayActivate: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var id: String = String()
+
+  public var kind: Crosswind_Control_TrayActivate.Kind = .primary
+
+  /// screen position of the click, in points
+  public var x: Int32 = 0
+
+  public var y: Int32 = 0
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public nonisolated enum Kind: SwiftProtobuf.Enum, Swift.CaseIterable {
+    public typealias RawValue = Int
+
+    /// left click: Activate
+    case primary // = 0
+
+    /// middle click: SecondaryActivate
+    case secondary // = 1
+
+    /// right click: ContextMenu (the app shows its own menu)
+    case contextMenu // = 2
+    case UNRECOGNIZED(Int)
+
+    public init() {
+      self = .primary
+    }
+
+    public init?(rawValue: Int) {
+      switch rawValue {
+      case 0: self = .primary
+      case 1: self = .secondary
+      case 2: self = .contextMenu
+      default: self = .UNRECOGNIZED(rawValue)
+      }
+    }
+
+    public var rawValue: Int {
+      switch self {
+      case .primary: return 0
+      case .secondary: return 1
+      case .contextMenu: return 2
+      case .UNRECOGNIZED(let i): return i
+      }
+    }
+
+    // The compiler won't synthesize support with the UNRECOGNIZED case.
+    public static let allCases: [Crosswind_Control_TrayActivate.Kind] = [
+      .primary,
+      .secondary,
+      .contextMenu,
+    ]
+
+  }
+
+  public init() {}
+}
+
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
 fileprivate nonisolated let _protobuf_package = "crosswind.control"
 
 nonisolated extension Crosswind_Control_Request: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Request"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}hello\0\u{3}refresh_catalog\0\u{3}get_catalog\0\u{3}list_installed\0\u{1}install\0\u{1}uninstall\0\u{1}update\0\u{1}cancel\0\u{1}launch\0\u{1}stop\0\u{3}list_running\0\u{3}get_permissions\0\u{3}set_permissions\0\u{1}shutdown\0\u{3}set_appearance\0\u{3}call_reply\0\u{3}offer_clipboard\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}hello\0\u{3}refresh_catalog\0\u{3}get_catalog\0\u{3}list_installed\0\u{1}install\0\u{1}uninstall\0\u{1}update\0\u{1}cancel\0\u{1}launch\0\u{1}stop\0\u{3}list_running\0\u{3}get_permissions\0\u{3}set_permissions\0\u{1}shutdown\0\u{3}set_appearance\0\u{3}call_reply\0\u{3}offer_clipboard\0\u{3}debug_exec\0\u{3}tray_activate\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1392,6 +1575,32 @@ nonisolated extension Crosswind_Control_Request: SwiftProtobuf.Message, SwiftPro
           self.body = .offerClipboard(v)
         }
       }()
+      case 19: try {
+        var v: Crosswind_Control_DebugExec?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .debugExec(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .debugExec(v)
+        }
+      }()
+      case 20: try {
+        var v: Crosswind_Control_TrayActivate?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .trayActivate(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .trayActivate(v)
+        }
+      }()
       default: break
       }
     }
@@ -1473,6 +1682,14 @@ nonisolated extension Crosswind_Control_Request: SwiftProtobuf.Message, SwiftPro
     case .offerClipboard?: try {
       guard case .offerClipboard(let v)? = self.body else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 18)
+    }()
+    case .debugExec?: try {
+      guard case .debugExec(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 19)
+    }()
+    case .trayActivate?: try {
+      guard case .trayActivate(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 20)
     }()
     case nil: break
     }
@@ -2608,7 +2825,7 @@ nonisolated extension Crosswind_Control_FileChooserResult: SwiftProtobuf.Message
 
 nonisolated extension Crosswind_Control_Response: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Response"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}error\0\u{1}ok\0\u{1}installed\0\u{1}running\0\u{1}catalog\0\u{1}operation\0\u{1}permissions\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}error\0\u{1}ok\0\u{1}installed\0\u{1}running\0\u{1}catalog\0\u{1}operation\0\u{1}permissions\0\u{3}debug_exec\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -2708,6 +2925,19 @@ nonisolated extension Crosswind_Control_Response: SwiftProtobuf.Message, SwiftPr
           self.result = .permissions(v)
         }
       }()
+      case 9: try {
+        var v: Crosswind_Control_DebugExecResult?
+        var hadOneofValue = false
+        if let current = self.result {
+          hadOneofValue = true
+          if case .debugExec(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.result = .debugExec(v)
+        }
+      }()
       default: break
       }
     }
@@ -2749,6 +2979,10 @@ nonisolated extension Crosswind_Control_Response: SwiftProtobuf.Message, SwiftPr
     case .permissions?: try {
       guard case .permissions(let v)? = self.result else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 8)
+    }()
+    case .debugExec?: try {
+      guard case .debugExec(let v)? = self.result else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 9)
     }()
     case nil: break
     }
@@ -3029,7 +3263,7 @@ nonisolated extension Crosswind_Control_Operation: SwiftProtobuf.Message, SwiftP
 
 nonisolated extension Crosswind_Control_Event: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Event"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}progress\0\u{3}operation_done\0\u{3}app_started\0\u{3}app_exited\0\u{1}log\0\u{3}clipboard_changed\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}progress\0\u{3}operation_done\0\u{3}app_started\0\u{3}app_exited\0\u{1}log\0\u{3}clipboard_changed\0\u{3}tray_item_changed\0\u{3}tray_item_removed\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -3115,6 +3349,32 @@ nonisolated extension Crosswind_Control_Event: SwiftProtobuf.Message, SwiftProto
           self.body = .clipboardChanged(v)
         }
       }()
+      case 7: try {
+        var v: Crosswind_Control_TrayItemChanged?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .trayItemChanged(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .trayItemChanged(v)
+        }
+      }()
+      case 8: try {
+        var v: Crosswind_Control_TrayItemRemoved?
+        var hadOneofValue = false
+        if let current = self.body {
+          hadOneofValue = true
+          if case .trayItemRemoved(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.body = .trayItemRemoved(v)
+        }
+      }()
       default: break
       }
     }
@@ -3149,6 +3409,14 @@ nonisolated extension Crosswind_Control_Event: SwiftProtobuf.Message, SwiftProto
     case .clipboardChanged?: try {
       guard case .clipboardChanged(let v)? = self.body else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 6)
+    }()
+    case .trayItemChanged?: try {
+      guard case .trayItemChanged(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 7)
+    }()
+    case .trayItemRemoved?: try {
+      guard case .trayItemRemoved(let v)? = self.body else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 8)
     }()
     case nil: break
     }
@@ -3429,4 +3697,213 @@ nonisolated extension Crosswind_Control_LogLine: SwiftProtobuf.Message, SwiftPro
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
+}
+
+nonisolated extension Crosswind_Control_DebugExec: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".DebugExec"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}argv\0\u{3}timeout_secs\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeRepeatedStringField(value: &self.argv) }()
+      case 2: try { try decoder.decodeSingularUInt32Field(value: &self.timeoutSecs) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.argv.isEmpty {
+      try visitor.visitRepeatedStringField(value: self.argv, fieldNumber: 1)
+    }
+    if self.timeoutSecs != 0 {
+      try visitor.visitSingularUInt32Field(value: self.timeoutSecs, fieldNumber: 2)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Crosswind_Control_DebugExec, rhs: Crosswind_Control_DebugExec) -> Bool {
+    if lhs.argv != rhs.argv {return false}
+    if lhs.timeoutSecs != rhs.timeoutSecs {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Crosswind_Control_DebugExecResult: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".DebugExecResult"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}exit_code\0\u{3}timed_out\0\u{1}output\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularInt32Field(value: &self.exitCode) }()
+      case 2: try { try decoder.decodeSingularBoolField(value: &self.timedOut) }()
+      case 3: try { try decoder.decodeSingularBytesField(value: &self.output) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.exitCode != 0 {
+      try visitor.visitSingularInt32Field(value: self.exitCode, fieldNumber: 1)
+    }
+    if self.timedOut != false {
+      try visitor.visitSingularBoolField(value: self.timedOut, fieldNumber: 2)
+    }
+    if !self.output.isEmpty {
+      try visitor.visitSingularBytesField(value: self.output, fieldNumber: 3)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Crosswind_Control_DebugExecResult, rhs: Crosswind_Control_DebugExecResult) -> Bool {
+    if lhs.exitCode != rhs.exitCode {return false}
+    if lhs.timedOut != rhs.timedOut {return false}
+    if lhs.output != rhs.output {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Crosswind_Control_TrayItemChanged: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".TrayItemChanged"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}title\0\u{3}icon_width\0\u{3}icon_height\0\u{3}icon_rgba\0\u{1}passive\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.id) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.title) }()
+      case 3: try { try decoder.decodeSingularUInt32Field(value: &self.iconWidth) }()
+      case 4: try { try decoder.decodeSingularUInt32Field(value: &self.iconHeight) }()
+      case 5: try { try decoder.decodeSingularBytesField(value: &self.iconRgba) }()
+      case 6: try { try decoder.decodeSingularBoolField(value: &self.passive) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.id.isEmpty {
+      try visitor.visitSingularStringField(value: self.id, fieldNumber: 1)
+    }
+    if !self.title.isEmpty {
+      try visitor.visitSingularStringField(value: self.title, fieldNumber: 2)
+    }
+    if self.iconWidth != 0 {
+      try visitor.visitSingularUInt32Field(value: self.iconWidth, fieldNumber: 3)
+    }
+    if self.iconHeight != 0 {
+      try visitor.visitSingularUInt32Field(value: self.iconHeight, fieldNumber: 4)
+    }
+    if !self.iconRgba.isEmpty {
+      try visitor.visitSingularBytesField(value: self.iconRgba, fieldNumber: 5)
+    }
+    if self.passive != false {
+      try visitor.visitSingularBoolField(value: self.passive, fieldNumber: 6)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Crosswind_Control_TrayItemChanged, rhs: Crosswind_Control_TrayItemChanged) -> Bool {
+    if lhs.id != rhs.id {return false}
+    if lhs.title != rhs.title {return false}
+    if lhs.iconWidth != rhs.iconWidth {return false}
+    if lhs.iconHeight != rhs.iconHeight {return false}
+    if lhs.iconRgba != rhs.iconRgba {return false}
+    if lhs.passive != rhs.passive {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Crosswind_Control_TrayItemRemoved: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".TrayItemRemoved"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.id) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.id.isEmpty {
+      try visitor.visitSingularStringField(value: self.id, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Crosswind_Control_TrayItemRemoved, rhs: Crosswind_Control_TrayItemRemoved) -> Bool {
+    if lhs.id != rhs.id {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Crosswind_Control_TrayActivate: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".TrayActivate"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}kind\0\u{1}x\0\u{1}y\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.id) }()
+      case 2: try { try decoder.decodeSingularEnumField(value: &self.kind) }()
+      case 3: try { try decoder.decodeSingularSInt32Field(value: &self.x) }()
+      case 4: try { try decoder.decodeSingularSInt32Field(value: &self.y) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.id.isEmpty {
+      try visitor.visitSingularStringField(value: self.id, fieldNumber: 1)
+    }
+    if self.kind != .primary {
+      try visitor.visitSingularEnumField(value: self.kind, fieldNumber: 2)
+    }
+    if self.x != 0 {
+      try visitor.visitSingularSInt32Field(value: self.x, fieldNumber: 3)
+    }
+    if self.y != 0 {
+      try visitor.visitSingularSInt32Field(value: self.y, fieldNumber: 4)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Crosswind_Control_TrayActivate, rhs: Crosswind_Control_TrayActivate) -> Bool {
+    if lhs.id != rhs.id {return false}
+    if lhs.kind != rhs.kind {return false}
+    if lhs.x != rhs.x {return false}
+    if lhs.y != rhs.y {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Crosswind_Control_TrayActivate.Kind: SwiftProtobuf._ProtoNameProviding {
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0PRIMARY\0\u{1}SECONDARY\0\u{1}CONTEXT_MENU\0")
 }

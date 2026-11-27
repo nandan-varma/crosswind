@@ -12,6 +12,10 @@ public enum Preferences {
         public static let clipboardSync = "clipboardSync"
         /// Lets Linux apps record from the Mac's microphone. Off by default. Applies when the environment starts.
         public static let microphoneEnabled = "microphoneEnabled"
+        /// Runs x86_64 Linux apps through Rosetta when it is installed. On by default. Applies at environment start.
+        public static let rosettaEnabled = "rosettaEnabled"
+        /// Shows Linux apps' tray icons in the menu bar. On by default; applies at once.
+        public static let trayIconsEnabled = "trayIconsEnabled"
         /// Virtual CPUs given to the Linux environment. Applies when it starts.
         public static let cpuCount = "cpuCount"
         /// Memory in GiB given to the Linux environment. Applies when it starts.
@@ -30,6 +34,14 @@ public enum Preferences {
 
     public static var microphoneEnabled: Bool {
         suite.object(forKey: Key.microphoneEnabled) as? Bool ?? false
+    }
+
+    public static var trayIconsEnabled: Bool {
+        suite.object(forKey: Key.trayIconsEnabled) as? Bool ?? true
+    }
+
+    public static var rosettaEnabled: Bool {
+        suite.object(forKey: Key.rosettaEnabled) as? Bool ?? true
     }
 
     // MARK: Resources

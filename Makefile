@@ -8,6 +8,8 @@ LIMA_VM ?= cwbuild
 CW_TARGET ?= /tmp/cw-target
 CW_XWS_TARGET ?= /tmp/cw-xws
 IMG_OUT ?= /tmp/cw-image
+# Set to 1 to add the debugging tools in image/packages.debug to the guest image (development only).
+DEBUG_TOOLS ?=
 IMG_CACHE ?= $(HOME)/.cache/crosswind-img
 IMG_FILES := Image initramfs system.erofs SHA256SUMS
 
@@ -56,13 +58,13 @@ guest: ## Build crosswindd and xwayland-satellite (release) inside the Lima VM
 	limactl shell $(LIMA_VM) sh -c 'cd "$(CURDIR)" && OUT=$(CW_TARGET)/xwayland-satellite CARGO_TARGET_DIR=$(CW_XWS_TARGET) sh image/build-xwayland-satellite.sh'
 
 image: guest ## Build the guest image (crosswindd, xwayland-satellite) in the Lima VM and copy it to ~/.cache/crosswind-img
-	limactl shell $(LIMA_VM) sh -c 'cd "$(CURDIR)" && sudo CROSSWINDD=$(CW_TARGET)/release/crosswindd XWAYLAND_SATELLITE=$(CW_TARGET)/xwayland-satellite OUT=$(IMG_OUT) sh image/build.sh'
+	limactl shell $(LIMA_VM) sh -c 'cd "$(CURDIR)" && sudo DEBUG_TOOLS=$(DEBUG_TOOLS) CROSSWINDD=$(CW_TARGET)/release/crosswindd XWAYLAND_SATELLITE=$(CW_TARGET)/xwayland-satellite OUT=$(IMG_OUT) sh image/build.sh'
 	mkdir -p "$(IMG_CACHE)"
 	for f in $(IMG_FILES); do limactl copy $(LIMA_VM):$(IMG_OUT)/$$f "$(IMG_CACHE)/"; done
 
 dev-image: ## Install the image from ~/.cache/crosswind-img into the app's support directory
 	sh scripts/image-manifest.sh "$(IMG_CACHE)" dev-$$(date +%s) "file://$(IMG_CACHE)" > /tmp/GuestImage.json
-	"$$(xcodebuild -project Crosswind.xcodeproj -scheme $(SCHEME) -showBuildSettings 2>/dev/null | awk '/ BUILT_PRODUCTS_DIR/ {print $$3; exit}')/crosswindctl" image install /tmp/GuestImage.json
+	sh scripts/ctl.sh image install /tmp/GuestImage.json
 
 .PHONY: release install-local
 

@@ -17,7 +17,8 @@ public enum HostLogReader {
             return Result(lines: try read(from: try OSLogStore.local(), since: since, limit: limit), note: nil)
         } catch {
             let note = "system log store unavailable (\(error.localizedDescription)); current process only"
-            let lines = (try? read(from: try OSLogStore(scope: .currentProcessIdentifier), since: since, limit: limit)) ?? []
+            let lines =
+                (try? read(from: try OSLogStore(scope: .currentProcessIdentifier), since: since, limit: limit)) ?? []
             return Result(lines: lines, note: note)
         }
     }

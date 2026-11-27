@@ -22,6 +22,13 @@ final class StubDelegate: NSObject, NSApplicationDelegate {
     private var client: AgentClient?
     private var server: DisplayServer?
     private let fileChooser = FileChooserHandler()
+    /// Files Finder handed over before the app started; they go on its command line.
+    private var pendingFiles: [URL] = []
+    private var started = false
+
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        StubMenu.install(appName: Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? appID)
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         Task {
@@ -33,10 +40,36 @@ final class StubDelegate: NSObject, NSApplicationDelegate {
                     messages: client.display, send: { message in Task { await client.send(display: message) } })
                 watchForExit(client)
                 answerCalls(client)
-                _ = try await client.command(.launchApp(.with { $0.appID = appID }))
+                let paths = await fileChooser.guestPaths(forOpening: pendingFiles)
+                pendingFiles = []
+                started = true
+                _ = try await client.command(
+                    .launchApp(
+                        .with {
+                            $0.appID = appID
+                            $0.args = paths
+                        }))
             } catch {
                 present(error)
             }
+        }
+    }
+
+    /// Files opened with this app from Finder: on its command line when it starts, else passed to the running app
+    /// by a second launch (Flatpak forwards it to the first instance).
+    func application(_ application: NSApplication, open urls: [URL]) {
+        guard started, let client else {
+            pendingFiles += urls
+            return
+        }
+        Task {
+            let paths = await fileChooser.guestPaths(forOpening: urls)
+            _ = try? await client.command(
+                .launchApp(
+                    .with {
+                        $0.appID = appID
+                        $0.args = paths
+                    }))
         }
     }
 
@@ -52,8 +85,17 @@ final class StubDelegate: NSObject, NSApplicationDelegate {
     /// The app ending in the guest ends its stub.
     private func watchForExit(_ client: AgentClient) {
         Task { [appID] in
+            var launches = LaunchTracker()
             for await event in client.control.events {
-                if case .appExited(let exited) = event, exited.appID == appID { await NSApp.terminate(nil) }
+                switch event {
+                case .appStarted(let started) where started.appID == appID:
+                    launches.started(appID: appID, launchID: started.launchID)
+                case .appExited(let exited) where exited.appID == appID:
+                    // A launch that only forwarded files to the running app exits at once; that is not a quit.
+                    if launches.exited(appID: appID, launchID: exited.launchID) { await NSApp.terminate(nil) }
+                default:
+                    break
+                }
             }
             await NSApp.terminate(nil)  // the agent went away
         }

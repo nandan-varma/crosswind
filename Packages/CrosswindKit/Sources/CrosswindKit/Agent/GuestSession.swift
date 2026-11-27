@@ -32,6 +32,8 @@ public final class GuestSession {
     public var onControl: ((ControlConnection) -> Void)?
     /// Called once the control channel is up, before the session reports `running`; lets the agent greet the guest.
     public var onReady: (() async throws -> Void)?
+    /// Sends the guest one cheap request and returns whether it answered; the watchdog calls it while the guest runs.
+    public var heartbeat: (@Sendable () async -> Bool)?
 
     private let paths: GuestPaths
     private var vm: GuestVM?
@@ -46,6 +48,8 @@ public final class GuestSession {
     private var idleSince: ContinuousClock.Instant?
     private var ballooned = false
     private var monitor: Task<Void, Never>?
+    private var watchdog: GuestWatchdog?
+    private var launches = LaunchTracker()
 
     public init(paths: GuestPaths) {
         self.paths = paths
@@ -119,6 +123,7 @@ public final class GuestSession {
             setPhase(.running)
             idleSince = .now
             startMonitor()
+            startWatchdog()
         } catch {
             self.vm = nil
             setPhase(.failed, detail: error.localizedDescription)
@@ -130,12 +135,12 @@ public final class GuestSession {
     func apply(_ event: Crosswind_Control_Event) {
         switch event.body {
         case .appStarted(let started)?:
-            if !state.runningApps.contains(started.appID) {
-                state.runningApps = (state.runningApps + [started.appID]).sorted()
-            }
+            launches.started(appID: started.appID, launchID: started.launchID)
+            publishRunningApps()
             restoreMemory()
         case .appExited(let exited)?:
-            state.runningApps.removeAll { $0 == exited.appID }
+            launches.exited(appID: exited.appID, launchID: exited.launchID)
+            publishRunningApps()
         case .progress(let progress)?:
             operations.insert(progress.operation)
         case .operationDone(let done)?:
@@ -151,6 +156,23 @@ public final class GuestSession {
         vm = nil
         tearDown()
         setPhase(.failed, detail: "The Linux environment stopped unexpectedly")
+    }
+
+    /// The guest stopped answering heartbeats while its channels stayed open: kill the VM and report it, so the user
+    /// sees a failure they can restart instead of apps that silently freeze.
+    private func guestHung() {
+        guard state.phase == .running, let hungVM = vm else { return }
+        Log.vm.error("guest is not responding; stopping the VM")
+        vm = nil
+        tearDown()
+        setPhase(.failed, detail: "The Linux environment stopped responding")
+        Task { try? await hungVM.stop() }
+    }
+
+    private func startWatchdog() {
+        guard let heartbeat else { return }
+        watchdog = GuestWatchdog(heartbeat: heartbeat, onHung: { [weak self] in self?.guestHung() })
+        watchdog?.start()
     }
 
     // MARK: Idle
@@ -197,9 +219,16 @@ public final class GuestSession {
         vm?.setMemoryTarget(nil)
     }
 
+    private func publishRunningApps() {
+        if state.runningApps != launches.runningApps { state.runningApps = launches.runningApps }
+    }
+
     private func tearDown() {
+        launches.removeAll()
         monitor?.cancel()
         monitor = nil
+        watchdog?.stop()
+        watchdog = nil
         operations.removeAll()
         idleSince = nil
         ballooned = false

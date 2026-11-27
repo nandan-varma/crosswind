@@ -207,7 +207,7 @@ public final class StoreModel {
         do {
             let version = installed[appID]?.version ?? "1"
             let bundle: URL
-            if let existing = stubs.bundleURL(for: appID) {
+            if let existing = stubs.bundleURL(for: appID), stubs.hasIcon(appID: appID) {
                 bundle = existing
             } else {
                 // The icon is optional: a failed download or undecodable image installs the stub without one.
@@ -218,9 +218,13 @@ public final class StoreModel {
                     iconPNG = try? await URLSession.shared.data(for: request).0
                 }
                 do {
-                    bundle = try stubs.install(appID: appID, name: name, version: version, iconPNG: iconPNG)
+                    bundle = try stubs.install(
+                        appID: appID, name: name, version: version, iconPNG: iconPNG,
+                        mediaTypes: app(appID)?.mediaTypes ?? [])
                 } catch  where iconPNG != nil {
-                    bundle = try stubs.install(appID: appID, name: name, version: version, iconPNG: nil)
+                    bundle = try stubs.install(
+                        appID: appID, name: name, version: version, iconPNG: nil,
+                        mediaTypes: app(appID)?.mediaTypes ?? [])
                 }
             }
             try await opener(bundle)

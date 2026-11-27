@@ -9,12 +9,13 @@ struct AppStreamParserTests {
     @Test("keeps desktop applications and skips runtimes, addons and console apps")
     func filtersComponentTypes() throws {
         let apps = try CatalogFixtures.sampleApps()
-        #expect(apps.map(\.id) == [
-            "ai.jan.Jan",
-            "org.darktable.Darktable",
-            "br.com.eduk.school",
-            "ai.lmstudio.lm-studio",
-        ])
+        #expect(
+            apps.map(\.id) == [
+                "ai.jan.Jan",
+                "org.darktable.Darktable",
+                "br.com.eduk.school",
+                "ai.lmstudio.lm-studio",
+            ])
     }
 
     @Test("maps darktable metadata")
@@ -83,25 +84,25 @@ struct AppStreamParserTests {
     @Test("reads OARS ratings, verification and paragraph structure from inline XML")
     func inlineComponent() throws {
         let xml = """
-        <components version="0.8" origin="flatpak">
-          <component type="desktop-application">
-            <id>org.example.Rated</id>
-            <name>Rated</name>
-            <summary>Summary</summary>
-            <summary xml:lang="de">Zusammenfassung</summary>
-            <description>
-              <p>First <em>emphasised</em> paragraph.</p>
-              <ul><li>One</li><li>Two</li></ul>
-            </description>
-            <content_rating type="oars-1.1">
-              <content_attribute id="violence-fantasy">mild</content_attribute>
-              <content_attribute id="language-profanity">none</content_attribute>
-            </content_rating>
-            <custom><value key="flathub::verification::verified">true</value></custom>
-            <releases><release version="2.0" timestamp="1700000000" type="stable"/></releases>
-          </component>
-        </components>
-        """
+            <components version="0.8" origin="flatpak">
+              <component type="desktop-application">
+                <id>org.example.Rated</id>
+                <name>Rated</name>
+                <summary>Summary</summary>
+                <summary xml:lang="de">Zusammenfassung</summary>
+                <description>
+                  <p>First <em>emphasised</em> paragraph.</p>
+                  <ul><li>One</li><li>Two</li></ul>
+                </description>
+                <content_rating type="oars-1.1">
+                  <content_attribute id="violence-fantasy">mild</content_attribute>
+                  <content_attribute id="language-profanity">none</content_attribute>
+                </content_rating>
+                <custom><value key="flathub::verification::verified">true</value></custom>
+                <releases><release version="2.0" timestamp="1700000000" type="stable"/></releases>
+              </component>
+            </components>
+            """
         let app = try #require(AppStreamParser.parse(xml: Data(xml.utf8)).first)
         #expect(app.summary == "Summary")
         #expect(app.description == "First emphasised paragraph.\n\n• One\n\n• Two")
@@ -133,8 +134,9 @@ struct AppStreamParserTests {
         let body = String(sample[bodyStart..<bodyEnd])
         let sampleComponents = 7
         let copies = 4_200 / sampleComponents
-        let xml = Data((String(sample[..<bodyStart]) + String(repeating: body, count: copies)
-            + String(sample[bodyEnd...])).utf8)
+        let xml = Data(
+            (String(sample[..<bodyStart]) + String(repeating: body, count: copies)
+                + String(sample[bodyEnd...])).utf8)
 
         let clock = ContinuousClock()
         var apps: [CatalogApp] = []
@@ -144,5 +146,30 @@ struct AppStreamParserTests {
         print("AppStream parse: \(copies * sampleComponents) components, \(xml.count / 1_000_000) MB, \(elapsed)")
         #expect(apps.count == copies * 4)
         #expect(elapsed < .seconds(3))
+    }
+
+    @Test("takes the id from the Flatpak bundle, not the desktop-file spelling")
+    func bundleIDWins() throws {
+        let xml = """
+            <components version="0.16"><component type="desktop-application">
+            <id>org.kde.kate.desktop</id><name>Kate</name>
+            <bundle type="flatpak">app/org.kde.kate/aarch64/stable</bundle>
+            </component></components>
+            """
+        let apps = try AppStreamParser.parse(xml: Data(xml.utf8))
+        #expect(apps.map(\.id) == ["org.kde.kate"])
+        #expect(apps.first?.bundle?.branch == "stable")
+    }
+
+    @Test("collects the media types an app opens")
+    func mediaTypes() throws {
+        let xml = """
+            <components version="0.16"><component type="desktop-application">
+            <id>org.example.Viewer</id><name>Viewer</name>
+            <provides><mediatype>image/png</mediatype><mediatype>image/jpeg</mediatype></provides>
+            </component></components>
+            """
+        let apps = try AppStreamParser.parse(xml: Data(xml.utf8))
+        #expect(apps.first?.mediaTypes == ["image/png", "image/jpeg"])
     }
 }

@@ -35,9 +35,13 @@ struct TextInputState: Equatable {
         return NSRange(location: 0, length: marked.utf16.count)
     }
 
-    /// Replaces the composition. An empty string ends it.
+    /// Replaces the composition. An empty string cancels it without committing anything.
     mutating func setMarkedText(_ text: String, selectedRange: NSRange) -> Update {
-        guard !text.isEmpty else { return unmark() }
+        guard !text.isEmpty else {
+            guard marked != nil else { return Update() }
+            marked = nil
+            return Update(preedit: Self.cleared)
+        }
         marked = text
         let utf16 = text.utf16.count
         let cursor = selectedRange.location == NSNotFound ? utf16 : min(selectedRange.location, utf16)

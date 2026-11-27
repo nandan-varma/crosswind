@@ -55,7 +55,7 @@ public struct DiagnosticSnapshot: Sendable {
     public var problems: [String]
 }
 
-/// Builds the diagnostics bundle: a folder of JSON and text files, every line passed through `Redactor`, zipped with ditto.
+/// Builds the diagnostics bundle: JSON and text files, every line passed through `Redactor`, zipped with ditto.
 public enum DiagnosticBundle {
     public static let hostLogLimit = 500
     public static let reportLineLimit = 200
@@ -110,7 +110,9 @@ public enum DiagnosticBundle {
     }
 
     /// The bundle's files as relative path and content, with redaction applied. Pure, so it can be tested.
-    public static func files(for snapshot: DiagnosticSnapshot, redactor: Redactor = Redactor()) throws -> [(String, Data)] {
+    public static func files(for snapshot: DiagnosticSnapshot, redactor: Redactor = Redactor()) throws -> [(
+        String, Data
+    )] {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         encoder.dateEncodingStrategy = .iso8601
@@ -200,8 +202,9 @@ public enum DiagnosticBundle {
     }
 
     static func directorySize(_ url: URL) -> UInt64? {
-        guard let enumerator = FileManager.default.enumerator(
-            at: url, includingPropertiesForKeys: [.totalFileAllocatedSizeKey, .isRegularFileKey])
+        guard
+            let enumerator = FileManager.default.enumerator(
+                at: url, includingPropertiesForKeys: [.totalFileAllocatedSizeKey, .isRegularFileKey])
         else { return nil }
         var total: UInt64 = 0
         for case let file as URL in enumerator {

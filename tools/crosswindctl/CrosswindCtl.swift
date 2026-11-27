@@ -2,6 +2,7 @@
 import ArgumentParser
 import CrosswindKit
 import Foundation
+import Synchronization
 
 @main
 struct CrosswindCtl: AsyncParsableCommand {
@@ -10,13 +11,13 @@ struct CrosswindCtl: AsyncParsableCommand {
         abstract: "Control the Crosswind host agent and the Linux environment.",
         subcommands: [
             Status.self, Start.self, Stop.self, Installed.self, Install.self, Uninstall.self, Update.self,
-            Launch.self, Logs.self, CatalogCommand.self, StubCommand.self, ImageCommand.self,
+            Launch.self, Exec.self, Logs.self, CatalogCommand.self, StubCommand.self, ImageCommand.self,
             Windows.self, TypeText.self, Click.self, Diagnose.self, CompatCommand.self,
         ]
     )
 }
 
-private func connect() async throws -> AgentClient {
+func connect() async throws -> AgentClient {
     try await AgentClient.connect(role: .ctl)
 }
 
@@ -68,13 +69,13 @@ struct Installed: AsyncParsableCommand {
 
 private func follow(_ handle: OperationHandle, verb: String) async throws {
     Task {
+        var line = ProgressLine()
         for await progress in handle.progress {
-            print("\r\(verb) \(progress.percent)% \(progress.detail)", terminator: "")
-            fflush(stdout)
+            line.update(percent: Int(progress.percent), detail: "\(verb) \(progress.detail)")
         }
     }
     try await handle.result()
-    print("\r\(verb): done                                        ")
+    ProgressLine().finish("\(verb): done")
 }
 
 struct Install: AsyncParsableCommand {
@@ -122,6 +123,21 @@ struct Launch: AsyncParsableCommand {
     }
 }
 
+struct Exec: AsyncParsableCommand {
+    static let configuration = CommandConfiguration(
+        abstract: "Development only: run a command in the guest (needs `make dev-agent`, which enables debug mode).",
+        discussion: "Example: crosswindctl exec -- flatpak list --app")
+    @Option(help: "Seconds before the command is killed.") var timeout: UInt32 = 30
+    @Argument(parsing: .remaining) var command: [String]
+
+    func run() async throws {
+        let result = try await connect().control.debugExec(argv: command, timeoutSeconds: timeout)
+        FileHandle.standardOutput.write(result.output)
+        if result.timedOut { FileHandle.standardError.write(Data("timed out after \(timeout) s\n".utf8)) }
+        if result.exitCode != 0 { throw ExitCode(result.exitCode == -1 ? 1 : result.exitCode) }
+    }
+}
+
 struct Logs: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         abstract: "Stream guest and app log lines, or print the recent ones with --since.")
@@ -141,7 +157,8 @@ struct Logs: AsyncParsableCommand {
         for await event in client.control.events {
             switch event {
             case .log(let line): print("[\(line.source)] \(line.text)")
-            case .appStarted(let started): print("started \(started.appID) pid \(started.pid) launch \(started.launchID)")
+            case .appStarted(let started):
+                print("started \(started.appID) pid \(started.pid) launch \(started.launchID)")
             case .appExited(let exited): print("exited \(exited.appID) code \(exited.exitCode)")
             }
         }
@@ -195,9 +212,25 @@ struct StubCommand: AsyncParsableCommand {
         @Argument var name: String
         @Option(help: "Path to CrosswindAppStub.app (default: the one inside Crosswind.app).") var template: String?
 
-        func run() throws {
+        /// The app's catalog entry, as the store uses it for the stub's icon and file types; nil when the guest is
+        /// unreachable (the stub is then made without them).
+        private func catalogEntry() async -> CatalogApp? {
+            guard let client = try? await connect(), let catalog = try? await client.control.catalog(),
+                let apps = try? AppStreamParser.parse(gzipped: catalog)
+            else { return nil }
+            return apps.first { $0.id == appID }
+        }
+
+        func run() async throws {
             let url = try template.map { URL(fileURLWithPath: $0) } ?? Self.bundledTemplate()
-            let bundle = try StubInstaller(template: url).install(appID: appID, name: name, version: "1")
+            let entry = await catalogEntry()
+            var icon: Data?
+            if let largest = entry?.icons.max(by: { $0.width * $0.height < $1.width * $1.height }) {
+                icon = try? await URLSession.shared.data(from: largest.url).0
+            }
+            let bundle = try StubInstaller(template: url)
+                .install(
+                    appID: appID, name: name, version: "1", iconPNG: icon, mediaTypes: entry?.mediaTypes ?? [])
             print(bundle.path)
         }
 
@@ -233,8 +266,11 @@ struct ImageCommand: AsyncParsableCommand {
             let data = try Data(contentsOf: URL(fileURLWithPath: manifest))
             let manifest = try JSONDecoder().decode(GuestImageManifest.self, from: data)
             let store = ImageStore(paths: .standard)
-            try await store.install(manifest) { print(String(format: "\r%3.0f%%", $0 * 100), terminator: "") }
-            print("\rinstalled image \(manifest.version)")
+            let line = Mutex(ProgressLine())
+            try await store.install(manifest) { fraction in
+                line.withLock { $0.update(percent: Int(fraction * 100), detail: "downloading the guest image") }
+            }
+            ProgressLine().finish("installed image \(manifest.version)")
         }
     }
 }
@@ -246,14 +282,16 @@ struct Windows: AsyncParsableCommand {
         let result = try await connect().command(.listWindows(.init()))
         for window in result.windows {
             let latency = String(format: "%.1f ms", window.lastInputToFrameMs)
-            print("\(window.id)\t\(window.appID)\t\(window.width)x\(window.height)\t\(window.frames) frames\t\(latency)\t\(window.title)")
+            let size = "\(window.width)x\(window.height)"
+            print("\(window.id)\t\(window.appID)\t\(size)\t\(window.frames) frames\t\(latency)\t\(window.title)")
         }
     }
 }
 
 struct TypeText: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
-        commandName: "type", abstract: "Type text into a window (letters, digits, space) and report input-to-frame latency.")
+        commandName: "type",
+        abstract: "Type text into a window (letters, digits, space) and report input-to-frame latency.")
     @Argument var window: UInt32
     @Argument var text: String
 
@@ -272,8 +310,19 @@ struct TypeText: AsyncParsableCommand {
         for character in text.lowercased() {
             guard let code = Self.codes[character] else { continue }
             for pressed in [true, false] {
-                let key = Crosswind_Display_Input.OneOf_Event.key(.with { $0.keycode = code; $0.pressed = pressed })
-                _ = try await client.command(.injectInput(.with { $0.input = .with { $0.window = window; $0.event = key } }))
+                let key = Crosswind_Display_Input.OneOf_Event.key(
+                    .with {
+                        $0.keycode = code
+                        $0.pressed = pressed
+                    })
+                _ = try await client.command(
+                    .injectInput(
+                        .with {
+                            $0.input = .with {
+                                $0.window = window
+                                $0.event = key
+                            }
+                        }))
             }
             try await Task.sleep(for: .milliseconds(300))
             let info = try await client.command(.listWindows(.init())).windows.first { $0.id == window }
@@ -283,7 +332,8 @@ struct TypeText: AsyncParsableCommand {
 }
 
 struct Click: AsyncParsableCommand {
-    static let configuration = CommandConfiguration(abstract: "Click at a point (window-local points) and report latency.")
+    static let configuration = CommandConfiguration(
+        abstract: "Click at a point (window-local points) and report latency.")
     @Argument var window: UInt32
     @Argument var x: Double
     @Argument var y: Double
@@ -291,82 +341,33 @@ struct Click: AsyncParsableCommand {
     func run() async throws {
         let client = try await connect()
         func send(_ event: Crosswind_Display_Input.OneOf_Event) async throws {
-            _ = try await client.command(.injectInput(.with { $0.input = .with { $0.window = window; $0.event = event } }))
+            _ = try await client.command(
+                .injectInput(
+                    .with {
+                        $0.input = .with {
+                            $0.window = window
+                            $0.event = event
+                        }
+                    }))
         }
-        try await send(.motion(.with { $0.x = x; $0.y = y }))
+        try await send(
+            .motion(
+                .with {
+                    $0.x = x
+                    $0.y = y
+                }))
         try await Task.sleep(for: .milliseconds(100))
         for pressed in [true, false] {
-            try await send(.button(.with { $0.button = 0x110; $0.pressed = pressed }))
+            try await send(
+                .button(
+                    .with {
+                        $0.button = 0x110
+                        $0.pressed = pressed
+                    }))
             try await Task.sleep(for: .milliseconds(80))
         }
         try await Task.sleep(for: .milliseconds(500))
         let info = try await client.command(.listWindows(.init())).windows.first { $0.id == window }
         print(String(format: "click-to-frame %.1f ms", info?.lastInputToFrameMs ?? -1))
-    }
-}
-
-struct Diagnose: AsyncParsableCommand {
-    static let configuration = CommandConfiguration(
-        abstract: "Write a diagnostic bundle (zip): system, agent state, windows, apps, logs, with personal data redacted.")
-    @Option(help: "Output .zip path (default: crosswind-diagnostics-<time>.zip in the current directory).")
-    var output: String?
-
-    func run() async throws {
-        let client = try await connect()
-        let snapshot = await DiagnosticBundle.collect(agent: client)
-        let stamp = Date().formatted(.iso8601.year().month().day().time(includingFractionalSeconds: false))
-            .replacingOccurrences(of: ":", with: "-")
-        let destination = URL(fileURLWithPath: output ?? "crosswind-diagnostics-\(stamp).zip")
-        print(try DiagnosticBundle.write(snapshot, to: destination).path)
-        for problem in snapshot.problems { FileHandle.standardError.write(Data("warning: \(problem)\n".utf8)) }
-    }
-}
-
-struct CompatCommand: AsyncParsableCommand {
-    static let configuration = CommandConfiguration(
-        commandName: "compat", abstract: "Test Flathub apps and record their compatibility.", subcommands: [Run.self])
-
-    struct Run: AsyncParsableCommand {
-        static let configuration = CommandConfiguration(
-            abstract: "Install, launch and check apps; writes results.json, matrix.md and screenshots.")
-        @Option(help: "Comma-separated Flatpak app ids.") var ids: String?
-        @Option(help: "A named set of apps: curated.") var set: String?
-        @Option(help: "Seconds to wait for a window, a first frame, and an exit.") var timeout = 90
-        @Flag(help: "Keep the apps installed afterwards.") var keep = false
-        @Option(help: "Directory for results.json, matrix.md and screenshots/.") var dir = "docs/compat"
-        @Option(help: "Also write the bundled ratings file to this path.") var ratings: String?
-
-        func run() async throws {
-            let appIDs: [String]
-            if let ids {
-                appIDs = ids.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
-            } else if set == "curated" {
-                appIDs = CompatHarness.curatedSet
-            } else if let set {
-                throw HarnessError.unknownSet(set)
-            } else {
-                throw ValidationError("pass --ids or --set curated")
-            }
-            let client = try await connect()
-            _ = try await client.command(.startVm(.init()))
-
-            let directory = URL(fileURLWithPath: dir, isDirectory: true)
-            let screenshots = directory.appending(path: "screenshots", directoryHint: .isDirectory)
-            try FileManager.default.createDirectory(at: screenshots, withIntermediateDirectories: true)
-            var options = CompatHarness.Options(screenshotDirectory: screenshots)
-            options.timeout = .seconds(timeout)
-            options.keepInstalled = keep
-            options.imageVersion = await ImageStore(paths: .standard).installedVersion() ?? "dev"
-
-            let ratingsFile = ratings.map { URL(fileURLWithPath: $0) }
-            // Each app is written as soon as it is tested, so an interrupted run keeps what it finished.
-            let records = try await CompatHarness.run(
-                ids: appIDs, control: client, options: options,
-                log: { FileHandle.standardError.write(Data(($0 + "\n").utf8)) },
-                onRecord: { record in
-                    try? CompatReport.write([record], directory: directory, ratingsFile: ratingsFile)
-                })
-            print(records.map { "\($0.status.rawValue)\t\($0.appID)" }.joined(separator: "\n"))
-        }
     }
 }

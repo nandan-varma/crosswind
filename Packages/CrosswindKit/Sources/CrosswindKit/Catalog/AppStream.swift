@@ -28,6 +28,8 @@ public struct CatalogApp: Sendable, Hashable, Identifiable {
     /// True when Flathub has verified the app's publisher (`flathub::verification::verified`).
     public var isVerified = false
     public var bundle: CatalogBundle?
+    /// MIME types the app opens (`<provides><mediatype>`), e.g. `image/png`.
+    public var mediaTypes: [String] = []
 
     public init() {}
 }

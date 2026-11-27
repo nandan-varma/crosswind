@@ -6,7 +6,7 @@ let package = Package(
     platforms: [.macOS(.v27)],
     products: [.library(name: "CrosswindKit", targets: ["CrosswindKit"])],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-protobuf.git", exact: "1.39.0"),
+        .package(url: "https://github.com/apple/swift-protobuf.git", exact: "1.39.0")
     ],
     targets: [
         .target(

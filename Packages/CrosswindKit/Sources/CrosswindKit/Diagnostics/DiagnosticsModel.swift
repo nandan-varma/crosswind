@@ -59,30 +59,33 @@ public final class DiagnosticsModel {
     func attach(_ client: AgentClient) {
         agent = client
         isConnected = true
-        tasks.append(Task { [weak self] in
-            for await event in client.control.events {
-                guard let self else { return }
-                self.record(event)
-            }
-        })
-        tasks.append(Task { [weak self] in
-            for await state in client.states {
-                guard let self else { return }
-                self.apply(state)
-            }
-        })
-        tasks.append(Task { [weak self] in
-            while !Task.isCancelled {
-                guard let self else { return }
-                await self.pollWindows()
-                self.sampleProcess()
-                try? await Task.sleep(for: Self.pollInterval)
-            }
-        })
+        tasks.append(
+            Task { [weak self] in
+                for await event in client.control.events {
+                    guard let self else { return }
+                    self.record(event)
+                }
+            })
+        tasks.append(
+            Task { [weak self] in
+                for await state in client.states {
+                    guard let self else { return }
+                    self.apply(state)
+                }
+            })
+        tasks.append(
+            Task { [weak self] in
+                while !Task.isCancelled {
+                    guard let self else { return }
+                    await self.pollWindows()
+                    self.sampleProcess()
+                    try? await Task.sleep(for: Self.pollInterval)
+                }
+            })
     }
 
     public func disconnect() {
-        tasks.forEach { $0.cancel() }
+        for task in tasks { task.cancel() }
         tasks.removeAll()
         if let agent { Task { await agent.disconnect() } }
         agent = nil
@@ -127,14 +130,17 @@ public final class DiagnosticsModel {
     func record(_ event: GuestControl.Event) {
         switch event {
         case .log(let line):
-            logs.append(source: line.source, level: line.level, launchID: line.launchID, text: line.text,
-                        time: Date(timeIntervalSince1970: Double(line.unixTimeMs) / 1000))
+            logs.append(
+                source: line.source, level: line.level, launchID: line.launchID, text: line.text,
+                time: Date(timeIntervalSince1970: Double(line.unixTimeMs) / 1000))
         case .appStarted(let started):
-            logs.append(source: started.appID, level: 6, launchID: started.launchID,
-                        text: "started, pid \(started.pid)")
+            logs.append(
+                source: started.appID, level: 6, launchID: started.launchID,
+                text: "started, pid \(started.pid)")
         case .appExited(let exited):
-            logs.append(source: exited.appID, level: exited.exitCode == 0 ? 6 : 4, launchID: exited.launchID,
-                        text: "exited with code \(exited.exitCode)")
+            logs.append(
+                source: exited.appID, level: exited.exitCode == 0 ? 6 : 4, launchID: exited.launchID,
+                text: "exited with code \(exited.exitCode)")
         }
     }
 
@@ -173,8 +179,9 @@ public final class DiagnosticsModel {
     }
 
     private func sampleProcess() {
-        guard let pid = NSRunningApplication.runningApplications(withBundleIdentifier: Self.agentBundleID)
-            .first?.processIdentifier,
+        guard
+            let pid = NSRunningApplication.runningApplications(withBundleIdentifier: Self.agentBundleID)
+                .first?.processIdentifier,
             let sample = ProcessSampler.sample(pid: pid)
         else {
             agentProcess = nil

@@ -5,34 +5,40 @@ import Testing
 
 @Suite("FilesystemAccess")
 struct FilesystemAccessTests {
-    @Test("parses the mode suffix", arguments: [
-        ("xdg-download:ro", "xdg-download", FilesystemAccess.Mode.readOnly),
-        ("xdg-download:rw", "xdg-download", .readWrite),
-        ("xdg-download:create", "xdg-download", .create),
-        ("xdg-download", "xdg-download", .readWrite),
-        ("~/Projects:ro", "~/Projects", .readOnly),
-        ("/srv/data:create", "/srv/data", .create),
-        ("/srv/a:b", "/srv/a:b", .readWrite),
-    ])
+    @Test(
+        "parses the mode suffix",
+        arguments: [
+            ("xdg-download:ro", "xdg-download", FilesystemAccess.Mode.readOnly),
+            ("xdg-download:rw", "xdg-download", .readWrite),
+            ("xdg-download:create", "xdg-download", .create),
+            ("xdg-download", "xdg-download", .readWrite),
+            ("~/Projects:ro", "~/Projects", .readOnly),
+            ("/srv/data:create", "/srv/data", .create),
+            ("/srv/a:b", "/srv/a:b", .readWrite),
+        ])
     func parsesEntries(entry: String, path: String, mode: FilesystemAccess.Mode) {
         let access = FilesystemAccess(parsing: entry)
         #expect(access.path == path)
         #expect(access.mode == mode)
     }
 
-    @Test("serializes back to the Flatpak entry", arguments: [
-        ("xdg-download:ro", "xdg-download:ro"),
-        ("xdg-documents", "xdg-documents"),
-        ("~/Projects:create", "~/Projects:create"),
-    ])
+    @Test(
+        "serializes back to the Flatpak entry",
+        arguments: [
+            ("xdg-download:ro", "xdg-download:ro"),
+            ("xdg-documents", "xdg-documents"),
+            ("~/Projects:create", "~/Projects:create"),
+        ])
     func roundTrips(entry: String, expected: String) {
         #expect(FilesystemAccess(parsing: entry).entry == expected)
     }
 
-    @Test("accepts Flatpak paths and refuses malformed ones", arguments: [
-        ("/srv/data", true), ("~/Projects", true), ("xdg-music", true),
-        ("", false), ("   ", false), ("Projects", false), ("/a;/b", false), ("!/srv", false),
-    ])
+    @Test(
+        "accepts Flatpak paths and refuses malformed ones",
+        arguments: [
+            ("/srv/data", true), ("~/Projects", true), ("xdg-music", true),
+            ("", false), ("   ", false), ("Projects", false), ("/a;/b", false), ("!/srv", false),
+        ])
     func validatesCustomPaths(path: String, valid: Bool) {
         #expect(FilesystemAccess.isValidCustomPath(path) == valid)
     }
@@ -61,7 +67,8 @@ struct AppPermissionsTests {
     func grouping() {
         let groups = PermissionCatalog.grouped(PermissionCatalog.options)
         #expect(groups.map(\.group) == [.network, .windowing, .sound, .devices, .features])
-        #expect(groups.first { $0.group == .windowing }?.options.map(\.value) == ["x11", "wayland", "fallback-x11", "ipc"])
+        #expect(
+            groups.first { $0.group == .windowing }?.options.map(\.value) == ["x11", "wayland", "fallback-x11", "ipc"])
         #expect(PermissionCatalog.grouped([network]).map(\.group) == [.network])
     }
 

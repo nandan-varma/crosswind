@@ -158,7 +158,8 @@ struct DisplayLimitsTests {
         for _ in 0..<20_000 {
             let width = biased(EdgeValues.sizes, max: 20_000, &rng)
             let height = biased(EdgeValues.sizes, max: 20_000, &rng)
-            let scale = Bool.random(using: &rng)
+            let scale =
+                Bool.random(using: &rng)
                 ? EdgeValues.scales.randomElement(using: &rng)! : UInt32.random(in: 0...1000, using: &rng)
             let count = Int.random(in: 0...4, using: &rng)
             let rects = (0..<count).map { _ in

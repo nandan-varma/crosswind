@@ -46,7 +46,7 @@ extension CompatHarness {
             report.notes.append("exited before close")
             return
         }
-        await checkExit(&report, stub: stub, window: window.id, appID: appID, session: session)
+        await checkExit(&report, stub: stub, display: display, window: window.id, session: session)
     }
 
     /// Waits for a first frame, then checks the settled picture is not one flat colour and saves a screenshot.
@@ -87,19 +87,27 @@ extension CompatHarness {
         report.checks.inputWorks = reacted ? .pass : .unknown
     }
 
-    /// Asks the window to close and expects the process to exit within 10 s. Otherwise the agent stops it,
-    /// and the exit code shows whether it needed a signal.
+    /// Asks the window to close and expects the process to exit within 10 s. An app that answers with a new window
+    /// (the "Save changes?" prompt an editor shows after the input check typed into it) handled the request, so that
+    /// counts as a clean exit. Otherwise the agent stops it, and the exit code shows whether it needed a signal.
     private static func checkExit(
-        _ report: inout Report, stub: AgentClient, window: UInt32, appID: String, session: Session
+        _ report: inout Report, stub: AgentClient, display: HeadlessDisplay, window: UInt32, session: Session
     ) async {
+        let appID = report.appID
         let events = session.events
+        let windowsBefore = await display.openToplevelCount
         await stub.send(display: close(window))
         if await poll(.seconds(10), { await events.exitCode(appID) != nil }) {
             report.checks.cleanExit = .pass
             return
         }
-        report.checks.cleanExit = .fail
-        report.notes.append("did not exit within 10 s of a close request; stopping it")
+        if await display.openToplevelCount > windowsBefore {
+            report.checks.cleanExit = .pass
+            report.notes.append("asked to confirm closing (the input check had changed its content); stopping it")
+        } else {
+            report.checks.cleanExit = .fail
+            report.notes.append("did not exit within 10 s of a close request; stopping it")
+        }
         try? await session.control.control.stop(appID: appID)
         _ = await poll(.seconds(10)) { await events.exitCode(appID) != nil }
         switch await events.exitCode(appID) {

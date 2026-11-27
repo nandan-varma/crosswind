@@ -36,7 +36,9 @@ public struct LogRingBuffer: Sendable {
 
     public var entries: ArraySlice<LogEntry> { storage.suffix(capacity) }
 
-    public mutating func append(source: String, level: Int32, launchID: String = "", text: String, time: Date = Date()) {
+    public mutating func append(
+        source: String, level: Int32, launchID: String = "", text: String, time: Date = Date()
+    ) {
         nextID += 1
         storage.append(LogEntry(id: nextID, time: time, source: source, level: level, launchID: launchID, text: text))
         if storage.count > capacity * 2 {

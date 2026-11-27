@@ -3,10 +3,12 @@ import CrosswindKit
 import Darwin
 import ServiceManagement
 import SwiftUI
+import Virtualization
 
 /// The settings window, for a SwiftUI `Settings` scene.
 struct SettingsView: View {
     let model: StoreModel
+    let updater: AppUpdater
 
     var body: some View {
         TabView {
@@ -18,7 +20,7 @@ struct SettingsView: View {
                 .tabItem { Label("Storage", systemImage: "internaldrive") }
             SharedFoldersSettings(model: model)
                 .tabItem { Label("Shared Folders", systemImage: "folder.badge.person.crop") }
-            AboutSettings()
+            AboutSettings(updater: updater)
                 .tabItem { Label("About", systemImage: "info.circle") }
         }
         .scenePadding()
@@ -30,6 +32,7 @@ private struct GeneralSettings: View {
     @AppStorage(Preferences.Key.commandActsAsControl, store: Preferences.suite) private var commandActsAsControl = true
     @AppStorage(Preferences.Key.clipboardSync, store: Preferences.suite) private var clipboardSync = true
     @AppStorage(Preferences.Key.microphoneEnabled, store: Preferences.suite) private var microphoneEnabled = false
+    @AppStorage(Preferences.Key.trayIconsEnabled, store: Preferences.suite) private var trayIcons = true
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
     @State private var loginError: String?
 
@@ -43,8 +46,9 @@ private struct GeneralSettings: View {
                 .help("Use the Command key for shortcuts that Linux apps expect on Control.")
             Toggle("Share the clipboard with Linux apps", isOn: $clipboardSync)
                 .help("Text and images are shared while a Crosswind app is in front.")
+            Toggle("Show Linux apps' tray icons in the menu bar", isOn: $trayIcons)
             Toggle("Allow Linux apps to use the microphone", isOn: $microphoneEnabled)
-            Text("Off by default. Applies the next time the Linux environment starts.")
+            Text("The microphone is off by default and applies the next time the Linux environment starts.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -109,6 +113,7 @@ private struct EnvironmentSettings: View {
                     apps start it again when you open them.
                     """)
             }
+            RosettaSettings()
             Section {
                 Button("Restart Environment") { run { try await model.restartEnvironment() } }
                     .disabled(working)
@@ -195,7 +200,55 @@ private struct StorageSettings: View {
     }
 }
 
+/// Intel (x86_64) support through Rosetta: the toggle, and what to do when Rosetta is not installed.
+private struct RosettaSettings: View {
+    @AppStorage(Preferences.Key.rosettaEnabled, store: Preferences.suite) private var enabled = true
+    @State private var availability = VZLinuxRosettaDirectoryShare.availability
+    @State private var installing = false
+    @State private var failure: String?
+
+    var body: some View {
+        Section {
+            switch availability {
+            case .installed:
+                Toggle("Run Intel apps with Rosetta (experimental)", isOn: $enabled)
+            case .notInstalled:
+                LabeledContent("Rosetta") {
+                    Button("Install Rosetta…") { install() }.disabled(installing)
+                }
+            default:
+                LabeledContent("Rosetta", value: String(localized: "Not available on this Mac"))
+            }
+            if let failure { Text(verbatim: failure).font(.caption).foregroundStyle(.red) }
+        } footer: {
+            Text(
+                """
+                Lets the environment run apps built only for Intel. Some, such as Electron apps, may crash. \
+                Applies the next time the environment starts.
+                """)
+        }
+    }
+
+    private func install() {
+        installing = true
+        failure = nil
+        Task {
+            do {
+                try await VZLinuxRosettaDirectoryShare.installRosetta()
+            } catch {
+                failure = error.localizedDescription
+            }
+            availability = VZLinuxRosettaDirectoryShare.availability
+            installing = false
+        }
+    }
+}
+
 private struct AboutSettings: View {
+    let updater: AppUpdater
+    @State private var checks = false
+    @State private var downloads = false
+
     private static let license = URL(string: "https://www.gnu.org/licenses/agpl-3.0.html")
     private static let repository = URL(string: "https://github.com/nandan-varma/crosswind")
 
@@ -210,6 +263,27 @@ private struct AboutSettings: View {
     var body: some View {
         Form {
             LabeledContent("Version") { Text(verbatim: "\(version) (\(build))").textSelection(.enabled) }
+            Section("Updates") {
+                Toggle(
+                    "Check for updates automatically",
+                    isOn: Binding(
+                        get: { checks },
+                        set: {
+                            checks = $0
+                            updater.automaticallyChecks = $0
+                        }))
+                Toggle(
+                    "Download updates automatically",
+                    isOn: Binding(
+                        get: { downloads },
+                        set: {
+                            downloads = $0
+                            updater.automaticallyDownloads = $0
+                        })
+                )
+                .disabled(!checks)
+                Button("Check Now") { updater.checkForUpdates() }.disabled(!updater.canCheckForUpdates)
+            }
             if let license = Self.license {
                 Link("AGPL-3.0 License", destination: license)
             }
@@ -218,6 +292,10 @@ private struct AboutSettings: View {
             }
         }
         .formStyle(.grouped)
+        .onAppear {
+            checks = updater.automaticallyChecks
+            downloads = updater.automaticallyDownloads
+        }
     }
 }
 

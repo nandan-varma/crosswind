@@ -25,6 +25,11 @@ public actor HeadlessDisplay {
         order.lazy.compactMap { self.windows[$0] }.first { $0.kind == .toplevel }
     }
 
+    /// How many toplevels are open now. A close request that raises a confirmation dialog raises this.
+    public var openToplevelCount: Int {
+        windows.values.filter { $0.kind == .toplevel && !$0.closed }.count
+    }
+
     /// The open toplevel with the most frames: the window a screenshot shows.
     public var primary: Window? {
         order.lazy.compactMap { self.windows[$0] }.filter { $0.kind == .toplevel && !$0.closed }

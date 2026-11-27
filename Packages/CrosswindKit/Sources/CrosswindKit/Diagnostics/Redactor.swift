@@ -23,12 +23,12 @@ public struct Redactor: Sendable {
             return String(token[..<query]) + "?<redacted>"
         }
         result = Self.substitute(result, pattern: #"(?i)Bearer\s+[A-Za-z0-9._~+\-/=]+"#) { _ in "Bearer <redacted>" }
-        result = Self.substitute(result, pattern: #"[A-Za-z0-9._%+\-]+@[A-Za-z0-9\-]+(\.[A-Za-z0-9\-]+)*\.[A-Za-z]{2,}"#) {
-            _ in "<email>"
-        }
+        result = Self.substitute(
+            result, pattern: #"[A-Za-z0-9._%+\-]+@[A-Za-z0-9\-]+(\.[A-Za-z0-9\-]+)*\.[A-Za-z]{2,}"#
+        ) { _ in "<email>" }
         result = Self.substitute(result, pattern: #"\b[0-9A-Fa-f]{2}(?:[:\-][0-9A-Fa-f]{2}){5}\b"#) { _ in "<mac>" }
-        result = Self.substitute(result, pattern: #"(?<![0-9A-Za-z.])(?:\d{1,3}\.){3}\d{1,3}(?![0-9A-Za-z]|\.\d)"#) {
-            token in
+        let ipv4 = #"(?<![0-9A-Za-z.])(?:\d{1,3}\.){3}\d{1,3}(?![0-9A-Za-z]|\.\d)"#
+        result = Self.substitute(result, pattern: ipv4) { token in
             guard Self.isIPv4(token), !token.hasPrefix(Self.guestNetworkPrefix) else { return nil }
             return "<ipv4>"
         }
@@ -44,9 +44,8 @@ public struct Redactor: Sendable {
             result = result.replacingOccurrences(of: homeDirectory, with: "~")
         }
         if !userName.isEmpty {
-            result = Self.substitute(result, pattern: "\\b\(NSRegularExpression.escapedPattern(for: userName))\\b") {
-                _ in "<user>"
-            }
+            let name = NSRegularExpression.escapedPattern(for: userName)
+            result = Self.substitute(result, pattern: "\\b\(name)\\b") { _ in "<user>" }
         }
         return result
     }

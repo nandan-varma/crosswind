@@ -278,6 +278,16 @@ public nonisolated struct Crosswind_Display_WindowChanged: Sendable {
   /// Clears the value of `minimized`. Subsequent reads from it will return its default value.
   public mutating func clearMinimized() {self._minimized = nil}
 
+  /// The app asked to be brought to the front (xdg-activation): restore it if minimized and make it key.
+  public var activate: Bool {
+    get {_activate ?? false}
+    set {_activate = newValue}
+  }
+  /// Returns true if `activate` has been explicitly set.
+  public var hasActivate: Bool {self._activate != nil}
+  /// Clears the value of `activate`. Subsequent reads from it will return its default value.
+  public mutating func clearActivate() {self._activate = nil}
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -291,6 +301,7 @@ public nonisolated struct Crosswind_Display_WindowChanged: Sendable {
   fileprivate var _fullscreen: Bool? = nil
   fileprivate var _maximized: Bool? = nil
   fileprivate var _minimized: Bool? = nil
+  fileprivate var _activate: Bool? = nil
 }
 
 public nonisolated struct Crosswind_Display_WindowClosed: Sendable {
@@ -1048,7 +1059,7 @@ nonisolated extension Crosswind_Display_WindowOpened: SwiftProtobuf.Message, Swi
 
 nonisolated extension Crosswind_Display_WindowChanged: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".WindowChanged"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}title\0\u{3}app_id\0\u{3}min_width\0\u{3}min_height\0\u{3}max_width\0\u{3}max_height\0\u{1}fullscreen\0\u{1}maximized\0\u{1}minimized\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}title\0\u{3}app_id\0\u{3}min_width\0\u{3}min_height\0\u{3}max_width\0\u{3}max_height\0\u{1}fullscreen\0\u{1}maximized\0\u{1}minimized\0\u{1}activate\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1066,6 +1077,7 @@ nonisolated extension Crosswind_Display_WindowChanged: SwiftProtobuf.Message, Sw
       case 8: try { try decoder.decodeSingularBoolField(value: &self._fullscreen) }()
       case 9: try { try decoder.decodeSingularBoolField(value: &self._maximized) }()
       case 10: try { try decoder.decodeSingularBoolField(value: &self._minimized) }()
+      case 11: try { try decoder.decodeSingularBoolField(value: &self._activate) }()
       default: break
       }
     }
@@ -1106,6 +1118,9 @@ nonisolated extension Crosswind_Display_WindowChanged: SwiftProtobuf.Message, Sw
     try { if let v = self._minimized {
       try visitor.visitSingularBoolField(value: v, fieldNumber: 10)
     } }()
+    try { if let v = self._activate {
+      try visitor.visitSingularBoolField(value: v, fieldNumber: 11)
+    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -1120,6 +1135,7 @@ nonisolated extension Crosswind_Display_WindowChanged: SwiftProtobuf.Message, Sw
     if lhs._fullscreen != rhs._fullscreen {return false}
     if lhs._maximized != rhs._maximized {return false}
     if lhs._minimized != rhs._minimized {return false}
+    if lhs._activate != rhs._activate {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

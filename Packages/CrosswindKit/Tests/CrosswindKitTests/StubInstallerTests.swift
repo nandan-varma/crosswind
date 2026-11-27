@@ -118,4 +118,11 @@ import UniformTypeIdentifiers
         #expect(info["CFBundleShortVersionString"] as? String == "2")
         #expect(info["CFBundleIconFile"] as? String == "AppIcon")
     }
+
+    @Test func mediaTypesBecomeUniqueKnownContentTypes() {
+        let types = StubInstaller.contentTypes(for: [
+            "image/png", "image/png", "text/plain", "application/x-zz-unknown",
+        ])
+        #expect(types == ["public.png", "public.plain-text"])
+    }
 }

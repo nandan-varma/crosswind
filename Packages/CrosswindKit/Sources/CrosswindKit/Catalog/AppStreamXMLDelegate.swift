@@ -7,7 +7,7 @@ final class AppStreamXMLDelegate: NSObject, XMLParserDelegate {
     /// Elements the parser acts on. Each element name is resolved once, at its start tag.
     private enum Tag {
         case component, id, name, summary, projectLicense, developerName, developer
-        case keywords, keyword, categories, category, url, icon, bundle
+        case keywords, keyword, categories, category, url, icon, bundle, provides, mediatype
         case contentRating, contentAttribute, custom, value
         case description, paragraph, listItem
         case releases, release, screenshots, screenshot, caption, image
@@ -26,7 +26,7 @@ final class AppStreamXMLDelegate: NSObject, XMLParserDelegate {
         "component": .component, "id": .id, "name": .name, "summary": .summary,
         "project_license": .projectLicense, "developer_name": .developerName, "developer": .developer,
         "keywords": .keywords, "keyword": .keyword, "categories": .categories, "category": .category,
-        "url": .url, "icon": .icon, "bundle": .bundle,
+        "url": .url, "icon": .icon, "bundle": .bundle, "provides": .provides, "mediatype": .mediatype,
         "content_rating": .contentRating, "content_attribute": .contentAttribute,
         "custom": .custom, "value": .value,
         "description": .description, "p": .paragraph, "li": .listItem,
@@ -129,7 +129,8 @@ final class AppStreamXMLDelegate: NSObject, XMLParserDelegate {
         case (.url, .component): assignURL(collapsed(), type: frame.attributes["type"])
         case (.icon, .component) where frame.attributes["type"] == "remote":
             appendIcon(collapsed(), attributes: frame.attributes)
-        case (.bundle, .component): app?.bundle = Self.parseBundle(collapsed())
+        case (.bundle, .component): applyBundle(collapsed())
+        case (.mediatype, .provides): app?.mediaTypes.append(collapsed())
         case (.contentAttribute, .contentRating):
             app?.contentRating[frame.attributes["id"] ?? ""] = collapsed()
         case (.value, .custom) where frame.attributes["key"] == "flathub::verification::verified":
@@ -204,10 +205,13 @@ final class AppStreamXMLDelegate: NSObject, XMLParserDelegate {
     }
 
     /// `app/org.example.App/x86_64/stable`
-    private static func parseBundle(_ value: String) -> CatalogBundle? {
+    /// Reads `app/<id>/<arch>/<branch>`. The reference names the Flatpak, so its id replaces the component id, which
+    /// some apps spell with the desktop file suffix (`org.kde.kate.desktop` for `org.kde.kate`).
+    private func applyBundle(_ value: String) {
         let parts = value.split(separator: "/")
-        guard parts.count == 4 else { return nil }
-        return CatalogBundle(arch: String(parts[2]), branch: String(parts[3]))
+        guard parts.count == 4 else { return }
+        app?.bundle = CatalogBundle(arch: String(parts[2]), branch: String(parts[3]))
+        app?.id = String(parts[1])
     }
 
     /// Trims and folds ASCII whitespace runs to one space. Multi-byte UTF-8 sequences pass through untouched.

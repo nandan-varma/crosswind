@@ -8,8 +8,9 @@ import Testing
 struct CompatMatrixTests {
     private static let when = Date(timeIntervalSince1970: 1_780_000_000)
 
-    private static func record(_ id: String, _ name: String, _ status: CompatStatus, note: String = "") -> CompatRecord
-    {
+    private static func record(
+        _ id: String, _ name: String, _ status: CompatStatus, note: String = ""
+    ) -> CompatRecord {
         CompatRecord(
             appID: id, name: name, status: status, notes: note.isEmpty ? [] : [note], testedAt: when,
             guestImageVersion: "0.4.0", arch: "aarch64")

@@ -1,28 +1,148 @@
 {
-  "apps": {
-    "com.vscodium.codium": {
-      "guestImageVersion": "dev-1793486068",
-      "note": "no window within 90.0 seconds",
-      "status": "broken",
-      "testedAt": "2026-10-31T23:38:00Z"
+  "apps" : {
+    "com.vscodium.codium" : {
+      "guestImageVersion" : "dev-1795761009",
+      "note" : "exited before close",
+      "status" : "broken",
+      "testedAt" : "2026-11-27T06:30:41Z"
     },
-    "org.gnome.Calculator": {
-      "guestImageVersion": "dev-1793486068",
-      "note": "",
-      "status": "works",
-      "testedAt": "2026-10-31T23:35:19Z"
+    "im.riot.Riot" : {
+      "guestImageVersion" : "dev-1795764958",
+      "note" : "[im.riot.Riot] [3:1126\/235352.297126:ERROR:ui\/ozone\/platform\/wayland\/common\/drm_render_node_path_finder.cc:45] drmGetDevices2() has not found any devices: No such file or directory (2)",
+      "status" : "caveats",
+      "testedAt" : "2026-11-27T07:53:57Z"
     },
-    "org.gnome.TextEditor": {
-      "guestImageVersion": "dev-1793486068",
-      "note": "did not exit within 10 s of a close request; stopping it",
-      "status": "caveats",
-      "testedAt": "2026-10-31T23:35:34Z"
+    "io.dbeader.DBeaverCommunity" : {
+      "guestImageVersion" : "dev-1795764958",
+      "note" : "not in the Flathub catalog",
+      "status" : "no-arm-build",
+      "testedAt" : "2026-11-27T07:54:42Z"
     },
-    "org.gnome.clocks": {
-      "guestImageVersion": "dev-1793486068",
-      "note": "did not exit within 10 s of a close request; stopping it",
-      "status": "caveats",
-      "testedAt": "2026-10-31T23:35:52Z"
+    "md.obsidian.Obsidian" : {
+      "guestImageVersion" : "dev-1795764958",
+      "note" : "",
+      "status" : "works",
+      "testedAt" : "2026-11-27T07:52:48Z"
+    },
+    "org.audacityteam.Audacity" : {
+      "guestImageVersion" : "dev-1795760340",
+      "note" : "did not exit within 10 s of a close request; stopping it",
+      "status" : "caveats",
+      "testedAt" : "2026-11-27T06:20:29Z"
+    },
+    "org.chromium.Chromium" : {
+      "guestImageVersion" : "dev-1795764958",
+      "note" : "",
+      "status" : "works",
+      "testedAt" : "2026-11-27T07:52:34Z"
+    },
+    "org.filezillaproject.Filezilla" : {
+      "guestImageVersion" : "dev-1795764958",
+      "note" : "did not exit within 10 s of a close request; stopping it",
+      "status" : "caveats",
+      "testedAt" : "2026-11-27T07:54:42Z"
+    },
+    "org.gimp.GIMP" : {
+      "guestImageVersion" : "dev-1795761009",
+      "note" : "",
+      "status" : "works",
+      "testedAt" : "2026-11-27T06:30:49Z"
+    },
+    "org.gnome.Calculator" : {
+      "guestImageVersion" : "dev-1795764958",
+      "note" : "",
+      "status" : "works",
+      "testedAt" : "2026-11-27T07:55:32Z"
+    },
+    "org.gnome.Epiphany" : {
+      "guestImageVersion" : "dev-1795764958",
+      "note" : "",
+      "status" : "works",
+      "testedAt" : "2026-11-27T07:54:18Z"
+    },
+    "org.gnome.Loupe" : {
+      "guestImageVersion" : "dev-1795764958",
+      "note" : "[org.gnome.Loupe] MESA-EGL: warning: failed to get driver name for fd -1",
+      "status" : "caveats",
+      "testedAt" : "2026-11-27T07:55:51Z"
+    },
+    "org.gnome.Nautilus" : {
+      "guestImageVersion" : "dev-1795764958",
+      "note" : "not in the Flathub catalog",
+      "status" : "no-arm-build",
+      "testedAt" : "2026-11-27T07:54:42Z"
+    },
+    "org.gnome.TextEditor" : {
+      "guestImageVersion" : "dev-1795764958",
+      "note" : "did not exit within 10 s of a close request; stopping it",
+      "status" : "caveats",
+      "testedAt" : "2026-11-27T07:55:28Z"
+    },
+    "org.gnome.clocks" : {
+      "guestImageVersion" : "dev-1795764958",
+      "note" : "did not exit within 10 s of a close request; stopping it",
+      "status" : "caveats",
+      "testedAt" : "2026-11-27T07:55:14Z"
+    },
+    "org.gnome.gedit" : {
+      "guestImageVersion" : "dev-1795764958",
+      "note" : "",
+      "status" : "works",
+      "testedAt" : "2026-11-27T07:54:54Z"
+    },
+    "org.inkscape.Inkscape" : {
+      "guestImageVersion" : "dev-1795764958",
+      "note" : "did not exit within 10 s of a close request; stopping it",
+      "status" : "caveats",
+      "testedAt" : "2026-11-27T07:53:44Z"
+    },
+    "org.kde.dolphin" : {
+      "guestImageVersion" : "dev-1795764958",
+      "note" : "",
+      "status" : "works",
+      "testedAt" : "2026-11-27T07:55:42Z"
+    },
+    "org.kde.kate" : {
+      "guestImageVersion" : "dev-1795760340",
+      "note" : "",
+      "status" : "works",
+      "testedAt" : "2026-11-27T06:22:56Z"
+    },
+    "org.kde.kcalc" : {
+      "guestImageVersion" : "dev-1795760340",
+      "note" : "",
+      "status" : "works",
+      "testedAt" : "2026-11-27T06:22:46Z"
+    },
+    "org.keepassxc.KeePassXC" : {
+      "guestImageVersion" : "dev-1795764958",
+      "note" : "[org.keepassxc.KeePassXC] XDG Remote Desktop portal is not available, Auto-Type disabled",
+      "status" : "caveats",
+      "testedAt" : "2026-11-27T07:54:25Z"
+    },
+    "org.libreoffice.LibreOffice" : {
+      "guestImageVersion" : "dev-1795764958",
+      "note" : "did not exit within 10 s of a close request; stopping it",
+      "status" : "caveats",
+      "testedAt" : "2026-11-27T07:53:22Z"
+    },
+    "org.mozilla.Thunderbird" : {
+      "guestImageVersion" : "dev-1795764958",
+      "note" : "not in the Flathub catalog",
+      "status" : "no-arm-build",
+      "testedAt" : "2026-11-27T07:53:44Z"
+    },
+    "org.telegram.desktop" : {
+      "guestImageVersion" : "dev-1795764958",
+      "note" : "",
+      "status" : "works",
+      "testedAt" : "2026-11-27T07:54:02Z"
+    },
+    "org.videolan.VLC" : {
+      "guestImageVersion" : "dev-1795761009",
+      "note" : "did not exit within 10 s of a close request; stopping it",
+      "status" : "caveats",
+      "testedAt" : "2026-11-27T06:31:10Z"
     }
   }
 }

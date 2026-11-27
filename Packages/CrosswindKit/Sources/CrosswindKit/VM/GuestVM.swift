@@ -96,6 +96,7 @@ public final class GuestVM: NSObject {
         let boot = VZLinuxBootLoader(kernelURL: imageDirectory.appending(path: "Image"))
         boot.initialRamdiskURL = imageDirectory.appending(path: "initramfs")
         boot.commandLine = "console=hvc0 root=/dev/vda ro quiet"
+        if DebugMode.isEnabled { boot.commandLine += " crosswind.debug=1" }
 
         let config = VZVirtualMachineConfiguration()
         config.bootLoader = boot
@@ -120,7 +121,8 @@ public final class GuestVM: NSObject {
         try FileManager.default.createDirectory(at: Staging.root, withIntermediateDirectories: true)
         let shares = VZVirtioFileSystemDeviceConfiguration(tag: SharedFolders.mountTag)
         shares.share = ShareLayout.share(for: try SharedFolders.load(from: SharedFolders.defaultFile))
-        config.directorySharingDevices = [shares]
+        // The shared folders device stays first: `updateSharedFolders` addresses it by position.
+        config.directorySharingDevices = [shares] + [RosettaShare.device()].compactMap { $0 }
 
         let serial = VZVirtioConsoleDeviceSerialPortConfiguration()
         serial.attachment = VZFileHandleSerialPortAttachment(

@@ -9,7 +9,8 @@ DOMAIN="gui/$(id -u)"
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 
 built_products_dir() {
-    xcodebuild -project "$ROOT/Crosswind.xcodeproj" -scheme Crosswind -configuration Debug -showBuildSettings \
+    xcodebuild -project "$ROOT/Crosswind.xcodeproj" -scheme Crosswind -configuration Debug \
+        ${DERIVED_DATA:+-derivedDataPath "$DERIVED_DATA"} -showBuildSettings \
         | awk -F' = ' '/^ *BUILT_PRODUCTS_DIR = / { print $2; exit }'
 }
 
@@ -48,6 +49,11 @@ install() {
     <dict>
         <key>$LABEL</key>
         <true/>
+    </dict>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>CROSSWIND_DEBUG</key>
+        <string>1</string>
     </dict>
     <key>ProcessType</key>
     <string>Interactive</string>

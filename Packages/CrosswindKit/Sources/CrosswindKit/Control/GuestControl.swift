@@ -94,6 +94,20 @@ public actor GuestControl {
         try await expectOk(.launch(launch))
     }
 
+    /// Development only: runs a command in the guest. The guest refuses unless the agent runs with CROSSWIND_DEBUG=1.
+    public func debugExec(
+        argv: [String], timeoutSeconds: UInt32 = 0
+    ) async throws -> Crosswind_Control_DebugExecResult {
+        let request = Crosswind_Control_DebugExec.with {
+            $0.argv = argv
+            $0.timeoutSecs = timeoutSeconds
+        }
+        guard case .debugExec(let result) = try await call(.debugExec(request)) else {
+            throw GuestControlError.unexpectedResponse
+        }
+        return result
+    }
+
     public func stop(appID: String) async throws {
         try await expectOk(.stop(Crosswind_Control_Stop.with { $0.appID = appID }))
     }
@@ -235,8 +249,8 @@ public actor GuestControl {
             eventContinuation.yield(.appExited(exited))
         case .log(let line)?:
             eventContinuation.yield(.log(line))
-        case .clipboardChanged?:
-            break  // consumed by the agent's clipboard bridge
+        case .clipboardChanged?, .trayItemChanged?, .trayItemRemoved?:
+            break  // consumed by the agent (clipboard bridge, tray presenter)
         case nil:
             break
         }

@@ -46,16 +46,20 @@ struct DiagnosticsBufferTests {
                 appVersion: "0.1", macOSVersion: "Version 27.0", model: "Mac15,6", memoryBytes: 1 << 34,
                 generatedAt: Date(timeIntervalSince1970: 0)),
             agentState: AgentStateRecord(phase: "running", detail: "", runningApps: ["org.gnome.Calculator"]),
-            windows: [WindowRecord(
-                id: 3, appID: "org.gnome.Calculator", title: "Calculator for nandanvarma.me@gmail.com",
-                width: 800, height: 600, scale120: 240, frames: 1234, lastInputToFrameMs: 12.5)],
+            windows: [
+                WindowRecord(
+                    id: 3, appID: "org.gnome.Calculator", title: "Calculator for nandanvarma.me@gmail.com",
+                    width: 800, height: 600, scale120: 240, frames: 1234, lastInputToFrameMs: 12.5)
+            ],
             installed: nil,
-            guestLogs: [Crosswind_Control_LogLine.with {
-                $0.source = "crosswindd"
-                $0.level = 6
-                $0.launchID = "L1"
-                $0.text = "mount /Users/nandan/vm from 10.1.2.3"
-            }],
+            guestLogs: [
+                Crosswind_Control_LogLine.with {
+                    $0.source = "crosswindd"
+                    $0.level = 6
+                    $0.launchID = "L1"
+                    $0.text = "mount /Users/nandan/vm from 10.1.2.3"
+                }
+            ],
             hostLogs: [],
             reports: [ReportExcerpt(name: "CrosswindHost.ips", lines: ["Path: /Users/nandan/Crosswind"])],
             supportDirectoryBytes: 4096,
@@ -66,7 +70,7 @@ struct DiagnosticsBufferTests {
         #expect(!names.contains("installed-apps.json"))
         #expect(names.contains("diagnostic-reports/CrosswindHost.ips.txt"))
         for (name, data) in files {
-            let text = String(decoding: data, as: UTF8.self)
+            let text = String(bytes: data, encoding: .utf8) ?? ""
             #expect(!text.contains("/Users/nandan"), "\(name) leaks the home path")
             #expect(!text.contains("nandanvarma"), "\(name) leaks the email")
             #expect(!text.contains("10.1.2.3"), "\(name) leaks an address")

@@ -10,7 +10,9 @@ struct DiagnosticsRedactorTests {
 
     @Test("home directory and user name are replaced")
     func homeAndUser() {
-        #expect(redactor.redact("/Users/nandan/Library/Application Support/Crosswind") == "~/Library/Application Support/Crosswind")
+        #expect(
+            redactor.redact("/Users/nandan/Library/Application Support/Crosswind")
+                == "~/Library/Application Support/Crosswind")
         #expect(redactor.redact("owner nandan launched it") == "owner <user> launched it")
     }
 
@@ -53,8 +55,9 @@ struct DiagnosticsRedactorTests {
 
     @Test("URL query strings are dropped, the path is kept")
     func urlQuery() {
-        #expect(redactor.redact("GET https://flathub.org/api/v2/app?token=abc&x=1 ok")
-            == "GET https://flathub.org/api/v2/app?<redacted> ok")
+        #expect(
+            redactor.redact("GET https://flathub.org/api/v2/app?token=abc&x=1 ok")
+                == "GET https://flathub.org/api/v2/app?<redacted> ok")
         #expect(redactor.redact("https://flathub.org/apps") == "https://flathub.org/apps")
     }
 

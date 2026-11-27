@@ -128,7 +128,8 @@ public struct CatalogIndex: Sendable {
     private static func match(_ token: String, in entry: Entry) -> Match? {
         if entry.name == token { return .exactName }
         if entry.name.hasPrefix(token) { return .namePrefix }
-        let isWordOrKeywordMatch = entry.nameWords.contains { $0.hasPrefix(token) }
+        let isWordOrKeywordMatch =
+            entry.nameWords.contains { $0.hasPrefix(token) }
             || entry.keywords.contains { $0.hasPrefix(token) }
             || entry.id.contains(token)
         if isWordOrKeywordMatch { return .wordOrKeyword }

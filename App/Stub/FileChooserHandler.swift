@@ -100,6 +100,19 @@ final class FileChooserHandler {
         return paths.isEmpty ? cancelled : chosen(paths)
     }
 
+    /// Guest paths for files the user handed to the app from Finder (Dock drop, Open With). Unlike a file dialog, the
+    /// user has already chosen the files, so nothing is asked: a file in a granted folder is used in place and any
+    /// other is cloned into the staging directory (a snapshot the guest can read).
+    func guestPaths(forOpening urls: [URL]) async -> [String] {
+        stagedThisCall = false
+        let folders = currentFolders()
+        let paths = urls.compactMap { url in
+            folders.guestPath(forHostPath: url.path) ?? (try? cloneIntoStaging(url))
+        }
+        if stagedThisCall { await refreshShares?() }
+        return paths
+    }
+
     // MARK: Save
 
     private func save(_ request: Crosswind_Control_FileChooser) async -> Crosswind_Control_CallReply.OneOf_Result {

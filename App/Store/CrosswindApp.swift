@@ -34,7 +34,7 @@ struct CrosswindApp: App {
         }
         .defaultSize(width: 980, height: 640)
 
-        Settings { SettingsView(model: model) }
+        Settings { SettingsView(model: model, updater: updater) }
     }
 
     private static func makeModel() -> StoreModel {

@@ -29,7 +29,8 @@ public actor AgentClient {
         let states = AsyncStream<Crosswind_Agent_State>.makeStream(bufferingPolicy: .bufferingNewest(1))
         let display = AsyncStream<ToHost>.makeStream()
         let results = AsyncStream<Crosswind_Agent_CommandResult>.makeStream()
-        control = GuestControl(messages: guest.stream, send: { request in connection.send(.with { $0.request = request }) })
+        control = GuestControl(
+            messages: guest.stream, send: { request in connection.send(.with { $0.request = request }) })
         self.states = states.stream
         self.display = display.stream
 
@@ -64,12 +65,13 @@ public actor AgentClient {
         let id = nextID
         let result = try await withCheckedThrowingContinuation { continuation in
             pending[id] = continuation
-            connection.send(.with {
-                $0.command = .with {
-                    $0.id = id
-                    $0.body = body
-                }
-            })
+            connection.send(
+                .with {
+                    $0.command = .with {
+                        $0.id = id
+                        $0.body = body
+                    }
+                })
         }
         if !result.error.isEmpty { throw AgentCommandError.failed(result.error) }
         return result
