@@ -150,7 +150,10 @@ impl State {
         loop_handle
             .insert_source(Generic::new(display, Interest::READ, Mode::Level), |_, display, state| {
                 // Safety: the display is never dropped while the loop runs.
-                unsafe { display.get_mut().dispatch_clients(state).expect("dispatch") };
+                // A failing client must not take the compositor (and every other app's windows) down with it.
+                if let Err(e) = unsafe { display.get_mut().dispatch_clients(state) } {
+                    tracing::warn!("client dispatch failed: {e}");
+                }
                 Ok(PostAction::Continue)
             })
             .expect("display source");

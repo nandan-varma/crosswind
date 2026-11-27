@@ -134,3 +134,26 @@ private func tempDirectory() throws -> URL {
     sync.stop()
     Staging.removeSession(session)
 }
+
+@Test func dotDotCannotClimbOutOfAGrant() {
+    var folders = SharedFolders()
+    folders.add(path: "/Volumes/Work/Docs")
+    #expect(folders.guestPath(forHostPath: "/Volumes/Work/Docs/../Secrets/key.pem") == nil)
+    #expect(folders.guestPath(forHostPath: "/Volumes/Work/Docs/a/../b.txt") == "/mnt/mac/Docs/b.txt")
+}
+
+@Test func aSymlinkInsideAGrantThatLeavesItIsNotMappedIntoIt() throws {
+    let root = try tempDirectory()
+    defer { try? FileManager.default.removeItem(at: root) }
+    let shared = root.appending(path: "shared")
+    let secret = root.appending(path: "secret")
+    try FileManager.default.createDirectory(at: shared, withIntermediateDirectories: true)
+    try FileManager.default.createDirectory(at: secret, withIntermediateDirectories: true)
+    try "x".write(to: secret.appending(path: "key"), atomically: true, encoding: .utf8)
+    try FileManager.default.createSymbolicLink(at: shared.appending(path: "link"), withDestinationURL: secret)
+
+    var folders = SharedFolders()
+    folders.add(path: shared.path)
+    // The link's target is outside the grant, so the file is not treated as shared (the user is asked instead).
+    #expect(folders.guestPath(forHostPath: shared.appending(path: "link/key").path) == nil)
+}

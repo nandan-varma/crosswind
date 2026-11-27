@@ -45,14 +45,7 @@ extension AgentCore {
             send(message, toStubOfWindow: closed.id)
             windows.removeValue(forKey: closed.id)
         case .frame(let frame)?:
-            guard windows[frame.window] != nil else { return }
-            do {
-                try DisplayLimits.checkFrame(frame)
-            } catch {
-                return refuse(error, "frame for window \(frame.window)")
-            }
-            record(frame)
-            send(message, toStubOfWindow: frame.window)
+            route(frame: frame, message)
         case .cursor(let cursor)?:
             guard windows[cursor.window] != nil else { return }
             do {
@@ -106,6 +99,22 @@ extension AgentCore {
         windows.removeAll()
     }
 
+    /// A frame is checked against the display limits and the window's acknowledgement budget before it is forwarded.
+    private func route(frame: Crosswind_Display_Frame, _ message: ToHost) {
+        guard windows[frame.window] != nil else { return }
+        do {
+            try DisplayLimits.checkFrame(frame)
+        } catch {
+            return refuse(error, "frame for window \(frame.window)")
+        }
+        guard (windows[frame.window]?.unackedFrames ?? 0) < DisplayLimits.maxUnackedFrames else {
+            return refuse(DisplayLimits.Violation.framesNotAcknowledged(window: frame.window), "frame")
+        }
+        windows[frame.window]?.unackedFrames += 1
+        record(frame)
+        send(message, toStubOfWindow: frame.window)
+    }
+
     func record(_ frame: Crosswind_Display_Frame) {
         guard var record = windows[frame.window] else { return }
         record.frames += 1
@@ -138,6 +147,7 @@ extension AgentCore {
 
     /// Forwards input to the guest and starts the input-to-frame clock for the window.
     func send(_ input: ToGuest) {
+        if case .ack(let value)? = input.msg { windows[value.window]?.unackedFrames = 0 }
         if case .input(let value)? = input.msg, windows[value.window] != nil {
             if case .leave? = value.event {} else { windows[value.window]?.lastInput = .now }
         }

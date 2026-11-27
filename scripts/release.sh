@@ -120,8 +120,14 @@ if [ "$NOTARIZE" != 1 ]; then
     exit 0
 fi
 
+# Apple scans the build (asc talks to its servers); the ticket is then stapled so Gatekeeper accepts it offline.
 step "Notarizing and stapling the app"
-helpers sign notarize "$APP"
+APP_ZIP="$OUT/Crosswind-$VERSION-notarize.zip"
+rm -f "$APP_ZIP"
+ditto -c -k --keepParent "$APP" "$APP_ZIP"
+asc notarization submit --file "$APP_ZIP" --wait || die "notarization of the app was rejected (asc notarization log --id <id>)"
+rm -f "$APP_ZIP"
+asc notarization staple --file "$APP" --confirm
 
 step "Building the DMG"
 STAGE="$OUT/dmg-stage"
@@ -134,7 +140,8 @@ hdiutil create -format UDZO -volname Crosswind -srcfolder "$STAGE" -ov "$DMG"
 rm -rf "$STAGE"
 
 step "Notarizing and stapling the DMG"
-helpers sign notarize "$DMG"
+asc notarization submit --file "$DMG" --wait || die "notarization of the DMG was rejected (asc notarization log --id <id>)"
+asc notarization staple --file "$DMG" --confirm
 
 step "Verifying the release"
 helpers sign verify "$DMG"

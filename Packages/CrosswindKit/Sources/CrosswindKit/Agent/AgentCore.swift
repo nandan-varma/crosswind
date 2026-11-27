@@ -44,6 +44,8 @@ public final class AgentCore {
         var lastInput: ContinuousClock.Instant?
         var lastLatencyMs = 0.0
         var popupDepth = 0
+        /// Frames sent since the last acknowledgement from the stub.
+        var unackedFrames = 0
     }
 
     var windows: [UInt32: WindowRecord] = [:] {

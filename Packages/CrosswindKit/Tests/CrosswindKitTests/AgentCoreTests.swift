@@ -306,3 +306,33 @@ import Testing
         #expect(!StubCommandPolicy.allows(nil, appID: "org.example.A"))
     }
 }
+
+extension AgentCoreTests {
+    @Test func aGuestThatIgnoresAcknowledgementsIsThrottled() async throws {
+        let harness = AgentHarness()
+        let display = await harness.attachDisplay()
+        let stub = harness.connect(.stub, appID: "org.example.A")
+        display.send(.opened(1, flatpakID: "org.example.A"))
+        _ = await stub.nextDisplay()
+
+        for _ in 0..<(DisplayLimits.maxUnackedFrames + 6) { display.send(.frame(1)) }
+        display.send(.changed(1, title: "end"))  // messages are ordered, so this marks the end of the frames
+        var delivered = 0
+        while let message = await stub.nextDisplay(), message != ToHost.changed(1, title: "end") { delivered += 1 }
+        #expect(delivered == DisplayLimits.maxUnackedFrames)
+    }
+
+    @Test func anAcknowledgementLetsFramesThroughAgain() async throws {
+        let harness = AgentHarness()
+        let display = await harness.attachDisplay()
+        let stub = harness.connect(.stub, appID: "org.example.A")
+        display.send(.opened(1, flatpakID: "org.example.A"))
+        _ = await stub.nextDisplay()
+        for _ in 0..<DisplayLimits.maxUnackedFrames { display.send(.frame(1)) }
+        for _ in 0..<DisplayLimits.maxUnackedFrames { _ = await stub.nextDisplay() }
+
+        stub.send(display: .with { $0.ack = .with { $0.window = 1 } })
+        display.send(.frame(1))
+        #expect(await stub.nextDisplay() == ToHost.frame(1))
+    }
+}

@@ -38,8 +38,8 @@ NOTARIZE=0 make release      # signed app only: no notarization, no DMG
 3. `xcodebuild archive` (Release, scheme `Crosswind`, manual signing). It passes `RELEASE_SIGN="Developer ID Application"`, `ENABLE_HARDENED_RUNTIME=YES` and `OTHER_CODE_SIGN_FLAGS=--timestamp`.
 4. `xcodebuild -exportArchive` with `ExportOptions.plist` (method `developer-id`).
 5. Checks every signed binary (the app, `CrosswindHost`, `CrosswindAppStub`, `crosswindctl`, and Sparkle's `Sparkle` binary, `Autoupdate`, `Updater.app`, and the `Installer.xpc` and `Downloader.xpc` services): the Developer ID authority, the hardened runtime, a secure timestamp and no `get-task-allow`. It also checks `codesign --verify --deep --strict` on the app and `--strict` on `Sparkle.framework`, and that `CrosswindHost` has `com.apple.security.virtualization`.
-6. `helpers sign notarize` on the app (this also staples the ticket).
-7. Builds `build/release/Crosswind-<version>.dmg` with `hdiutil` (volume `Crosswind`, with an `/Applications` link), then notarizes and staples it.
+6. Notarizes the app: zips it with `ditto`, `asc notarization submit --wait`, then `asc notarization staple`.
+7. Builds `build/release/Crosswind-<version>.dmg` with `hdiutil` (volume `Crosswind`, with an `/Applications` link), then notarizes and staples it the same way.
 8. `helpers sign verify` on the DMG.
 
 Output goes to `build/release/`: the archive, the `export/` directory and the DMG. Nothing is committed or uploaded.

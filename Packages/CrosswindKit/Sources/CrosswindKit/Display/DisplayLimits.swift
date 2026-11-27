@@ -14,6 +14,9 @@ public enum DisplayLimits {
     public static let maxSurfacePixels: UInt64 = 64 << 20
     public static let scale120Range: ClosedRange<UInt32> = 60...960
     public static let maxDamageRectsPerFrame = 256
+    /// Frames the guest may have outstanding for one window. It sends the next frame only after the host presented the
+    /// last, so one is normal; a guest past this is ignoring the protocol and its frames are dropped.
+    public static let maxUnackedFrames = 4
     public static let maxCursorSide: UInt32 = 512
     public static let maxCursorNameBytes = 64
     public static let maxTitleBytes = 1024
@@ -38,6 +41,7 @@ public enum DisplayLimits {
         case unknownParent(UInt32)
         case parentFromOtherApp(UInt32)
         case popupTooDeep(Int)
+        case framesNotAcknowledged(window: UInt32)
 
         public var description: String {
             switch self {
@@ -55,6 +59,7 @@ public enum DisplayLimits {
             case .unknownParent(let id): "popup parent \(id) is not open"
             case .parentFromOtherApp(let id): "popup parent \(id) belongs to another app"
             case .popupTooDeep(let d): "popup depth \(d) exceeds limit"
+            case .framesNotAcknowledged(let id): "window \(id) sent frames without waiting for acknowledgements"
             }
         }
     }
