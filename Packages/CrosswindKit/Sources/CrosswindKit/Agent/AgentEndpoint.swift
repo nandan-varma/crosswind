@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import Foundation
-import os
 @preconcurrency import XPC
+import os
 
 public enum AgentService {
     /// Mach service the host agent registers with launchd (see the LaunchAgent plist in the app bundle).
