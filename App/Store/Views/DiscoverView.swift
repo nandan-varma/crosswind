@@ -129,6 +129,7 @@ struct DiscoverView: View {
                 .scrollTargetLayout()
             }
             .scrollPosition(id: $heroID)
+            .onAppear { if heroID == nil { heroID = apps.first?.id } }
             .scrollTargetBehavior(.viewAligned)
             .scrollIndicators(.hidden)
             if apps.count > 1 {
