@@ -20,8 +20,12 @@ First public beta (0.1.0).
   native Open and Save dialogs, shared folders, audio output, keyboard layouts and input methods.
 - Drag and drop between Mac and Linux apps: text and files, both ways. Dropped Mac files are shared like files opened
   from Finder; a Linux drag that leaves the app's windows becomes a Mac drag (text, and files inside shared folders).
-- Tray icons appear in the menu bar and clicks reach the app. Apps can ask to be raised.
+- Tray icons appear in the menu bar, show the app's own menu as a native menu, and clicks reach the app. Apps can ask to be raised.
 - Window title bars take the color of the app's own header bar.
+
+### Errors
+- Failures say what happened and what to do (offline, disk full, app missing), a stopped Linux environment is restarted
+  and the operation repeated once, and a Mac app that fails to start offers Try Again.
 
 ### Environment
 - A small Linux VM (Virtualization.framework) that starts on demand, gives memory back when idle and stops after a

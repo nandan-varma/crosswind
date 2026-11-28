@@ -9,6 +9,8 @@ public struct AppOperation: Sendable, Equatable {
     public var fraction: Double
     public var detail: String
     public var failure: String?
+    /// What kind of failure `failure` describes, so the UI can offer the matching way out.
+    public var failureKind = Failure.Kind.other
 }
 
 /// Everything the store UI shows and does. One instance per store window; it owns the connection to the agent.
@@ -210,9 +212,14 @@ public final class StoreModel {
         do {
             try await opener(try await ensureStub(appID))
         } catch {
-            operations[appID] = AppOperation(
-                kind: .install, fraction: 0, detail: "", failure: error.localizedDescription)
+            fail(appID, .install, error)
         }
+    }
+
+    private func fail(_ appID: String, _ kind: AppOperation.Kind, _ error: Error) {
+        let failure = Failure(error)
+        operations[appID] = AppOperation(
+            kind: kind, fraction: 0, detail: "", failure: failure.message, failureKind: failure.kind)
     }
 
     /// The app's Mac wrapper (Dock tile, Spotlight and Open With entry), made when it is missing.
@@ -249,20 +256,30 @@ public final class StoreModel {
     private func run(
         _ appID: String, _ kind: AppOperation.Kind, _ start: (GuestControl) async throws -> OperationHandle
     ) async {
-        guard let control = agent?.control else { return }
         operations[appID] = AppOperation(kind: kind, fraction: 0, detail: "")
-        do {
-            let handle = try await start(control)
-            Task { [weak self] in
-                for await progress in handle.progress {
-                    self?.operations[appID]?.fraction = Double(progress.percent) / 100
-                    self?.operations[appID]?.detail = progress.detail
+        var restarted = false
+        while true {
+            guard let control = agent?.control else { return }
+            do {
+                let handle = try await start(control)
+                Task { [weak self] in
+                    for await progress in handle.progress {
+                        self?.operations[appID]?.fraction = Double(progress.percent) / 100
+                        self?.operations[appID]?.detail = progress.detail
+                    }
                 }
+                try await handle.result()
+                operations[appID] = nil
+            } catch {
+                // The environment stopping under a running operation is recoverable: start it again, once, and repeat.
+                if Failure(error).retriesAutomatically, !restarted, (try? await restartEnvironment()) != nil {
+                    restarted = true
+                    operations[appID] = AppOperation(kind: kind, fraction: 0, detail: "")
+                    continue
+                }
+                fail(appID, kind, error)
             }
-            try await handle.result()
-            operations[appID] = nil
-        } catch {
-            operations[appID] = AppOperation(kind: kind, fraction: 0, detail: "", failure: error.localizedDescription)
+            break
         }
         await refreshInstalled()
     }

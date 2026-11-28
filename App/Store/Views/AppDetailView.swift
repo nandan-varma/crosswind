@@ -108,10 +108,12 @@ struct AppDetailView: View {
                         .textSelection(.enabled)
                 }
                 Spacer(minLength: 12)
-                Button("Retry") {
-                    Task { await retry(app.id, operation) }
+                if operation.failureKind != .notFound {
+                    Button("Retry") {
+                        Task { await retry(app.id, operation) }
+                    }
+                    .buttonStyle(.borderedProminent)
                 }
-                .buttonStyle(.borderedProminent)
                 Button("Dismiss") {
                     model.clearFailure(app.id)
                 }

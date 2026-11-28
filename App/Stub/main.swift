@@ -31,16 +31,15 @@ final class StubDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        start()
+    }
+
+    /// Connects to the agent and launches the app. A failure offers to try again (the agent or the environment may
+    /// simply not have been ready) instead of only quitting.
+    private func start() {
         Task {
             do {
-                let client = try await AgentClient.connect(role: .stub, appID: appID)
-                self.client = client
-                fileChooser.refreshShares = { _ = try? await client.command(.refreshShares(.init())) }
-                server = DisplayServer(
-                    messages: client.display, send: { message in Task { await client.send(display: message) } })
-                server?.resolveDroppedFiles = { [fileChooser] urls in await fileChooser.arguments(forOpening: urls) }
-                watchForExit(client)
-                answerCalls(client)
+                let client = try await connection()
                 let args = await fileChooser.arguments(forOpening: pendingURLs)
                 pendingURLs = []
                 started = true
@@ -54,6 +53,20 @@ final class StubDelegate: NSObject, NSApplicationDelegate {
                 present(error)
             }
         }
+    }
+
+    /// The agent connection, made on the first call and kept for the retries after it.
+    private func connection() async throws -> AgentClient {
+        if let client { return client }
+        let client = try await AgentClient.connect(role: .stub, appID: appID)
+        self.client = client
+        fileChooser.refreshShares = { _ = try? await client.command(.refreshShares(.init())) }
+        server = DisplayServer(
+            messages: client.display, send: { message in Task { await client.send(display: message) } })
+        server?.resolveDroppedFiles = { [fileChooser] urls in await fileChooser.arguments(forOpening: urls) }
+        watchForExit(client)
+        answerCalls(client)
+        return client
     }
 
     /// Files and links opened with this app: on its command line when it starts, else passed to the running app
@@ -142,9 +155,14 @@ final class StubDelegate: NSObject, NSApplicationDelegate {
         let alert = NSAlert()
         let name = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? appID
         alert.messageText = String(localized: "Couldn't start \(name)")
-        alert.informativeText = error.localizedDescription
-        alert.runModal()
-        NSApp.terminate(nil)
+        alert.informativeText = Failure(error).message
+        alert.addButton(withTitle: String(localized: "Try Again"))
+        alert.addButton(withTitle: String(localized: "Quit"))
+        if alert.runModal() == .alertFirstButtonReturn {
+            start()
+        } else {
+            NSApp.terminate(nil)
+        }
     }
 }
 

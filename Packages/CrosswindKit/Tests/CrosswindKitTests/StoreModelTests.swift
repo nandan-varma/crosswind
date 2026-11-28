@@ -193,3 +193,29 @@ struct StoreModelQueryTests {
         #expect(model.updatableApps == [Self.jan, Self.darktable])
     }
 }
+
+@Suite("Failures")
+struct FailureTests {
+    @Test("Flatpak's own wording becomes advice the user can act on")
+    func guestMessagesAreClassified() {
+        let cases: [(String, Failure.Kind)] = [
+            ("error: Failed to install org.x.App: No space left on device", .diskFull),
+            ("error: Unable to load summary from remote flathub: Could not resolve host", .offline),
+            ("error: Operation timed out", .offline),
+            ("error: No remote refs found for 'org.nope.App'", .notFound),
+            ("error: something nobody has seen", .other),
+        ]
+        for (text, kind) in cases {
+            #expect(Failure(GuestControlError.remote(text)).kind == kind, Comment(rawValue: text))
+        }
+        #expect(Failure(GuestControlError.remote("error: something nobody has seen")).message.contains("nobody"))
+    }
+
+    @Test("A stopped environment is retried by the store, anything else is not")
+    func onlyAStoppedEnvironmentRetriesByItself() {
+        #expect(Failure(GuestControlError.disconnected).retriesAutomatically)
+        #expect(Failure(AgentCommandError.disconnected).retriesAutomatically)
+        #expect(!Failure(GuestControlError.remote("No space left on device")).retriesAutomatically)
+        #expect(!Failure(GuestControlError.cancelled).retriesAutomatically)
+    }
+}
