@@ -17,7 +17,7 @@ Status as of 2026-11-26. Open work is tracked as GitHub issues (https://github.c
 - X11 windows are attributed to their Flatpak app through the X-Resource extension (issue 2).
 - Tray icons (issue 9): StatusNotifierWatcher in the guest, validated icons in the menu bar, clicks sent back. Verified with Telegram. dbusmenu menus show as native menus (layout parsing unit-tested; not yet seen live because no installed app registered a menu).
 - Open files from Finder (issue 10), standard stub menus, xdg-activation (raise requests), Konsole/terminal apps, portal frontend fix, detached-launcher apps (issue 19).
-- Rosetta spike (issue 11): share, binfmt, `apply_extra` shim and x86_64 installs work; store integration and Electron stability remain.
+- Intel-only Flathub apps (issue 11): with Rosetta on, the store lists apps that have no arm64 build (marked as running through Rosetta), installs them and runs them. Verified with Zoom (opens, shows its sign-in). Electron apps can still crash (Slack renderer).
 - Website and docs (crosswind.nandan.fyi) in `site/`.
 - Drag and drop (issue 8): Mac to Linux (text, files via shared folders or staging) and Linux to Mac (text, files inside shared folders), verified with Kate.
 - IME caret (issue 4): crosswindd has its own text-input-v3, so the candidate window opens at the app's caret and password fields skip the input method. Dead keys verified in Kate.
@@ -27,7 +27,6 @@ Status as of 2026-11-26. Open work is tracked as GitHub issues (https://github.c
 
 ## Next (see issues)
 1. Human verification of what only a person at the screen can judge: clipboard, audio, notifications, dark mode, shared folders and file dialogs, window management (issues 5, 6, 7).
-3. x86 apps via Rosetta (issue 11).
 4. Battery baselines and CI for performance (issue 14): `scripts/perf.sh` records boot, latency and memory locally; hosted runners cannot run VMs.
 5. Release: notarization, DMG, appcast, hosted guest image, v0.1.0 (issue 13), after the public beta feature set is complete. Signing runs through `helpers sign` and `asc`.
 

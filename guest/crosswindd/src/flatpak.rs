@@ -21,6 +21,8 @@ pub const REMOTE: &str = "flathub";
 pub const ARCH: &str = "aarch64";
 /// The Intel architecture, run through Rosetta when the Mac shares it (see `rosetta_ready`).
 pub const X86_ARCH: &str = "x86_64";
+/// Where Flathub serves its repository.
+pub const FLATHUB_URL: &str = "https://dl.flathub.org/repo";
 pub const REPO_URL: &str = "https://dl.flathub.org/repo/flathub.flatpakrepo";
 /// OpenPGP fingerprint of the Flathub signing key. A `.flatpakrepo` carrying any other key is refused.
 pub const FLATHUB_KEY_FPR: &str = "6E5C05D979C76DAF93C081354184DD4D907A7CAE";
@@ -257,6 +259,17 @@ pub fn rosetta_ready() -> bool {
     Path::new("/proc/sys/fs/binfmt_misc/rosetta").exists()
 }
 
+/// Tells Flatpak to see the Intel builds (its `extra-arches` setting) exactly when Rosetta can run them. Without it
+/// the remote's x86_64 refs and AppStream data are invisible on an arm64 system.
+fn configure_arches(inst: &Installation) -> Result<(), String> {
+    let want = if rosetta_ready() { X86_ARCH } else { "" };
+    let current = inst.config("extra-arches", None::<&gio::Cancellable>).map(|c| c.to_string()).unwrap_or_default();
+    if current == want {
+        return Ok(());
+    }
+    inst.set_config_sync("extra-arches", want, None::<&gio::Cancellable>).map_err(s)
+}
+
 fn is_app(kind: RefKind) -> bool {
     kind == RefKind::App
 }
@@ -301,14 +314,45 @@ pub fn list_installed() -> Result<Vec<pb::InstalledApp>, String> {
 pub fn refresh_catalog() -> Result<(), String> {
     let inst = user_installation()?;
     ensure_remote(&inst)?;
+    configure_arches(&inst)?;
     inst.update_appstream_sync(REMOTE, Some(ARCH), None::<&gio::Cancellable>).map_err(s)?;
     // The Intel catalog only matters where Intel apps can run; a failure there must not fail the refresh.
     if rosetta_ready()
-        && let Err(e) = inst.update_appstream_sync(REMOTE, Some(X86_ARCH), None::<&gio::Cancellable>)
+        && let Err(e) = fetch_x86_catalog(&inst)
     {
         tracing::warn!("x86_64 catalog refresh failed: {e}");
     }
     Ok(())
+}
+
+/// Where the Intel catalog is kept: Flatpak itself will not fetch AppStream data for an architecture it does not
+/// run natively, so this one comes straight from Flathub.
+fn x86_catalog_path(inst: &Installation) -> Result<PathBuf, String> {
+    Ok(installation_dir(inst)?.join(format!("appstream/{REMOTE}/{X86_ARCH}/active/appstream.xml.gz")))
+}
+
+/// Downloads the Intel AppStream catalog over HTTPS. It is not signature-checked like the native one (Flatpak cannot
+/// do that for a foreign architecture); it only lists apps, and installing one still verifies the app's own commit.
+fn fetch_x86_catalog(inst: &Installation) -> Result<(), String> {
+    const MAX_BYTES: u64 = 64 << 20;
+    let path = x86_catalog_path(inst)?;
+    let dir = path.parent().ok_or("no catalog directory")?;
+    fs::create_dir_all(dir).map_err(s)?;
+    let part = dir.join("appstream.xml.gz.part");
+    let status = std::process::Command::new("curl")
+        .args(["-fsSL", "--max-time", "180", "--max-filesize", &MAX_BYTES.to_string(), "-o"])
+        .arg(&part)
+        .arg(format!("{FLATHUB_URL}/appstream/{X86_ARCH}/appstream.xml.gz"))
+        .status()
+        .map_err(s)?;
+    let mut magic = [0u8; 2];
+    let gzip = fs::File::open(&part).and_then(|mut f| io::Read::read_exact(&mut f, &mut magic)).is_ok()
+        && magic == [0x1f, 0x8b];
+    if !status.success() || !gzip {
+        let _ = fs::remove_file(&part);
+        return Err("download failed or was not a gzip file".into());
+    }
+    fs::rename(&part, &path).map_err(s)
 }
 
 /// The cached x86_64 AppStream catalog, or nothing when Rosetta is not ready or the catalog was never fetched.
@@ -317,8 +361,7 @@ pub fn read_x86_catalog() -> Vec<u8> {
         return Vec::new();
     }
     let Ok(inst) = user_installation() else { return Vec::new() };
-    let Ok(dir) = installation_dir(&inst) else { return Vec::new() };
-    fs::read(dir.join(format!("appstream/{REMOTE}/{X86_ARCH}/active/appstream.xml.gz"))).unwrap_or_default()
+    x86_catalog_path(&inst).and_then(|p| fs::read(p).map_err(s)).unwrap_or_default()
 }
 
 /// The cached Flathub AppStream catalog, gzip-compressed, as Flatpak wrote it.
@@ -364,18 +407,23 @@ pub fn list_running() -> Vec<pb::RunningApp> {
 /// Remote ref string (`app/<id>/<arch>/<branch>`) for an app on the Flathub remote.
 fn remote_ref(inst: &Installation, app_id: &str) -> Result<String, String> {
     let refs = inst.list_remote_refs_sync(REMOTE, None::<&gio::Cancellable>).map_err(s)?;
-    // The native build wins; an Intel build is used only when there is no native one and Rosetta can run it.
-    let arches = if rosetta_ready() { vec![ARCH, X86_ARCH] } else { vec![ARCH] };
-    for arch in arches {
-        let mut matches = refs
-            .iter()
-            .filter(|r| is_app(r.kind()) && r.name().as_deref() == Some(app_id) && r.arch().as_deref() == Some(arch));
-        let chosen = matches.clone().find(|r| r.branch().as_deref() == Some("stable")).or_else(|| matches.next());
-        if let Some(branch) = chosen.and_then(|r| r.branch()) {
-            return Ok(format!("app/{app_id}/{arch}/{branch}"));
-        }
+    let mut native = refs
+        .iter()
+        .filter(|r| is_app(r.kind()) && r.name().as_deref() == Some(app_id) && r.arch().as_deref() == Some(ARCH));
+    let chosen = native.clone().find(|r| r.branch().as_deref() == Some("stable")).or_else(|| native.next());
+    if let Some(branch) = chosen.and_then(|r| r.branch()) {
+        return Ok(format!("app/{app_id}/{ARCH}/{branch}"));
     }
     Err(format!("{app_id} not found on {REMOTE} for {ARCH}"))
+}
+
+/// Whether Flathub has a native build of the app.
+fn has_native_build(inst: &Installation, app_id: &str) -> Result<bool, String> {
+    Ok(inst
+        .list_remote_refs_sync(REMOTE, None::<&gio::Cancellable>)
+        .map_err(s)?
+        .iter()
+        .any(|r| is_app(r.kind()) && r.name().as_deref() == Some(app_id) && r.arch().as_deref() == Some(ARCH)))
 }
 
 /// The architecture an installed app was installed for; the native one when it is not installed.
@@ -427,14 +475,94 @@ fn attach_progress(tx: &Transaction, progress: impl Fn(Progress) + 'static) {
     });
 }
 
+/// The percent in a line of `flatpak` output such as `Installing… ████ 42%`, or nil.
+fn percent_in(line: &str) -> Option<u32> {
+    let end = line.rfind('%')?;
+    let digits: String = line[..end].chars().rev().take_while(char::is_ascii_digit).collect::<Vec<_>>().into_iter().rev().collect();
+    digits.parse::<u32>().ok().filter(|p| *p <= 100)
+}
+
+/// Runs the `flatpak` command line for an Intel app. libflatpak only looks at its own architecture's remote
+/// metadata, so these go through the command line, which can be told `--arch`. Progress comes from its output.
+fn run_cli(
+    args: &[&str],
+    detail: &str,
+    cancel: &gio::Cancellable,
+    progress: &impl Fn(Progress),
+) -> Result<(), String> {
+    use std::{process::Stdio, sync::mpsc, time::Duration};
+    let mut child = std::process::Command::new("sh")
+        .args(["-c", "exec flatpak \"$@\" 2>&1", "flatpak", "--user"])
+        .args(args)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .spawn()
+        .map_err(s)?;
+    let out = child.stdout.take().ok_or("no output")?;
+    let (tx, rx) = mpsc::channel::<String>();
+    std::thread::spawn(move || {
+        use io::Read;
+        let mut line = Vec::new();
+        for byte in io::BufReader::new(out).bytes().map_while(Result::ok) {
+            // Progress bars redraw with carriage returns, so both end a line.
+            if byte == b'\n' || byte == b'\r' {
+                if !line.is_empty() && tx.send(String::from_utf8_lossy(&line).into_owned()).is_err() {
+                    return;
+                }
+                line.clear();
+            } else if line.len() < 4096 {
+                line.push(byte);
+            }
+        }
+    });
+    let mut tail: Vec<String> = Vec::new();
+    loop {
+        if cancel.is_cancelled() {
+            let _ = child.kill();
+            let _ = child.wait();
+            return Err("cancelled".into());
+        }
+        match rx.recv_timeout(Duration::from_millis(200)) {
+            Ok(line) => {
+                if let Some(percent) = percent_in(&line) {
+                    progress(Progress { phase: "install", detail: detail.to_owned(), percent, bytes_transferred: 0, bytes_total: 0 });
+                }
+                tail.push(line);
+                if tail.len() > 8 {
+                    tail.remove(0);
+                }
+            }
+            Err(mpsc::RecvTimeoutError::Timeout) => {}
+            Err(mpsc::RecvTimeoutError::Disconnected) => break,
+        }
+    }
+    let status = child.wait().map_err(s)?;
+    if status.success() { Ok(()) } else { Err(tail.iter().rev().find(|l| l.contains("rror")).or(tail.last()).cloned().unwrap_or_else(|| "flatpak failed".into())) }
+}
+
 /// Runs one install, uninstall or update to completion or cancellation. Blocking.
 pub fn run_op(op: &Op, cancel: &gio::Cancellable, progress: impl Fn(Progress) + 'static) -> Outcome {
+    let progress = Rc::new(progress);
     let result = (|| -> Result<(), String> {
         let inst = user_installation()?;
         ensure_remote(&inst)?;
+        configure_arches(&inst)?;
+        // Apps Flathub builds only for Intel go through Rosetta, by the command line (see `run_cli`).
+        if let Op::Install(app_id) = op
+            && rosetta_ready()
+            && !has_native_build(&inst, app_id)?
+        {
+            return run_cli(
+                &["install", "-y", "--noninteractive", "--arch", X86_ARCH, REMOTE, app_id],
+                app_id,
+                cancel,
+                &*progress,
+            );
+        }
         let tx = Transaction::for_installation(&inst, None::<&gio::Cancellable>).map_err(s)?;
         tx.set_no_interaction(true);
         tx.add_default_dependency_sources();
+        let mut intel_updates: Vec<String> = Vec::new();
         match op {
             Op::Install(app_id) => {
                 let r = remote_ref(&inst, app_id)?;
@@ -447,14 +575,24 @@ pub fn run_op(op: &Op, cancel: &gio::Cancellable, progress: impl Fn(Progress) + 
             Op::Update(app_id) => {
                 for r in inst.list_installed_refs_for_update(None::<&gio::Cancellable>).map_err(s)? {
                     if app_id.is_empty() || r.name().as_deref() == Some(app_id.as_str()) {
+                        if r.arch().as_deref() == Some(X86_ARCH) {
+                            intel_updates.extend(r.name().map(|n| n.to_string()));
+                            continue;
+                        }
                         let rs = r.format_ref().ok_or("no ref")?;
                         tx.add_update(&rs, &[], None).map_err(s)?;
                     }
                 }
             }
         }
-        attach_progress(&tx, progress);
-        tx.run(Some(cancel)).map_err(s)?;
+        if !tx.operations().is_empty() || intel_updates.is_empty() {
+            let shared = progress.clone();
+            attach_progress(&tx, move |p| shared(p));
+            tx.run(Some(cancel)).map_err(s)?;
+        }
+        for app in &intel_updates {
+            run_cli(&["update", "-y", "--noninteractive", "--arch", X86_ARCH, app], app, cancel, &*progress)?;
+        }
         if let Op::Uninstall { app_id, delete_data: true } = op {
             let data = PathBuf::from(std::env::var("HOME").map_err(s)?).join(".var/app").join(app_id);
             match fs::remove_dir_all(&data) {
@@ -494,6 +632,15 @@ mod tests {
             field_mut(&mut p, key).sort();
         }
         p
+    }
+
+    #[test]
+    fn percent_is_read_from_progress_lines() {
+        assert_eq!(percent_in("Installing… ████████        42%  1.2 MB/s"), Some(42));
+        assert_eq!(percent_in("Installing… 100%"), Some(100));
+        assert_eq!(percent_in("no number %"), None);
+        assert_eq!(percent_in("Installing 250%"), None);
+        assert_eq!(percent_in("plain line"), None);
     }
 
     #[test]
