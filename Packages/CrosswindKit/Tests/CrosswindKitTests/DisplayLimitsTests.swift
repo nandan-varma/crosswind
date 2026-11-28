@@ -231,3 +231,28 @@ struct RectCodecTests {
         }
     }
 }
+
+@Test func dragDataIsBoundedAndConfinedToTheMacShare() throws {
+    try DisplayLimits.checkDragStarted(
+        .with {
+            $0.uris = ["file:///mnt/mac/Docs/a%20b.txt"]
+            $0.text = "hi"
+        })
+    #expect(throws: DisplayLimits.Violation.self) {
+        try DisplayLimits.checkDragStarted(.with { $0.uris = ["file:///etc/passwd"] })
+    }
+    #expect(throws: DisplayLimits.Violation.self) {
+        try DisplayLimits.checkDragStarted(.with { $0.uris = ["file:///mnt/mac/Docs/%2E%2E/x"] })
+    }
+    #expect(throws: DisplayLimits.Violation.self) {
+        try DisplayLimits.checkDragStarted(
+            .with { $0.text = String(repeating: "a", count: DisplayLimits.maxDragTextBytes + 1) })
+    }
+    #expect(throws: DisplayLimits.Violation.self) {
+        try DisplayLimits.checkDragDrop(
+            .with { $0.paths = Array(repeating: "/mnt/mac/a", count: DisplayLimits.maxDragFiles + 1) })
+    }
+    #expect(throws: DisplayLimits.Violation.self) {
+        try DisplayLimits.checkDragDrop(.with { $0.paths = ["/mnt/mac/../etc"] })
+    }
+}

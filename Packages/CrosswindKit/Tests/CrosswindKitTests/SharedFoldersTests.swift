@@ -169,3 +169,14 @@ private func tempDirectory() throws -> URL {
     // The link's target is outside the grant, so the file is not treated as shared (the user is asked instead).
     #expect(folders.guestPath(forHostPath: shared.appending(path: "link/key").path) == nil)
 }
+
+@Test func guestPathsMapBackOnlyInsideGrants() throws {
+    let folders = SharedFolders(folders: [SharedFolder(name: "Docs", path: "/Users/me/Documents", readOnly: false)])
+    #expect(folders.hostPath(forGuestPath: "/mnt/mac/Docs/a/b.txt") == "/Users/me/Documents/a/b.txt")
+    #expect(folders.hostPath(forGuestPath: "/mnt/mac/Docs") == "/Users/me/Documents")
+    #expect(folders.hostPath(forGuestPath: "/mnt/mac/Docs/../x") == nil)
+    #expect(folders.hostPath(forGuestPath: "/mnt/mac/staging/abc/f.txt") == nil)
+    #expect(folders.hostPath(forGuestPath: "/mnt/mac/Other/f") == nil)
+    #expect(folders.hostPath(forGuestPath: "/etc/passwd") == nil)
+    #expect(folders.hostPath(forGuestPath: "/mnt/mac/Docs/a\nb") == nil)
+}

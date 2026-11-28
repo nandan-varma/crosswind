@@ -57,9 +57,24 @@ extension AgentCore {
         case .textInputState(let state)?:
             guard windows[state.window] != nil else { return }
             send(message, toStubOfWindow: state.window)
+        case .dragStarted(let drag)?:
+            route(drag: drag, message)
+        case .dragStatus(let status)?:
+            guard windows[status.window] != nil else { return }
+            send(message, toStubOfWindow: status.window)
         case nil:
             break
         }
+    }
+
+    private func route(drag: Crosswind_Display_DragStarted, _ message: ToHost) {
+        guard windows[drag.window] != nil else { return }
+        do {
+            try DisplayLimits.checkDragStarted(drag)
+        } catch {
+            return refuse(error, "drag for window \(drag.window)")
+        }
+        send(message, toStubOfWindow: drag.window)
     }
 
     /// Input and acknowledgements are host messages; this only keeps them well-formed for the guest.
@@ -72,6 +87,12 @@ extension AgentCore {
             // Composition results are small; a stub cannot push megabytes of text through the IME path.
             let bytes = text.commit.text.utf8.count + text.preedit.text.utf8.count
             return bytes <= TextInputState.maxBytes
+        case .dragEnter(let drag)?:
+            return drag.x.isFinite && drag.y.isFinite
+        case .dragMotion(let drag)?:
+            return drag.x.isFinite && drag.y.isFinite
+        case .dragDrop(let drop)?:
+            return (try? DisplayLimits.checkDragDrop(drop)) != nil
         default:
             return true
         }
@@ -161,6 +182,11 @@ extension AgentCore {
         case .input(let value)?: value.window
         case .close(let value)?: value.window
         case .textInput(let value)?: value.window
+        case .dragEnter(let value)?: value.window
+        case .dragMotion(let value)?: value.window
+        case .dragLeave(let value)?: value.window
+        case .dragDrop(let value)?: value.window
+        case .dragCancel(let value)?: value.window
         case .output?, .keyboardLayout?, nil: 0
         }
     }

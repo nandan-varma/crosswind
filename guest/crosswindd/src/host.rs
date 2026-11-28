@@ -57,6 +57,11 @@ impl State {
             Msg::Input(i) => self.input(i),
             Msg::KeyboardLayout(l) => self.set_keyboard_layout(l),
             Msg::TextInput(t) => self.text_input(t),
+            Msg::DragEnter(e) => self.drag_enter(e),
+            Msg::DragMotion(m) => self.drag_motion(m),
+            Msg::DragLeave(l) => self.drag_cancel(l.window),
+            Msg::DragDrop(d) => self.drag_drop(d),
+            Msg::DragCancel(c) => self.drag_cancel(c.window),
         }
     }
 
@@ -172,7 +177,7 @@ impl State {
         text_input.done(false);
     }
 
-    fn input(&mut self, input: pb::Input) {
+    pub fn input(&mut self, input: pb::Input) {
         tracing::debug!(?input, "input");
         let Some(win) = self.windows.iter().find(|w| w.id == input.window) else { return };
         let surface = win.surface.clone();

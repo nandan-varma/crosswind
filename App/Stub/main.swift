@@ -38,6 +38,7 @@ final class StubDelegate: NSObject, NSApplicationDelegate {
                 fileChooser.refreshShares = { _ = try? await client.command(.refreshShares(.init())) }
                 server = DisplayServer(
                     messages: client.display, send: { message in Task { await client.send(display: message) } })
+                server?.resolveDroppedFiles = { [fileChooser] urls in await fileChooser.arguments(forOpening: urls) }
                 watchForExit(client)
                 answerCalls(client)
                 let args = await fileChooser.arguments(forOpening: pendingURLs)

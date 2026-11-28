@@ -17,7 +17,24 @@ message ToHost {
     Frame frame = 4;
     Cursor cursor = 5;
     TextInputState text_input_state = 6;
+    DragStarted drag_started = 7;
+    DragStatus drag_status = 8;
   }
+}
+
+// A guest app started dragging (wl_data_device.start_drag). The guest has already read the text and file list when
+// the app offered them, so the host can start a native drag without a round trip. `window` is the window the drag
+// began in. Files are guest paths; the host only offers those inside a shared folder.
+message DragStarted {
+  uint32 window = 1;
+  string text = 2;           // text/plain, at most 1 MiB; empty when the app offers none
+  repeated string uris = 3;  // text/uri-list entries (file:// URIs), at most 256
+}
+
+// Whether the guest app under the pointer accepts the data of the host drag over `window` (drives the drop cursor).
+message DragStatus {
+  uint32 window = 1;
+  bool accepted = 2;
 }
 
 // The client of `window` enabled (true) or disabled (false) text input (zwp_text_input_v3). While enabled, the
@@ -111,7 +128,44 @@ message ToGuest {
     Output output = 5;
     KeyboardLayout keyboard_layout = 6;
     TextInput text_input = 7;
+    DragEnter drag_enter = 8;
+    DragMotion drag_motion = 9;
+    DragLeave drag_leave = 10;
+    DragDrop drag_drop = 11;
+    DragCancel drag_cancel = 12;
   }
+}
+
+// A drag from the Mac entered `window`. Only the types are known now; the data follows with `DragDrop`.
+message DragEnter {
+  uint32 window = 1;
+  double x = 2;  // logical points, window-local
+  double y = 3;
+  bool offers_text = 4;
+  bool offers_files = 5;
+}
+
+message DragMotion {
+  uint32 window = 1;
+  double x = 2;
+  double y = 3;
+}
+
+// The drag left the window without dropping.
+message DragLeave {
+  uint32 window = 1;
+}
+
+// The user dropped. Files are guest paths (shared folder or staging); the host resolved them before sending.
+message DragDrop {
+  uint32 window = 1;
+  string text = 2;
+  repeated string paths = 3;
+}
+
+// The host took over a drag that began in the guest (it left the app's windows): the guest ends its own drag.
+message DragCancel {
+  uint32 window = 1;
 }
 
 // Result of host-side composition for the focused text input of `window`. Applied in the order delete_surrounding,

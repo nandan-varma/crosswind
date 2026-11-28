@@ -120,6 +120,22 @@ public nonisolated struct Crosswind_Display_ToHost: Sendable {
     set {msg = .textInputState(newValue)}
   }
 
+  public var dragStarted: Crosswind_Display_DragStarted {
+    get {
+      if case .dragStarted(let v)? = msg {return v}
+      return Crosswind_Display_DragStarted()
+    }
+    set {msg = .dragStarted(newValue)}
+  }
+
+  public var dragStatus: Crosswind_Display_DragStatus {
+    get {
+      if case .dragStatus(let v)? = msg {return v}
+      return Crosswind_Display_DragStatus()
+    }
+    set {msg = .dragStatus(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public nonisolated enum OneOf_Msg: Equatable, Sendable {
@@ -129,8 +145,46 @@ public nonisolated struct Crosswind_Display_ToHost: Sendable {
     case frame(Crosswind_Display_Frame)
     case cursor(Crosswind_Display_Cursor)
     case textInputState(Crosswind_Display_TextInputState)
+    case dragStarted(Crosswind_Display_DragStarted)
+    case dragStatus(Crosswind_Display_DragStatus)
 
   }
+
+  public init() {}
+}
+
+/// A guest app started dragging (wl_data_device.start_drag). The guest has already read the text and file list when
+/// the app offered them, so the host can start a native drag without a round trip. `window` is the window the drag
+/// began in. Files are guest paths; the host only offers those inside a shared folder.
+public nonisolated struct Crosswind_Display_DragStarted: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var window: UInt32 = 0
+
+  /// text/plain, at most 1 MiB; empty when the app offers none
+  public var text: String = String()
+
+  /// text/uri-list entries (file:// URIs), at most 256
+  public var uris: [String] = []
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+/// Whether the guest app under the pointer accepts the data of the host drag over `window` (drives the drop cursor).
+public nonisolated struct Crosswind_Display_DragStatus: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var window: UInt32 = 0
+
+  public var accepted: Bool = false
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 }
@@ -450,6 +504,46 @@ public nonisolated struct Crosswind_Display_ToGuest: Sendable {
     set {msg = .textInput(newValue)}
   }
 
+  public var dragEnter: Crosswind_Display_DragEnter {
+    get {
+      if case .dragEnter(let v)? = msg {return v}
+      return Crosswind_Display_DragEnter()
+    }
+    set {msg = .dragEnter(newValue)}
+  }
+
+  public var dragMotion: Crosswind_Display_DragMotion {
+    get {
+      if case .dragMotion(let v)? = msg {return v}
+      return Crosswind_Display_DragMotion()
+    }
+    set {msg = .dragMotion(newValue)}
+  }
+
+  public var dragLeave: Crosswind_Display_DragLeave {
+    get {
+      if case .dragLeave(let v)? = msg {return v}
+      return Crosswind_Display_DragLeave()
+    }
+    set {msg = .dragLeave(newValue)}
+  }
+
+  public var dragDrop: Crosswind_Display_DragDrop {
+    get {
+      if case .dragDrop(let v)? = msg {return v}
+      return Crosswind_Display_DragDrop()
+    }
+    set {msg = .dragDrop(newValue)}
+  }
+
+  public var dragCancel: Crosswind_Display_DragCancel {
+    get {
+      if case .dragCancel(let v)? = msg {return v}
+      return Crosswind_Display_DragCancel()
+    }
+    set {msg = .dragCancel(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public nonisolated enum OneOf_Msg: Equatable, Sendable {
@@ -460,8 +554,94 @@ public nonisolated struct Crosswind_Display_ToGuest: Sendable {
     case output(Crosswind_Display_Output)
     case keyboardLayout(Crosswind_Display_KeyboardLayout)
     case textInput(Crosswind_Display_TextInput)
+    case dragEnter(Crosswind_Display_DragEnter)
+    case dragMotion(Crosswind_Display_DragMotion)
+    case dragLeave(Crosswind_Display_DragLeave)
+    case dragDrop(Crosswind_Display_DragDrop)
+    case dragCancel(Crosswind_Display_DragCancel)
 
   }
+
+  public init() {}
+}
+
+/// A drag from the Mac entered `window`. Only the types are known now; the data follows with `DragDrop`.
+public nonisolated struct Crosswind_Display_DragEnter: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var window: UInt32 = 0
+
+  /// logical points, window-local
+  public var x: Double = 0
+
+  public var y: Double = 0
+
+  public var offersText: Bool = false
+
+  public var offersFiles: Bool = false
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public nonisolated struct Crosswind_Display_DragMotion: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var window: UInt32 = 0
+
+  public var x: Double = 0
+
+  public var y: Double = 0
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+/// The drag left the window without dropping.
+public nonisolated struct Crosswind_Display_DragLeave: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var window: UInt32 = 0
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+/// The user dropped. Files are guest paths (shared folder or staging); the host resolved them before sending.
+public nonisolated struct Crosswind_Display_DragDrop: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var window: UInt32 = 0
+
+  public var text: String = String()
+
+  public var paths: [String] = []
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+/// The host took over a drag that began in the guest (it left the app's windows): the guest ends its own drag.
+public nonisolated struct Crosswind_Display_DragCancel: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var window: UInt32 = 0
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 }
@@ -799,7 +979,7 @@ nonisolated extension Crosswind_Display_WindowKind: SwiftProtobuf._ProtoNameProv
 
 nonisolated extension Crosswind_Display_ToHost: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".ToHost"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}opened\0\u{1}changed\0\u{1}closed\0\u{1}frame\0\u{1}cursor\0\u{3}text_input_state\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}opened\0\u{1}changed\0\u{1}closed\0\u{1}frame\0\u{1}cursor\0\u{3}text_input_state\0\u{3}drag_started\0\u{3}drag_status\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -885,6 +1065,32 @@ nonisolated extension Crosswind_Display_ToHost: SwiftProtobuf.Message, SwiftProt
           self.msg = .textInputState(v)
         }
       }()
+      case 7: try {
+        var v: Crosswind_Display_DragStarted?
+        var hadOneofValue = false
+        if let current = self.msg {
+          hadOneofValue = true
+          if case .dragStarted(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.msg = .dragStarted(v)
+        }
+      }()
+      case 8: try {
+        var v: Crosswind_Display_DragStatus?
+        var hadOneofValue = false
+        if let current = self.msg {
+          hadOneofValue = true
+          if case .dragStatus(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.msg = .dragStatus(v)
+        }
+      }()
       default: break
       }
     }
@@ -920,6 +1126,14 @@ nonisolated extension Crosswind_Display_ToHost: SwiftProtobuf.Message, SwiftProt
       guard case .textInputState(let v)? = self.msg else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 6)
     }()
+    case .dragStarted?: try {
+      guard case .dragStarted(let v)? = self.msg else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 7)
+    }()
+    case .dragStatus?: try {
+      guard case .dragStatus(let v)? = self.msg else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 8)
+    }()
     case nil: break
     }
     try unknownFields.traverse(visitor: &visitor)
@@ -927,6 +1141,81 @@ nonisolated extension Crosswind_Display_ToHost: SwiftProtobuf.Message, SwiftProt
 
   public static func ==(lhs: Crosswind_Display_ToHost, rhs: Crosswind_Display_ToHost) -> Bool {
     if lhs.msg != rhs.msg {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Crosswind_Display_DragStarted: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".DragStarted"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}window\0\u{1}text\0\u{1}uris\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularUInt32Field(value: &self.window) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.text) }()
+      case 3: try { try decoder.decodeRepeatedStringField(value: &self.uris) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.window != 0 {
+      try visitor.visitSingularUInt32Field(value: self.window, fieldNumber: 1)
+    }
+    if !self.text.isEmpty {
+      try visitor.visitSingularStringField(value: self.text, fieldNumber: 2)
+    }
+    if !self.uris.isEmpty {
+      try visitor.visitRepeatedStringField(value: self.uris, fieldNumber: 3)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Crosswind_Display_DragStarted, rhs: Crosswind_Display_DragStarted) -> Bool {
+    if lhs.window != rhs.window {return false}
+    if lhs.text != rhs.text {return false}
+    if lhs.uris != rhs.uris {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Crosswind_Display_DragStatus: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".DragStatus"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}window\0\u{1}accepted\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularUInt32Field(value: &self.window) }()
+      case 2: try { try decoder.decodeSingularBoolField(value: &self.accepted) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.window != 0 {
+      try visitor.visitSingularUInt32Field(value: self.window, fieldNumber: 1)
+    }
+    if self.accepted != false {
+      try visitor.visitSingularBoolField(value: self.accepted, fieldNumber: 2)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Crosswind_Display_DragStatus, rhs: Crosswind_Display_DragStatus) -> Bool {
+    if lhs.window != rhs.window {return false}
+    if lhs.accepted != rhs.accepted {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -1338,7 +1627,7 @@ nonisolated extension Crosswind_Display_Cursor: SwiftProtobuf.Message, SwiftProt
 
 nonisolated extension Crosswind_Display_ToGuest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".ToGuest"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}configure\0\u{1}ack\0\u{1}input\0\u{1}close\0\u{1}output\0\u{3}keyboard_layout\0\u{3}text_input\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}configure\0\u{1}ack\0\u{1}input\0\u{1}close\0\u{1}output\0\u{3}keyboard_layout\0\u{3}text_input\0\u{3}drag_enter\0\u{3}drag_motion\0\u{3}drag_leave\0\u{3}drag_drop\0\u{3}drag_cancel\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1437,6 +1726,71 @@ nonisolated extension Crosswind_Display_ToGuest: SwiftProtobuf.Message, SwiftPro
           self.msg = .textInput(v)
         }
       }()
+      case 8: try {
+        var v: Crosswind_Display_DragEnter?
+        var hadOneofValue = false
+        if let current = self.msg {
+          hadOneofValue = true
+          if case .dragEnter(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.msg = .dragEnter(v)
+        }
+      }()
+      case 9: try {
+        var v: Crosswind_Display_DragMotion?
+        var hadOneofValue = false
+        if let current = self.msg {
+          hadOneofValue = true
+          if case .dragMotion(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.msg = .dragMotion(v)
+        }
+      }()
+      case 10: try {
+        var v: Crosswind_Display_DragLeave?
+        var hadOneofValue = false
+        if let current = self.msg {
+          hadOneofValue = true
+          if case .dragLeave(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.msg = .dragLeave(v)
+        }
+      }()
+      case 11: try {
+        var v: Crosswind_Display_DragDrop?
+        var hadOneofValue = false
+        if let current = self.msg {
+          hadOneofValue = true
+          if case .dragDrop(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.msg = .dragDrop(v)
+        }
+      }()
+      case 12: try {
+        var v: Crosswind_Display_DragCancel?
+        var hadOneofValue = false
+        if let current = self.msg {
+          hadOneofValue = true
+          if case .dragCancel(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.msg = .dragCancel(v)
+        }
+      }()
       default: break
       }
     }
@@ -1476,6 +1830,26 @@ nonisolated extension Crosswind_Display_ToGuest: SwiftProtobuf.Message, SwiftPro
       guard case .textInput(let v)? = self.msg else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 7)
     }()
+    case .dragEnter?: try {
+      guard case .dragEnter(let v)? = self.msg else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 8)
+    }()
+    case .dragMotion?: try {
+      guard case .dragMotion(let v)? = self.msg else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 9)
+    }()
+    case .dragLeave?: try {
+      guard case .dragLeave(let v)? = self.msg else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 10)
+    }()
+    case .dragDrop?: try {
+      guard case .dragDrop(let v)? = self.msg else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 11)
+    }()
+    case .dragCancel?: try {
+      guard case .dragCancel(let v)? = self.msg else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 12)
+    }()
     case nil: break
     }
     try unknownFields.traverse(visitor: &visitor)
@@ -1483,6 +1857,196 @@ nonisolated extension Crosswind_Display_ToGuest: SwiftProtobuf.Message, SwiftPro
 
   public static func ==(lhs: Crosswind_Display_ToGuest, rhs: Crosswind_Display_ToGuest) -> Bool {
     if lhs.msg != rhs.msg {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Crosswind_Display_DragEnter: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".DragEnter"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}window\0\u{1}x\0\u{1}y\0\u{3}offers_text\0\u{3}offers_files\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularUInt32Field(value: &self.window) }()
+      case 2: try { try decoder.decodeSingularDoubleField(value: &self.x) }()
+      case 3: try { try decoder.decodeSingularDoubleField(value: &self.y) }()
+      case 4: try { try decoder.decodeSingularBoolField(value: &self.offersText) }()
+      case 5: try { try decoder.decodeSingularBoolField(value: &self.offersFiles) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.window != 0 {
+      try visitor.visitSingularUInt32Field(value: self.window, fieldNumber: 1)
+    }
+    if self.x.bitPattern != 0 {
+      try visitor.visitSingularDoubleField(value: self.x, fieldNumber: 2)
+    }
+    if self.y.bitPattern != 0 {
+      try visitor.visitSingularDoubleField(value: self.y, fieldNumber: 3)
+    }
+    if self.offersText != false {
+      try visitor.visitSingularBoolField(value: self.offersText, fieldNumber: 4)
+    }
+    if self.offersFiles != false {
+      try visitor.visitSingularBoolField(value: self.offersFiles, fieldNumber: 5)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Crosswind_Display_DragEnter, rhs: Crosswind_Display_DragEnter) -> Bool {
+    if lhs.window != rhs.window {return false}
+    if lhs.x != rhs.x {return false}
+    if lhs.y != rhs.y {return false}
+    if lhs.offersText != rhs.offersText {return false}
+    if lhs.offersFiles != rhs.offersFiles {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Crosswind_Display_DragMotion: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".DragMotion"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}window\0\u{1}x\0\u{1}y\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularUInt32Field(value: &self.window) }()
+      case 2: try { try decoder.decodeSingularDoubleField(value: &self.x) }()
+      case 3: try { try decoder.decodeSingularDoubleField(value: &self.y) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.window != 0 {
+      try visitor.visitSingularUInt32Field(value: self.window, fieldNumber: 1)
+    }
+    if self.x.bitPattern != 0 {
+      try visitor.visitSingularDoubleField(value: self.x, fieldNumber: 2)
+    }
+    if self.y.bitPattern != 0 {
+      try visitor.visitSingularDoubleField(value: self.y, fieldNumber: 3)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Crosswind_Display_DragMotion, rhs: Crosswind_Display_DragMotion) -> Bool {
+    if lhs.window != rhs.window {return false}
+    if lhs.x != rhs.x {return false}
+    if lhs.y != rhs.y {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Crosswind_Display_DragLeave: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".DragLeave"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}window\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularUInt32Field(value: &self.window) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.window != 0 {
+      try visitor.visitSingularUInt32Field(value: self.window, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Crosswind_Display_DragLeave, rhs: Crosswind_Display_DragLeave) -> Bool {
+    if lhs.window != rhs.window {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Crosswind_Display_DragDrop: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".DragDrop"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}window\0\u{1}text\0\u{1}paths\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularUInt32Field(value: &self.window) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.text) }()
+      case 3: try { try decoder.decodeRepeatedStringField(value: &self.paths) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.window != 0 {
+      try visitor.visitSingularUInt32Field(value: self.window, fieldNumber: 1)
+    }
+    if !self.text.isEmpty {
+      try visitor.visitSingularStringField(value: self.text, fieldNumber: 2)
+    }
+    if !self.paths.isEmpty {
+      try visitor.visitRepeatedStringField(value: self.paths, fieldNumber: 3)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Crosswind_Display_DragDrop, rhs: Crosswind_Display_DragDrop) -> Bool {
+    if lhs.window != rhs.window {return false}
+    if lhs.text != rhs.text {return false}
+    if lhs.paths != rhs.paths {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Crosswind_Display_DragCancel: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".DragCancel"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}window\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularUInt32Field(value: &self.window) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.window != 0 {
+      try visitor.visitSingularUInt32Field(value: self.window, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Crosswind_Display_DragCancel, rhs: Crosswind_Display_DragCancel) -> Bool {
+    if lhs.window != rhs.window {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

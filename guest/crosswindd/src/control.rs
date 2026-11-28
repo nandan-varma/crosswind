@@ -39,6 +39,8 @@ pub enum Note {
     Reply(u64, response::Result),
     OpFinished { op: u64, event: pb::Event },
     Exited { launch_id: String, app_id: String, code: i32 },
+    /// A display message produced off the loop thread (drag and drop).
+    Display(crate::pb::to_host::Msg),
 }
 
 /// A GCancellable handed to a worker thread. GCancellable is documented thread-safe; the
@@ -411,6 +413,8 @@ impl Control {
                 }
                 self.event(pb::event::Body::AppExited(pb::AppExited { app_id, exit_code: code, launch_id }));
             }
+            // Goes to the display link, which `State` owns (see its notes source).
+            Note::Display(_) => {}
         }
     }
 }

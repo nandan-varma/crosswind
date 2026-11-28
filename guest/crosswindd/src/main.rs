@@ -5,6 +5,7 @@ mod audio;
 mod clipboard;
 mod control;
 mod debug;
+mod dnd;
 mod flatpak;
 mod handlers;
 mod host;

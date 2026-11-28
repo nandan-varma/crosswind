@@ -16,6 +16,11 @@ final class SurfaceView: NSView {
     /// Set by the text-input methods while AppKit interprets one key event: true when text was produced.
     var keyConsumedByText = false
     private(set) var textInputEnabled = false
+    /// Drag and drop (see SurfaceView+Drag.swift): events for the guest, whether the guest app under a Mac drag
+    /// accepts it, and a drag an app started in the guest that has not left the app's windows yet.
+    var onDrag: ((DragEvent) -> Void)?
+    var dragAccepted = true
+    var pendingDrag: PendingDrag?
     /// Key codes whose press went to the input method; their release is swallowed too.
     private var consumedKeys = Set<UInt16>()
     private var modifiers = ModifierTracker()
@@ -29,6 +34,7 @@ final class SurfaceView: NSView {
         wantsLayer = true
         layer?.contentsGravity = .topLeft
         layer?.isOpaque = false
+        registerForDraggedTypes(Self.draggedTypes)
         addTrackingArea(
             NSTrackingArea(
                 rect: .zero, options: [.activeInActiveApp, .mouseMoved, .mouseEnteredAndExited, .inVisibleRect],
@@ -71,7 +77,10 @@ final class SurfaceView: NSView {
     }
 
     override func mouseMoved(with event: NSEvent) { motion(event) }
-    override func mouseDragged(with event: NSEvent) { motion(event) }
+    override func mouseDragged(with event: NSEvent) {
+        motion(event)
+        beginNativeDragIfOutside(event)
+    }
     override func rightMouseDragged(with event: NSEvent) { motion(event) }
     override func otherMouseDragged(with event: NSEvent) { motion(event) }
     override func mouseEntered(with event: NSEvent) { motion(event) }
@@ -89,7 +98,10 @@ final class SurfaceView: NSView {
     }
 
     override func mouseDown(with event: NSEvent) { button(event, 0x110, pressed: true) }
-    override func mouseUp(with event: NSEvent) { button(event, 0x110, pressed: false) }
+    override func mouseUp(with event: NSEvent) {
+        pendingDrag = nil
+        button(event, 0x110, pressed: false)
+    }
     override func rightMouseDown(with event: NSEvent) { button(event, 0x111, pressed: true) }
     override func rightMouseUp(with event: NSEvent) { button(event, 0x111, pressed: false) }
     override func otherMouseDown(with event: NSEvent) { button(event, 0x112, pressed: true) }

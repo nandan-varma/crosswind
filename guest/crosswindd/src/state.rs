@@ -83,6 +83,9 @@ pub struct State {
     pub output_manager_state: OutputManagerState,
     /// MIME types of a guest copy waiting to be read (see `SelectionHandler::new_selection`).
     pub guest_copy: Option<Vec<String>>,
+    /// A drag from the Mac in progress, and the window an app-started drag began in (see `dnd`).
+    pub host_drag: Option<crate::dnd::HostDrag>,
+    pub guest_drag: Option<u32>,
     pub seat_state: SeatState<State>,
     pub data_device_state: DataDeviceState,
     #[allow(dead_code)]
@@ -176,8 +179,10 @@ impl State {
         let (notes_tx, notes_rx) = channel::channel::<control::Note>();
         loop_handle
             .insert_source(notes_rx, |event, _, state| {
-                if let channel::Event::Msg(note) = event {
-                    state.control.on_note(note);
+                match event {
+                    channel::Event::Msg(control::Note::Display(msg)) => state.send(msg),
+                    channel::Event::Msg(note) => state.control.on_note(note),
+                    channel::Event::Closed => {}
                 }
             })
             .expect("control notes");
@@ -224,6 +229,8 @@ impl State {
             compositor_state: CompositorState::new::<Self>(&dh),
             xdg_shell_state: XdgShellState::new::<Self>(&dh),
             guest_copy: None,
+            host_drag: None,
+            guest_drag: None,
             xdg_decoration_state: XdgDecorationState::new::<Self>(&dh),
             xdg_activation_state: smithay::wayland::xdg_activation::XdgActivationState::new::<Self>(&dh),
             shm_state: ShmState::new::<Self>(&dh, vec![]),

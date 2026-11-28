@@ -288,6 +288,7 @@ impl DataDeviceHandler for State {
 impl DndGrabHandler for State {}
 impl WaylandDndGrabHandler for State {
     fn dnd_requested<S: Source>(&mut self, source: S, _: Option<WlSurface>, seat: Seat<Self>, serial: Serial, ty: GrabType) {
+        self.guest_drag_started(&source);
         if let (GrabType::Pointer, Some(ptr)) = (ty, seat.get_pointer())
             && let Some(start) = ptr.grab_start_data()
         {

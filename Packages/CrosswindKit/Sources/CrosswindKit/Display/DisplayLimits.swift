@@ -21,6 +21,10 @@ public enum DisplayLimits {
     public static let maxCursorNameBytes = 64
     public static let maxTitleBytes = 1024
     public static let maxIdentifierBytes = 256
+    /// Drag and drop: text, file entries and the longest path either side may carry.
+    public static let maxDragTextBytes = 1 << 20
+    public static let maxDragFiles = 256
+    public static let maxDragPathBytes = 4096
 
     /// Violations are logged at most this often (burst 5, then one per second).
     public static let violationLog = RateLimiter(perSecond: 1, burst: 5)
@@ -42,6 +46,8 @@ public enum DisplayLimits {
         case parentFromOtherApp(UInt32)
         case popupTooDeep(Int)
         case framesNotAcknowledged(window: UInt32)
+        case dragTooLarge
+        case dragPathRefused(String)
 
         public var description: String {
             switch self {
@@ -60,6 +66,8 @@ public enum DisplayLimits {
             case .parentFromOtherApp(let id): "popup parent \(id) belongs to another app"
             case .popupTooDeep(let d): "popup depth \(d) exceeds limit"
             case .framesNotAcknowledged(let id): "window \(id) sent frames without waiting for acknowledgements"
+            case .dragTooLarge: "drag data exceeds limits"
+            case .dragPathRefused(let path): "drag path \(path.prefix(64)) refused"
             }
         }
     }
@@ -158,6 +166,30 @@ public enum DisplayLimits {
         else {
             throw .cursorPixelsMismatch
         }
+    }
+
+    // MARK: Drag and drop
+
+    /// A guest app's drag: bounded text and at most `maxDragFiles` `file://` URIs under the Mac share.
+    public static func checkDragStarted(_ drag: Crosswind_Display_DragStarted) throws(Violation) {
+        guard drag.text.utf8.count <= maxDragTextBytes, drag.uris.count <= maxDragFiles else { throw .dragTooLarge }
+        for uri in drag.uris where !isMacShareURI(uri) { throw .dragPathRefused(uri) }
+    }
+
+    /// Guest paths the host hands to an app (a drop from the Mac): bounded, and under the Mac share.
+    public static func checkDragDrop(_ drop: Crosswind_Display_DragDrop) throws(Violation) {
+        guard drop.text.utf8.count <= maxDragTextBytes, drop.paths.count <= maxDragFiles else { throw .dragTooLarge }
+        for path in drop.paths where !isMacSharePath(path) { throw .dragPathRefused(path) }
+    }
+
+    private static func isMacSharePath(_ path: String) -> Bool {
+        path.utf8.count <= maxDragPathBytes && path.hasPrefix("/mnt/mac/")
+            && !path.unicodeScalars.contains(where: { $0.value < 0x20 || $0.value == 0x7F })
+            && !path.split(separator: "/").contains("..")
+    }
+
+    private static func isMacShareURI(_ uri: String) -> Bool {
+        uri.hasPrefix("file://") && isMacSharePath(String(uri.dropFirst("file://".count)).removingPercentEncoding ?? "")
     }
 
     // MARK: Windows

@@ -93,6 +93,19 @@ public struct SharedFolders: Codable, Equatable, Sendable {
         return relative.isEmpty ? mount : "\(mount)/\(relative)"
     }
 
+    /// The host path of a guest path inside a grant (`/mnt/mac/Documents/a.txt`), or nil: not under a grant (staging
+    /// included), a `..` component, or a path that is not absolute. The guest is untrusted: nothing else is resolved.
+    public func hostPath(forGuestPath guestPath: String) -> String? {
+        let prefix = Self.guestMountPoint + "/"
+        guard guestPath.hasPrefix(prefix),
+            !guestPath.unicodeScalars.contains(where: { $0.value < 0x20 || $0.value == 0x7F })
+        else { return nil }
+        let parts = guestPath.dropFirst(prefix.count).split(separator: "/", omittingEmptySubsequences: true)
+        guard let name = parts.first, !parts.contains(".."), !parts.contains(".") else { return nil }
+        guard let folder = folders.first(where: { $0.name == String(name) }) else { return nil }
+        return ([folder.path] + parts.dropFirst().map(String.init)).joined(separator: "/")
+    }
+
     /// Resolves symlinks and removes `.`/`..` and trailing slashes, so grant paths compare reliably.
     public static func normalize(_ path: String) -> String {
         URL(fileURLWithPath: path).standardizedFileURL.resolvingSymlinksInPath().path

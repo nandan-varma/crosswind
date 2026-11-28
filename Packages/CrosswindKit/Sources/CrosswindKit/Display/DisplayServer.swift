@@ -13,6 +13,8 @@ public final class DisplayServer {
 
     /// Called after a frame has been applied (used by the diagnostics HUD and benchmarks).
     public var onFrame: ((_ window: UInt32, _ seq: UInt64, _ bytes: Int) -> Void)?
+    /// Makes files dropped from the Mac visible to the guest and returns their guest paths (set by the stub).
+    public var resolveDroppedFiles: (([URL]) async -> [String])?
     public var windowIDs: [UInt32] { windows.keys.sorted() }
 
     public init(messages: AsyncStream<ToHost>, send: @escaping (ToGuest) -> Void) {
@@ -53,6 +55,7 @@ public final class DisplayServer {
                 send(.with { $0.msg = .textInput(message) })
             }
             window.onResignKey = { [weak self] in self?.dismissPopups(of: opened.id) }
+            window.view.onDrag = { [weak self] event in self?.drag(event, window: opened.id) }
             windows[opened.id] = window
             titles[opened.id] = opened.title
         case .changed(let changed):
@@ -68,9 +71,73 @@ public final class DisplayServer {
             windows[cursor.window]?.view.setCursor(CursorMap.cursor(named: cursor.name))
         case .textInputState(let state):
             windows[state.window]?.view.setTextInputEnabled(state.enabled)
+        case .dragStarted(let drag):
+            windows[drag.window]?.view.pendingDrag = pendingDrag(from: drag)
+        case .dragStatus(let status):
+            windows[status.window]?.view.dragAccepted = status.accepted
         case nil:
             break
         }
+    }
+
+    // MARK: Drag and drop
+
+    /// A drag from a Mac app over one of this app's windows, as guest messages. Files are made visible to the guest
+    /// first (`resolveDroppedFiles`), so the drop message carries guest paths.
+    private func drag(_ event: DragEvent, window: UInt32) {
+        switch event {
+        case .enter(let point, let hasText, let hasFiles):
+            send(
+                .with {
+                    $0.msg = .dragEnter(
+                        .with {
+                            $0.window = window
+                            $0.x = point.x
+                            $0.y = point.y
+                            $0.offersText = hasText
+                            $0.offersFiles = hasFiles
+                        })
+                })
+        case .motion(let point):
+            send(
+                .with {
+                    $0.msg = .dragMotion(
+                        .with {
+                            $0.window = window
+                            $0.x = point.x
+                            $0.y = point.y
+                        })
+                })
+        case .leave:
+            send(.with { $0.msg = .dragLeave(.with { $0.window = window }) })
+        case .takeOver:
+            send(.with { $0.msg = .dragCancel(.with { $0.window = window }) })
+        case .drop(let text, let files):
+            Task { [weak self] in
+                guard let self else { return }
+                let paths = files.isEmpty ? [] : await resolveDroppedFiles?(files) ?? []
+                send(
+                    .with {
+                        $0.msg = .dragDrop(
+                            .with {
+                                $0.window = window
+                                $0.text = text ?? ""
+                                $0.paths = paths
+                            })
+                    })
+            }
+        }
+    }
+
+    /// The Mac side of a drag an app started: its text, and the files that lie inside a shared folder.
+    private func pendingDrag(from drag: Crosswind_Display_DragStarted) -> PendingDrag? {
+        let folders = (try? SharedFolders.load(from: SharedFolders.defaultFile)) ?? SharedFolders()
+        let files = drag.uris.compactMap { uri -> URL? in
+            guard let path = URL(string: uri)?.path, let host = folders.hostPath(forGuestPath: path) else { return nil }
+            return URL(fileURLWithPath: host)
+        }
+        guard !drag.text.isEmpty || !files.isEmpty else { return nil }
+        return PendingDrag(text: files.isEmpty ? drag.text : nil, files: files)
     }
 
     private static func keyboardLayoutMessage(_ layout: XkbLayout) -> ToGuest {
