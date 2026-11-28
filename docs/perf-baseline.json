@@ -1,0 +1,17 @@
+{
+  "machine": "Apple M4",
+  "tolerance": {
+    "boot_ms": 0.5,
+    "type_ms_p50": 1.0,
+    "type_ms_max": 2.0,
+    "host_rss_mb": 0.5,
+    "guest_used_mb": 0.5
+  },
+  "values": {
+    "boot_ms": 4898,
+    "type_ms_p50": 1.6,
+    "type_ms_max": 1.6,
+    "host_rss_mb": 57,
+    "guest_used_mb": 304
+  }
+}

@@ -112,3 +112,7 @@ Xcode 27 refuses to export an archive with several installable products ("doesn'
 `project.yml` therefore sets `SKIP_INSTALL: YES` on CrosswindHost, CrosswindAppStub and crosswindctl (they are embedded
 into Crosswind.app) and `SKIP_INSTALL: NO` with `INSTALL_PATH: /Applications` on Crosswind. Keep it that way for any new
 embedded target.
+
+## Performance gate
+
+`scripts/perf.sh` measures boot time, input-to-frame latency and idle memory against the running dev agent and compares them with `docs/perf-baseline.json` (`--record` rewrites the baseline). It needs a Mac with Virtualization.framework and an open app window, so it cannot run on a hosted CI runner; run it before publishing and re-record only on purpose.
