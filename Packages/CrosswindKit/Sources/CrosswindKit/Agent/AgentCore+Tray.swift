@@ -32,6 +32,19 @@ extension AgentCore {
         Task { _ = try? await request(.trayActivate(activate)) }
     }
 
+    /// Forwards a choice in a tray icon's menu to the guest app that owns it.
+    public func trayMenuChosen(id: String, item: Int32) {
+        guard trayIDs.contains(id) else { return }
+        Task {
+            _ = try? await request(
+                .trayMenuClick(
+                    .with {
+                        $0.id = id
+                        $0.item = item
+                    }))
+        }
+    }
+
     /// The guest is gone, so are its tray icons.
     func clearTray() {
         for id in trayIDs { onTray?(.removed(id: id)) }

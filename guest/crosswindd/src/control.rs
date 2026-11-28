@@ -249,6 +249,13 @@ impl Control {
                     _ => self.error(id, "tray icons are not available"),
                 }
             }
+            request::Body::TrayMenuClick(r) => match &self.tray {
+                Some(tray) => {
+                    tray.menu_click(&r.id, r.item);
+                    self.reply(id, response::Result::Ok(pb::Ok {}));
+                }
+                None => self.error(id, "tray icons are not available"),
+            },
             request::Body::DebugExec(r) => {
                 if !crate::debug::enabled() {
                     return self.error(id, "debug exec is disabled (boot with crosswind.debug=1)");
@@ -440,6 +447,7 @@ pub fn validate(body: &request::Body) -> Result<(), String> {
             Ok(())
         }
         request::Body::TrayActivate(r) if r.id.len() > limits::MAX_TRAY_ID => Err("tray id too long".to_owned()),
+        request::Body::TrayMenuClick(r) if r.id.len() > limits::MAX_TRAY_ID => Err("tray id too long".to_owned()),
         request::Body::Stop(r) => app_id(&r.app_id),
         request::Body::GetPermissions(r) => app_id(&r.app_id),
         request::Body::SetPermissions(r) => app_id(&r.app_id),

@@ -30,6 +30,7 @@ message Request {
     CallReply call_reply = 17;       // answer to a guest-initiated Call
     OfferClipboard offer_clipboard = 18;
     TrayActivate tray_activate = 20; // a click on a tray icon in the Mac menu bar
+    TrayMenuClick tray_menu_click = 21; // the user chose an entry of a tray icon's menu
     DebugExec debug_exec = 19;       // development only: refused unless the guest booted with crosswind.debug=1
   }
 }
@@ -321,6 +322,29 @@ message TrayItemChanged {
   uint32 icon_height = 4;
   bytes icon_rgba = 5;
   bool passive = 6;           // the app asked to hide the icon
+  repeated TrayMenuItem menu = 7;  // the app's com.canonical.dbusmenu, top level; empty when it has none
+  bool menu_on_activate = 8;       // ItemIsMenu: a click shows the menu instead of activating the app
+}
+
+// One entry of a tray icon's menu. `id` is the dbusmenu id; at most 4 levels and 128 entries in all.
+message TrayMenuItem {
+  sint32 id = 1;
+  string label = 2;           // mnemonic markers removed
+  bool enabled = 3;
+  bool separator = 4;
+  enum Check {
+    CHECK_NONE = 0;
+    CHECK_OFF = 1;
+    CHECK_ON = 2;
+  }
+  Check check = 5;
+  repeated TrayMenuItem children = 6;
+}
+
+// The user chose entry `item` of the menu of tray icon `id`.
+message TrayMenuClick {
+  string id = 1;
+  sint32 item = 2;
 }
 
 message TrayItemRemoved {

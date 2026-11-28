@@ -22,6 +22,7 @@ use crate::{
 const WATCHER_NAME: &str = "org.kde.StatusNotifierWatcher";
 const WATCHER_PATH: &str = "/StatusNotifierWatcher";
 const ITEM_INTERFACE: &str = "org.kde.StatusNotifierItem";
+const MENU_INTERFACE: &str = "com.canonical.dbusmenu";
 /// Where an item lives when the app registers a bare bus name.
 const DEFAULT_ITEM_PATH: &str = "/StatusNotifierItem";
 
@@ -85,6 +86,24 @@ impl Tray {
             let (bus_name, path) = (address.bus_name.as_str(), address.path.as_str());
             if let Err(e) = zbus::block_on(conn.call_method(Some(bus_name), path, Some(ITEM_INTERFACE), method, &(x, y))) {
                 tracing::debug!(%method, "tray click not delivered: {e}");
+            }
+        });
+    }
+
+    /// Forwards a choice in the menu the host showed for `id` to the app (dbusmenu `Event` "clicked").
+    pub fn menu_click(&self, id: &str, entry: i32) {
+        let Some(address) = lock(&self.items).get(id).cloned() else { return };
+        let conn = self.conn.clone();
+        thread::spawn(move || {
+            let result = zbus::block_on(async {
+                let item = zbus::Proxy::new(&conn, address.bus_name.as_str(), address.path.as_str(), ITEM_INTERFACE).await?;
+                let path: zbus::OwnedObjectPath = item.get_property("Menu").await?;
+                let menu = zbus::Proxy::new(&conn, address.bus_name.as_str(), path, MENU_INTERFACE).await?;
+                let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default();
+                menu.call_method("Event", &(entry, "clicked", zbus::Variant::from(0i32), now.as_secs() as u32)).await
+            });
+            if let Err(e) = result {
+                tracing::debug!("tray menu click not delivered: {e}");
             }
         });
     }
@@ -178,12 +197,18 @@ async fn mirror(conn: &Connection, notes: &channel::Sender<Note>, address: &Addr
         .receive_name_owner_changed_with_args(&[(0, address.bus_name.as_str())])
         .await?
         .map(|change| Wake::Owner(change.args().is_ok_and(|a| a.new_owner().is_none())));
-    let mut wakes = stream::select(signals, owner);
+    // The app's menu, when it has one: its layout changes wake the loop like the item's own signals.
+    let menu = menu_proxy(conn, &item, address).await;
+    let menu_signals = match &menu {
+        Some(menu) => menu.receive_all_signals().await?.map(|_| Wake::Changed).boxed(),
+        None => stream::empty().boxed(),
+    };
+    let mut wakes = stream::select(stream::select(signals, owner), menu_signals);
     loop {
         if !dbus.name_has_owner(name.clone()).await? {
             return Ok(());
         }
-        let changed = snapshot(&item, id).await?;
+        let changed = snapshot(&item, menu.as_ref(), id).await?;
         let _ = notes.send(Note::Event(pb::Event { body: Some(event::Body::TrayItemChanged(changed)) }));
         loop {
             match wakes.next().await {
@@ -196,13 +221,18 @@ async fn mirror(conn: &Connection, notes: &channel::Sender<Note>, address: &Addr
 }
 
 /// Reads the item's current state, cut to the limits the host enforces again.
-async fn snapshot(item: &zbus::Proxy<'_>, id: &str) -> zbus::Result<pb::TrayItemChanged> {
+async fn snapshot(item: &zbus::Proxy<'_>, menu: Option<&zbus::Proxy<'_>>, id: &str) -> zbus::Result<pb::TrayItemChanged> {
     let title: String = item.get_property("Title").await.unwrap_or_default();
     let id_property: String = item.get_property("Id").await.unwrap_or_default();
     let status: String = item.get_property("Status").await.unwrap_or_default();
     let pixmaps: Vec<(i32, i32, Vec<u8>)> = item.get_property("IconPixmap").await.unwrap_or_default();
     let (icon_width, icon_height, icon_rgba) = best_icon(&pixmaps).unwrap_or_default();
     let label = if title.is_empty() { id_property } else { title };
+    let menu_on_activate: bool = item.get_property("ItemIsMenu").await.unwrap_or_default();
+    let menu = match menu {
+        Some(menu) => read_menu(menu).await.unwrap_or_default(),
+        None => Vec::new(),
+    };
     Ok(pb::TrayItemChanged {
         id: id.to_owned(),
         title: limits::clean(&label, limits::MAX_TITLE),
@@ -210,7 +240,104 @@ async fn snapshot(item: &zbus::Proxy<'_>, id: &str) -> zbus::Result<pb::TrayItem
         icon_height,
         icon_rgba,
         passive: status == "Passive",
+        menu,
+        menu_on_activate,
     })
+}
+
+/// The item's `com.canonical.dbusmenu` object, when it names one.
+async fn menu_proxy<'a>(conn: &'a Connection, item: &zbus::Proxy<'_>, address: &Address) -> Option<zbus::Proxy<'a>> {
+    let path: zbus::OwnedObjectPath = item.get_property("Menu").await.ok()?;
+    if path.as_str() == "/" {
+        return None;
+    }
+    zbus::Proxy::new(conn, address.bus_name.clone(), path, MENU_INTERFACE).await.ok()
+}
+
+/// The menu's top level, read after `AboutToShow` (many apps build their menu lazily), cut to the limits the host
+/// enforces again.
+async fn read_menu(menu: &zbus::Proxy<'_>) -> zbus::Result<Vec<pb::TrayMenuItem>> {
+    let _ = menu.call_method("AboutToShow", &(0i32,)).await;
+    let (_revision, layout): (u32, zbus::OwnedVariant) = menu.call("GetLayout", &(0i32, -1i32, Vec::<String>::new())).await?;
+    let mut budget = limits::MAX_TRAY_MENU_ITEMS;
+    Ok(parse_layout(&layout, 0, &mut budget).map(|root| root.children).unwrap_or_default())
+}
+
+/// One dbusmenu node `(id, properties, children)`. `depth` 0 is the invisible root. Entries beyond the depth or the
+/// total budget are dropped, as are hidden ones.
+fn parse_layout(value: &zbus::Variant<'_>, depth: usize, budget: &mut usize) -> Option<pb::TrayMenuItem> {
+    parse_node(unwrap(value), depth, budget)
+}
+
+fn parse_node(value: &zbus::Variant<'_>, depth: usize, budget: &mut usize) -> Option<pb::TrayMenuItem> {
+    use zbus::Variant as Value;
+    let Value::Structure(node) = value else { return None };
+    let [Value::I32(id), Value::Dict(props), Value::Array(children)] = node.fields() else { return None };
+    let props: HashMap<String, &Value<'_>> = props
+        .iter()
+        .filter_map(|(k, v)| match k {
+            Value::Str(s) => Some((s.to_string(), unwrap(v))),
+            _ => None,
+        })
+        .collect();
+    let get = |key: &str| props.get(key).copied();
+    let flag = |key: &str, default: bool| match get(key) {
+        Some(Value::Bool(b)) => *b,
+        _ => default,
+    };
+    if depth > 0 {
+        if !flag("visible", true) || *budget == 0 {
+            return None;
+        }
+        *budget -= 1;
+    }
+    let text = |key: &str| match get(key) {
+        Some(Value::Str(s)) => s.to_string(),
+        _ => String::new(),
+    };
+    let toggle = text("toggle-type");
+    let check = match (toggle.as_str(), get("toggle-state")) {
+        ("checkmark" | "radio", Some(Value::I32(1))) => pb::tray_menu_item::Check::On,
+        ("checkmark" | "radio", _) => pb::tray_menu_item::Check::Off,
+        _ => pb::tray_menu_item::Check::None,
+    };
+    let mut item = pb::TrayMenuItem {
+        id: *id,
+        label: limits::clean(&unmnemonic(&text("label")), limits::MAX_TITLE),
+        enabled: flag("enabled", true),
+        separator: text("type") == "separator",
+        check: check as i32,
+        children: Vec::new(),
+    };
+    if depth < limits::MAX_TRAY_MENU_DEPTH {
+        item.children = children.iter().filter_map(|child| parse_layout(child, depth + 1, budget)).collect();
+    }
+    Some(item)
+}
+
+/// Variants nest: `a{sv}` values and `av` children arrive wrapped.
+fn unwrap<'a, 'v>(value: &'a zbus::Variant<'v>) -> &'a zbus::Variant<'v> {
+    match value {
+        zbus::Variant::Variant(inner) => unwrap(inner),
+        other => other,
+    }
+}
+
+/// dbusmenu labels mark the keyboard mnemonic with `_`; `__` is a literal underscore.
+fn unmnemonic(label: &str) -> String {
+    let mut out = String::with_capacity(label.len());
+    let mut chars = label.chars().peekable();
+    while let Some(c) = chars.next() {
+        if c == '_' {
+            if chars.peek() == Some(&'_') {
+                out.push('_');
+                chars.next();
+            }
+        } else {
+            out.push(c);
+        }
+    }
+    out
 }
 
 /// The largest valid pixmap within the size limit, converted to RGBA. `IconPixmap` carries ARGB32 in network byte
@@ -229,7 +356,13 @@ fn best_icon(pixmaps: &[(i32, i32, Vec<u8>)]) -> Option<(u32, u32, Vec<u8>)> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Address, best_icon};
+    #[test]
+    fn mnemonic_markers_go_and_double_underscores_stay() {
+        assert_eq!(unmnemonic("_Open"), "Open");
+        assert_eq!(unmnemonic("Save __as"), "Save _as");
+    }
+
+    use super::{Address, best_icon, unmnemonic};
 
     #[test]
     fn a_bus_name_means_the_default_item_path() {

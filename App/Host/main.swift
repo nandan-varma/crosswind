@@ -22,7 +22,9 @@ final class HostDelegate: NSObject, NSApplicationDelegate {
             Task { @MainActor in core.appearanceChanged() }
         }
         statusItem = StatusItemController(session: session)
-        let tray = TrayController { [weak core] id, kind, x, y in core?.trayClicked(id: id, kind: kind, x: x, y: y) }
+        let tray = TrayController(
+            activate: { [weak core] id, kind, x, y in core?.trayClicked(id: id, kind: kind, x: x, y: y) },
+            chooseMenuItem: { [weak core] id, item in core?.trayMenuChosen(id: id, item: item) })
         core.onTray = { tray.apply($0) }
         self.tray = tray
         let endpoint = AgentEndpoint { connection, role, appID in

@@ -21,6 +21,24 @@ public struct TrayItem: Equatable, Sendable, Identifiable {
     public let icon: Icon?
     /// The app asked to hide the icon.
     public let isPassive: Bool
+    /// The app's own menu (dbusmenu), shown by the host when the icon is clicked. Empty when it has none.
+    public let menu: [MenuEntry]
+    /// A click shows the menu instead of activating the app (the app's `ItemIsMenu`).
+    public let menuOnActivate: Bool
+
+    public static let maxMenuEntries = 128
+    public static let maxMenuDepth = 4
+    public static let maxMenuLabelBytes = 256
+
+    /// One entry of the menu: an action, a separator, or a submenu.
+    public struct MenuEntry: Equatable, Sendable {
+        public let id: Int32
+        public let label: String
+        public let isEnabled: Bool
+        public let isSeparator: Bool
+        public let check: TrayMenuCheck
+        public let children: [MenuEntry]
+    }
 
     /// Nil when the message is malformed: an empty or oversized id, or an icon whose size and data disagree.
     public init?(_ message: Crosswind_Control_TrayItemChanged) {
@@ -46,7 +64,39 @@ public struct TrayItem: Equatable, Sendable, Identifiable {
             })
         self.icon = icon
         isPassive = message.passive
+        var budget = Self.maxMenuEntries
+        menu = Self.entries(message.menu, depth: 1, budget: &budget)
+        menuOnActivate = message.menuOnActivate && !menu.isEmpty
     }
+
+    /// The guest's menu cut to the limits: levels, entries in all, and label length. Entries past a limit are dropped.
+    static func entries(
+        _ items: [Crosswind_Control_TrayMenuItem], depth: Int, budget: inout Int
+    ) -> [MenuEntry] {
+        guard depth <= maxMenuDepth else { return [] }
+        var result: [MenuEntry] = []
+        for item in items {
+            guard budget > 0 else { break }
+            budget -= 1
+            var bytes = 0
+            let label = String(
+                item.label.prefix {
+                    bytes += String($0).utf8.count
+                    return bytes <= maxMenuLabelBytes
+                })
+            result.append(
+                MenuEntry(
+                    id: item.id, label: label, isEnabled: item.enabled, isSeparator: item.separator,
+                    check: item.check == .on ? .checked : item.check == .off ? .unchecked : .none,
+                    children: entries(item.children, depth: depth + 1, budget: &budget)))
+        }
+        return result
+    }
+}
+
+/// Whether a menu entry has a check mark.
+public enum TrayMenuCheck: Equatable, Sendable {
+    case none, unchecked, checked
 }
 
 /// A change to the set of tray icons, for the presenter in the host agent.

@@ -33,6 +33,9 @@ pub const MAC_SHARE_PREFIX: &str = "/mnt/mac/";
 pub const MAX_TRAY_ITEMS: usize = 32;
 pub const MAX_TRAY_ID: usize = 512;
 pub const MAX_TRAY_ICON_SIDE: u32 = 256;
+/// Tray menus: entries in all, and levels (the top level counts as one).
+pub const MAX_TRAY_MENU_ITEMS: usize = 128;
+pub const MAX_TRAY_MENU_DEPTH: usize = 4;
 
 /// Whether a surface of `width` x `height` physical pixels at `scale_120` is one the host will accept.
 pub fn surface_ok(width: u32, height: u32, scale_120: u32) -> bool {

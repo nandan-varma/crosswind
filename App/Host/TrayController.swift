@@ -8,12 +8,17 @@ final class TrayController: NSObject {
     private static let iconHeight: CGFloat = 18
 
     private let activate: (String, Crosswind_Control_TrayActivate.Kind, Int32, Int32) -> Void
+    private let chooseMenuItem: (String, Int32) -> Void
     private var statusItems: [String: NSStatusItem] = [:]
     /// Every icon the guest has asked for, shown or not, so turning the setting back on restores them.
     private var items: [String: TrayItem] = [:]
 
-    init(activate: @escaping (String, Crosswind_Control_TrayActivate.Kind, Int32, Int32) -> Void) {
+    init(
+        activate: @escaping (String, Crosswind_Control_TrayActivate.Kind, Int32, Int32) -> Void,
+        chooseMenuItem: @escaping (String, Int32) -> Void
+    ) {
         self.activate = activate
+        self.chooseMenuItem = chooseMenuItem
         super.init()
         NotificationCenter.default.addObserver(
             self, selector: #selector(preferencesChanged), name: UserDefaults.didChangeNotification,
@@ -71,8 +76,44 @@ final class TrayController: NSObject {
             case .otherMouseUp: .secondary
             default: .primary
             }
+        // An app that exports a menu gets it as a native menu: on a right click, or on any click when the app's icon
+        // is only a menu (`ItemIsMenu`). Other clicks go to the app, which draws its own menu if it wants one.
+        if let item = items[id], !item.menu.isEmpty, kind == .contextMenu || (kind == .primary && item.menuOnActivate) {
+            let menu = Self.menu(for: item.menu, target: self, id: id)
+            menu.popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height + 4), in: sender)
+            return
+        }
         let point = sender.window?.convertPoint(toScreen: event.locationInWindow) ?? .zero
         activate(id, kind, Int32(point.x), Int32(point.y))
+    }
+
+    /// The app's menu as an `NSMenu`. Each action remembers which icon and entry it belongs to.
+    private static func menu(for entries: [TrayItem.MenuEntry], target: TrayController, id: String) -> NSMenu {
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+        for entry in entries {
+            if entry.isSeparator {
+                menu.addItem(.separator())
+                continue
+            }
+            let item = NSMenuItem(title: entry.label, action: nil, keyEquivalent: "")
+            item.isEnabled = entry.isEnabled
+            item.state = entry.check == .checked ? .on : .off
+            if !entry.children.isEmpty {
+                item.submenu = Self.menu(for: entry.children, target: target, id: id)
+            } else {
+                item.action = #selector(menuItemChosen(_:))
+                item.target = target
+                item.representedObject = TrayMenuChoice(icon: id, entry: entry.id)
+            }
+            menu.addItem(item)
+        }
+        return menu
+    }
+
+    @objc private func menuItemChosen(_ sender: NSMenuItem) {
+        guard let choice = sender.representedObject as? TrayMenuChoice else { return }
+        chooseMenuItem(choice.icon, choice.entry)
     }
 
     /// The app's pixels at menu bar height, or a generic symbol when it only names a themed icon.
@@ -94,5 +135,16 @@ final class TrayController: NSObject {
                 decode: nil, shouldInterpolate: true, intent: .defaultIntent)
         else { return nil }
         return NSImage(cgImage: cgImage, size: .zero)
+    }
+}
+
+/// Which entry of which tray icon's menu an `NSMenuItem` stands for.
+private final class TrayMenuChoice: NSObject {
+    let icon: String
+    let entry: Int32
+
+    init(icon: String, entry: Int32) {
+        self.icon = icon
+        self.entry = entry
     }
 }

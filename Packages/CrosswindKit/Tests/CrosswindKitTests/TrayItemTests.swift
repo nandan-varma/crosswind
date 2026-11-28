@@ -53,3 +53,40 @@ import Testing
         #expect(item.title.allSatisfy { $0 == "é" })
     }
 }
+
+@Test func aTrayMenuIsCutToTheLevelAndEntryLimits() throws {
+    func entry(_ id: Int32, _ children: [Crosswind_Control_TrayMenuItem] = []) -> Crosswind_Control_TrayMenuItem {
+        .with {
+            $0.id = id
+            $0.label = "item \(id)"
+            $0.enabled = true
+            $0.children = children
+        }
+    }
+    let deep = entry(1, [entry(2, [entry(3, [entry(4, [entry(5)])])])])
+    let item = try #require(
+        TrayItem(
+            .with {
+                $0.id = "a/b"
+                $0.menu = [deep]
+                $0.menuOnActivate = true
+            }))
+    #expect(item.menuOnActivate)
+    #expect(item.menu[0].children[0].children[0].children[0].children.isEmpty)  // level 5 is dropped
+
+    let many = (0..<500).map { entry(Int32($0)) }
+    let wide = try #require(
+        TrayItem(
+            .with {
+                $0.id = "a/b"
+                $0.menu = many
+            }))
+    #expect(wide.menu.count == TrayItem.maxMenuEntries)
+    let none = try #require(
+        TrayItem(
+            .with {
+                $0.id = "a/b"
+                $0.menuOnActivate = true
+            }))
+    #expect(!none.menuOnActivate)  // no menu to show
+}
