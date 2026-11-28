@@ -467,4 +467,128 @@ mod tests {
         assert_eq!((w, h), (2, 2));
         assert!(best_icon(&[]).is_none());
     }
+
+    /// The whole path on a private session bus: a fake app registers an item with a dbusmenu, the watcher mirrors the
+    /// menu to the host's events, and a menu choice reaches the app as a dbusmenu `Event`. Needs `dbus-daemon`.
+    #[test]
+    #[ignore = "needs dbus-daemon; run with --ignored"]
+    fn a_registered_item_and_its_menu_round_trip_over_the_bus() {
+        use std::{
+            io::{BufRead, BufReader},
+            process::{Command, Stdio},
+            sync::{Arc, Mutex},
+            time::{Duration, Instant},
+        };
+
+        use smithay::reexports::calloop::{EventLoop, channel};
+        use zbus::{connection::Builder, interface};
+
+        use crate::{control::Note, control_pb::{self as pb, event}};
+
+        struct Item;
+        #[interface(name = "org.kde.StatusNotifierItem")]
+        impl Item {
+            #[zbus(property)]
+            fn id(&self) -> String {
+                "fake".into()
+            }
+            #[zbus(property)]
+            fn title(&self) -> String {
+                "Fake".into()
+            }
+            #[zbus(property)]
+            fn status(&self) -> String {
+                "Active".into()
+            }
+            #[zbus(property)]
+            fn menu(&self) -> zbus::OwnedObjectPath {
+                zbus::OwnedObjectPath::try_from("/MenuBar").expect("path")
+            }
+        }
+
+        type Layout = (i32, HashMap<String, zbus::OwnedVariant>, Vec<zbus::OwnedVariant>);
+        struct Menu(Arc<Mutex<Vec<(i32, String)>>>);
+        #[interface(name = "com.canonical.dbusmenu")]
+        impl Menu {
+            fn get_layout(&self, _parent: i32, _depth: i32, _props: Vec<String>) -> (u32, Layout) {
+                let leaf = |id: i32, label: &str| -> zbus::OwnedVariant {
+                    let props: HashMap<String, zbus::OwnedVariant> =
+                        [("label".to_owned(), zbus::OwnedVariant::try_from(zbus::Variant::from(label)).expect("label"))].into();
+                    let node: Layout = (id, props, Vec::new());
+                    zbus::OwnedVariant::try_from(zbus::Variant::from(node)).expect("node")
+                };
+                (1, (0, HashMap::new(), vec![leaf(1, "_Open"), leaf(2, "Quit")]))
+            }
+            fn about_to_show(&self, _id: i32) -> bool {
+                false
+            }
+            fn event(&self, id: i32, kind: String, _data: zbus::OwnedVariant, _timestamp: u32) {
+                self.0.lock().expect("events").push((id, kind));
+            }
+        }
+
+        let mut daemon = Command::new("dbus-daemon")
+            .args(["--session", "--nofork", "--print-address=1"])
+            .stdout(Stdio::piped())
+            .spawn()
+            .expect("dbus-daemon");
+        let mut address = String::new();
+        BufReader::new(daemon.stdout.take().expect("stdout")).read_line(&mut address).expect("address");
+        let address = address.trim().to_owned();
+
+        let mut event_loop: EventLoop<Vec<Note>> = EventLoop::try_new().expect("loop");
+        let (notes_tx, notes_rx) = channel::channel::<Note>();
+        event_loop
+            .handle()
+            .insert_source(notes_rx, |event, _, notes| {
+                if let channel::Event::Msg(note) = event {
+                    notes.push(note);
+                }
+            })
+            .expect("source");
+        let tray = super::Tray::start(&address, notes_tx).expect("watcher");
+
+        let events = Arc::new(Mutex::new(Vec::new()));
+        let app = zbus::block_on(
+            Builder::address(address.as_str())
+                .serve_at("/StatusNotifierItem", Item)
+                .serve_at("/MenuBar", Menu(events.clone()))
+                .build(),
+        )
+        .expect("app connection");
+        let unique = app.unique_name().expect("name").to_string();
+        zbus::block_on(app.call_method(
+            Some(super::WATCHER_NAME),
+            super::WATCHER_PATH,
+            Some(super::WATCHER_NAME),
+            "RegisterStatusNotifierItem",
+            &(unique.as_str(),),
+        ))
+        .expect("register");
+
+        let mut notes = Vec::new();
+        let deadline = Instant::now() + Duration::from_secs(10);
+        let mirrored = loop {
+            event_loop.dispatch(Duration::from_millis(100), &mut notes).expect("dispatch");
+            let found = notes.iter().find_map(|n| match n {
+                Note::Event(pb::Event { body: Some(event::Body::TrayItemChanged(c)) }) if !c.menu.is_empty() => Some(c.clone()),
+                _ => None,
+            });
+            if let Some(found) = found {
+                break found;
+            }
+            assert!(Instant::now() < deadline, "the item was never mirrored with a menu");
+        };
+        let labels: Vec<_> = mirrored.menu.iter().map(|m| (m.id, m.label.as_str())).collect();
+        assert_eq!(labels, [(1, "Open"), (2, "Quit")]);
+
+        tray.menu_click(&mirrored.id, 2);
+        let deadline = Instant::now() + Duration::from_secs(10);
+        while events.lock().expect("events").is_empty() {
+            assert!(Instant::now() < deadline, "the menu click never arrived");
+            std::thread::sleep(Duration::from_millis(50));
+        }
+        assert_eq!(events.lock().expect("events")[0], (2, "clicked".to_owned()));
+        let _ = daemon.kill();
+    }
 }

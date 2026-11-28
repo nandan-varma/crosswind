@@ -15,7 +15,7 @@ Status as of 2026-11-26. Open work is tracked as GitHub issues (https://github.c
 - Live guest verified end to end on this Mac: install, launch, windows, input, X11 apps, Electron (VSCodium), Qt (Kate, KCalc), GTK (Calculator, GIMP), VLC, Audacity. See docs/compat/matrix.md.
 - Electron/Chromium apps start (issue 1): the guest's Flatpak system installation was empty, which broke the portal's nested sandboxes.
 - X11 windows are attributed to their Flatpak app through the X-Resource extension (issue 2).
-- Tray icons (issue 9): StatusNotifierWatcher in the guest, validated icons in the menu bar, clicks sent back. Verified with Telegram. dbusmenu menus show as native menus (layout parsing unit-tested; not yet seen live because no installed app registered a menu).
+- Tray icons (issue 9): StatusNotifierWatcher in the guest, validated icons in the menu bar, clicks sent back. Verified with Telegram. dbusmenu menus show as native menus (guest side verified on a private D-Bus bus with a fake app: menu mirrored, click delivered; the native menu on the Mac not yet seen).
 - Open files from Finder (issue 10), standard stub menus, xdg-activation (raise requests), Konsole/terminal apps, portal frontend fix, detached-launcher apps (issue 19).
 - Intel-only Flathub apps (issue 11): with Rosetta on, the store lists apps that have no arm64 build (marked as running through Rosetta), installs them and runs them. Verified with Zoom (opens, shows its sign-in). Electron apps can still crash (Slack renderer).
 - Website and docs (crosswind.nandan.fyi) in `site/`.
