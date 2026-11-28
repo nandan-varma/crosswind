@@ -15,7 +15,7 @@ Crosswind runs Linux apps from [Flathub](https://flathub.org) on your Mac. Each 
 
 ## Install Crosswind
 
-Download `Crosswind-0.1.0.dmg` from the [beta release](https://github.com/nandan-varma/crosswind/releases/tag/v0.1.0-beta.1), open it and drag Crosswind to Applications. It is signed and notarized by Apple. You can also build it from source; the [development guide](/docs/development/) walks through it.
+Download `Crosswind-0.1.0.dmg` from the [beta release](https://github.com/nandan-varma/crosswind/releases/tag/v0.1.0-beta.2), open it and drag Crosswind to Applications. It is signed and notarized by Apple. You can also build it from source; the [development guide](/docs/development/) walks through it.
 
 ## First launch
 
