@@ -30,6 +30,8 @@ public struct CatalogApp: Sendable, Hashable, Identifiable {
     public var bundle: CatalogBundle?
     /// MIME types the app opens (`<provides><mediatype>`), e.g. `image/png`.
     public var mediaTypes: [String] = []
+    /// Flathub only builds this app for Intel; it runs through Rosetta, and some such apps (Electron) can crash.
+    public var requiresRosetta = false
 
     public init() {}
 }

@@ -194,7 +194,7 @@ struct CatalogCommand: AsyncParsableCommand {
         func run() async throws {
             let client = try await connect()
             _ = try await client.command(.startVm(.init()))
-            let apps = try AppStreamParser.parse(gzipped: try await client.control.catalog())
+            let apps = try AppStreamParser.parse(gzipped: try await client.control.catalog().native)
             for app in CatalogIndex(apps: apps).search(query).prefix(10) {
                 print("\(app.id)\t\(app.name)\t\(app.summary)")
             }
@@ -215,7 +215,7 @@ struct StubCommand: AsyncParsableCommand {
         /// The app's catalog entry, as the store uses it for the stub's icon and file types; nil when the guest is
         /// unreachable (the stub is then made without them).
         private func catalogEntry() async -> CatalogApp? {
-            guard let client = try? await connect(), let catalog = try? await client.control.catalog(),
+            guard let client = try? await connect(), let catalog = try? await client.control.catalog().native,
                 let apps = try? AppStreamParser.parse(gzipped: catalog)
             else { return nil }
             return apps.first { $0.id == appID }

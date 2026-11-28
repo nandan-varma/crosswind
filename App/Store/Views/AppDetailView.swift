@@ -18,6 +18,7 @@ struct AppDetailView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 32) {
                     header(app)
+                    rosettaNotice(app)
                     failureBanner(app)
                     screenshots(app)
                     about(app)
@@ -89,6 +90,27 @@ struct AppDetailView: View {
                 }
                 .padding(.top, 8)
             }
+        }
+    }
+
+    @ViewBuilder
+    private func rosettaNotice(_ app: CatalogApp) -> some View {
+        if app.requiresRosetta {
+            Label {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Intel app").font(.headline)
+                    Text(
+                        "Only built for Intel, so it runs through Rosetta: slower, and Electron apps can crash."
+                    )
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                }
+            } icon: {
+                Image(systemName: "cpu").foregroundStyle(.secondary)
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         }
     }
 

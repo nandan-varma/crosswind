@@ -51,7 +51,7 @@ public enum CompatHarness {
         ids: [String], control: AgentClient, options: Options, log: @escaping @Sendable (String) -> Void,
         onRecord: @escaping @Sendable (CompatRecord) -> Void = { _ in }
     ) async throws -> [CompatRecord] {
-        let catalog = try AppStreamParser.parse(gzipped: try await control.control.catalog())
+        let catalog = try AppStreamParser.parse(gzipped: try await control.control.catalog().native)
         guard !catalog.isEmpty else { throw HarnessError.emptyCatalog }
         // AppStream ids of some apps carry a ".desktop" suffix (org.kde.kcalc.desktop); Flatpak ids do not.
         var apps: [String: CatalogApp] = [:]

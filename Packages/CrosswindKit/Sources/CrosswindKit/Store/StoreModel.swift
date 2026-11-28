@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import Foundation
 import Observation
+import Virtualization
 
 /// An install, update or uninstall in flight for one app.
 public struct AppOperation: Sendable, Equatable {
@@ -108,13 +109,21 @@ public final class StoreModel {
     // MARK: Catalog
 
     private var catalogFile: URL { cache.appending(path: "appstream.xml.gz") }
+    private var intelCatalogFile: URL { cache.appending(path: "appstream-x86_64.xml.gz") }
+
+    /// Whether the guest can list and run Intel-only apps: Rosetta is installed on this Mac and turned on.
+    private var intelAppsAvailable: Bool {
+        Preferences.rosettaEnabled && VZLinuxRosettaDirectoryShare.availability == .installed
+    }
 
     /// Shows the cached catalog at once. A cache older than a day is refreshed in the background; without a cache
     /// the refresh is awaited, since the guest must boot for it.
     private func loadCatalog(_ agent: AgentClient) async {
         let cached = try? Data(contentsOf: catalogFile)
-        if let cached { await parse(cached) }
-        guard cached == nil || catalogIsStale else { return }
+        if let cached { await parse(cached, intel: try? Data(contentsOf: intelCatalogFile)) }
+        // Turning Rosetta on after the catalog was cached adds the Intel apps at the next refresh.
+        let missingIntel = intelAppsAvailable && !FileManager.default.fileExists(atPath: intelCatalogFile.path)
+        guard cached == nil || catalogIsStale || missingIntel else { return }
         if cached == nil {
             await refreshCatalog(agent)
         } else {
@@ -133,16 +142,23 @@ public final class StoreModel {
             try await agent.control.refreshCatalog()
             let data = try await agent.control.catalog()
             try? FileManager.default.createDirectory(at: cache, withIntermediateDirectories: true)
-            try? data.write(to: catalogFile)
-            await parse(data)
+            try? data.native.write(to: catalogFile)
+            if data.intel.isEmpty {
+                try? FileManager.default.removeItem(at: intelCatalogFile)
+            } else {
+                try? data.intel.write(to: intelCatalogFile)
+            }
+            await parse(data.native, intel: data.intel)
         } catch {
             if catalog.isEmpty { phase = .failed(error.localizedDescription) }
         }
     }
 
-    private func parse(_ data: Data) async {
+    private func parse(_ data: Data, intel: Data?) async {
         let index = await Task.detached(priority: .userInitiated) {
-            (try? AppStreamParser.parse(gzipped: data)).map(CatalogIndex.init(apps:))
+            (try? AppStreamParser.parse(gzipped: data)).map { native in
+                CatalogIndex(apps: native + IntelCatalog.apps(intel, besides: native))
+            }
         }.value
         if let index { catalog = index }
     }

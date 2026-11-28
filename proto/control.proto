@@ -218,6 +218,7 @@ message InstalledApp {
   string branch = 4;
   uint64 installed_size = 5;
   bool update_available = 6;
+  string arch = 7;             // aarch64, or x86_64 for an app that runs through Rosetta
 }
 
 message InstalledList {
@@ -236,6 +237,8 @@ message RunningList {
 message Catalog {
   bytes appstream_xml_gz = 1;
   string arch = 2;
+  // The x86_64 catalog; empty unless Rosetta is ready in the guest. Apps found only here run through Rosetta.
+  bytes x86_appstream_xml_gz = 3;
 }
 
 // Returned immediately by Install/Uninstall/Update; progress arrives as Events.

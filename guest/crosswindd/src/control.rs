@@ -189,7 +189,12 @@ impl Control {
             }),
             request::Body::GetCatalog(_) => self.reply_later(id, || {
                 let appstream_xml_gz = flatpak::read_catalog()?;
-                Ok(response::Result::Catalog(pb::Catalog { appstream_xml_gz, arch: flatpak::ARCH.into() }))
+                let x86_appstream_xml_gz = flatpak::read_x86_catalog();
+                Ok(response::Result::Catalog(pb::Catalog {
+                    appstream_xml_gz,
+                    arch: flatpak::ARCH.into(),
+                    x86_appstream_xml_gz,
+                }))
             }),
             request::Body::ListInstalled(_) => self.reply_later(id, || {
                 Ok(response::Result::Installed(pb::InstalledList { apps: flatpak::list_installed()? }))
@@ -310,7 +315,13 @@ impl Control {
     fn launch(&mut self, app_id: &str, args: &[String]) -> Result<(), String> {
         let launch_id = new_launch_id().map_err(|e| format!("launch id: {e}"))?;
         let mut cmd = Command::new("flatpak");
-        cmd.args(["run", "--user", app_id])
+        // An app installed for Intel is not among Flatpak's native architectures, so say which build to run.
+        let arch = flatpak::installed_arch(app_id);
+        cmd.args(["run", "--user"]);
+        if arch != flatpak::ARCH {
+            cmd.arg(format!("--arch={arch}"));
+        }
+        cmd.arg(app_id)
             .args(args)
             .envs(self.env.iter().map(|(k, v)| (k.as_str(), v.as_str())))
             .env("CROSSWIND_DARK_MODE", if self.dark_mode { "1" } else { "0" })

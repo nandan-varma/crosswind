@@ -65,11 +65,12 @@ public actor GuestControl {
         try await expectOk(.refreshCatalog(Crosswind_Control_RefreshCatalog()))
     }
 
-    public func catalog() async throws -> Data {
+    /// The Flathub catalog for this Mac's architecture, and the Intel one (empty unless Rosetta is ready).
+    public func catalog() async throws -> (native: Data, intel: Data) {
         guard case .catalog(let catalog) = try await call(.getCatalog(Crosswind_Control_GetCatalog())) else {
             throw GuestControlError.unexpectedResponse
         }
-        return catalog.appstreamXmlGz
+        return (catalog.appstreamXmlGz, catalog.x86AppstreamXmlGz)
     }
 
     public func installed() async throws -> [Crosswind_Control_InstalledApp] {

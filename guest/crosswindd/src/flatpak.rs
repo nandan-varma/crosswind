@@ -19,6 +19,8 @@ use crate::control_pb as pb;
 
 pub const REMOTE: &str = "flathub";
 pub const ARCH: &str = "aarch64";
+/// The Intel architecture, run through Rosetta when the Mac shares it (see `rosetta_ready`).
+pub const X86_ARCH: &str = "x86_64";
 pub const REPO_URL: &str = "https://dl.flathub.org/repo/flathub.flatpakrepo";
 /// OpenPGP fingerprint of the Flathub signing key. A `.flatpakrepo` carrying any other key is refused.
 pub const FLATHUB_KEY_FPR: &str = "6E5C05D979C76DAF93C081354184DD4D907A7CAE";
@@ -249,6 +251,12 @@ pub fn ensure_remote(inst: &Installation) -> Result<(), String> {
     inst.add_remote(&remote, false, None::<&gio::Cancellable>).map_err(s)
 }
 
+/// Whether x86_64 programs can run: the Rosetta share is mounted and registered with binfmt_misc
+/// (`image/overlay/etc/init.d/crosswind-rosetta`).
+pub fn rosetta_ready() -> bool {
+    Path::new("/proc/sys/fs/binfmt_misc/rosetta").exists()
+}
+
 fn is_app(kind: RefKind) -> bool {
     kind == RefKind::App
 }
@@ -280,6 +288,7 @@ pub fn list_installed() -> Result<Vec<pb::InstalledApp>, String> {
                 name: r.appdata_name().map(|n| n.to_string()).unwrap_or_else(|| app_id.clone()),
                 version: r.appdata_version().map(|v| v.to_string()).unwrap_or_default(),
                 branch: r.branch().map(|b| b.to_string()).unwrap_or_default(),
+                arch: r.arch().map(|a| a.to_string()).unwrap_or_default(),
                 installed_size: r.installed_size(),
                 update_available: updates.contains(&app_id),
                 app_id,
@@ -292,7 +301,24 @@ pub fn list_installed() -> Result<Vec<pb::InstalledApp>, String> {
 pub fn refresh_catalog() -> Result<(), String> {
     let inst = user_installation()?;
     ensure_remote(&inst)?;
-    inst.update_appstream_sync(REMOTE, Some(ARCH), None::<&gio::Cancellable>).map_err(s)
+    inst.update_appstream_sync(REMOTE, Some(ARCH), None::<&gio::Cancellable>).map_err(s)?;
+    // The Intel catalog only matters where Intel apps can run; a failure there must not fail the refresh.
+    if rosetta_ready()
+        && let Err(e) = inst.update_appstream_sync(REMOTE, Some(X86_ARCH), None::<&gio::Cancellable>)
+    {
+        tracing::warn!("x86_64 catalog refresh failed: {e}");
+    }
+    Ok(())
+}
+
+/// The cached x86_64 AppStream catalog, or nothing when Rosetta is not ready or the catalog was never fetched.
+pub fn read_x86_catalog() -> Vec<u8> {
+    if !rosetta_ready() {
+        return Vec::new();
+    }
+    let Ok(inst) = user_installation() else { return Vec::new() };
+    let Ok(dir) = installation_dir(&inst) else { return Vec::new() };
+    fs::read(dir.join(format!("appstream/{REMOTE}/{X86_ARCH}/active/appstream.xml.gz"))).unwrap_or_default()
 }
 
 /// The cached Flathub AppStream catalog, gzip-compressed, as Flatpak wrote it.
@@ -338,12 +364,27 @@ pub fn list_running() -> Vec<pb::RunningApp> {
 /// Remote ref string (`app/<id>/<arch>/<branch>`) for an app on the Flathub remote.
 fn remote_ref(inst: &Installation, app_id: &str) -> Result<String, String> {
     let refs = inst.list_remote_refs_sync(REMOTE, None::<&gio::Cancellable>).map_err(s)?;
-    let mut matches = refs
-        .iter()
-        .filter(|r| is_app(r.kind()) && r.name().as_deref() == Some(app_id) && r.arch().as_deref() == Some(ARCH));
-    let chosen = matches.clone().find(|r| r.branch().as_deref() == Some("stable")).or_else(|| matches.next());
-    let branch = chosen.and_then(|r| r.branch()).ok_or_else(|| format!("{app_id} not found on {REMOTE} for {ARCH}"))?;
-    Ok(format!("app/{app_id}/{ARCH}/{branch}"))
+    // The native build wins; an Intel build is used only when there is no native one and Rosetta can run it.
+    let arches = if rosetta_ready() { vec![ARCH, X86_ARCH] } else { vec![ARCH] };
+    for arch in arches {
+        let mut matches = refs
+            .iter()
+            .filter(|r| is_app(r.kind()) && r.name().as_deref() == Some(app_id) && r.arch().as_deref() == Some(arch));
+        let chosen = matches.clone().find(|r| r.branch().as_deref() == Some("stable")).or_else(|| matches.next());
+        if let Some(branch) = chosen.and_then(|r| r.branch()) {
+            return Ok(format!("app/{app_id}/{arch}/{branch}"));
+        }
+    }
+    Err(format!("{app_id} not found on {REMOTE} for {ARCH}"))
+}
+
+/// The architecture an installed app was installed for; the native one when it is not installed.
+pub fn installed_arch(app_id: &str) -> String {
+    user_installation()
+        .and_then(|inst| find_installed(&inst, app_id))
+        .ok()
+        .and_then(|r| r.arch().map(|a| a.to_string()))
+        .unwrap_or_else(|| ARCH.to_owned())
 }
 
 fn phase_of(t: libflatpak::TransactionOperationType) -> &'static str {

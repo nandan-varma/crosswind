@@ -935,6 +935,9 @@ public nonisolated struct Crosswind_Control_InstalledApp: Sendable {
 
   public var updateAvailable: Bool = false
 
+  /// aarch64, or x86_64 for an app that runs through Rosetta
+  public var arch: String = String()
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -986,6 +989,9 @@ public nonisolated struct Crosswind_Control_Catalog: Sendable {
   public var appstreamXmlGz: Data = Data()
 
   public var arch: String = String()
+
+  /// The x86_64 catalog; empty unless Rosetta is ready in the guest. Apps found only here run through Rosetta.
+  public var x86AppstreamXmlGz: Data = Data()
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -3159,7 +3165,7 @@ nonisolated extension Crosswind_Control_Error: SwiftProtobuf.Message, SwiftProto
 
 nonisolated extension Crosswind_Control_InstalledApp: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".InstalledApp"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}app_id\0\u{1}name\0\u{1}version\0\u{1}branch\0\u{3}installed_size\0\u{3}update_available\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}app_id\0\u{1}name\0\u{1}version\0\u{1}branch\0\u{3}installed_size\0\u{3}update_available\0\u{1}arch\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -3173,6 +3179,7 @@ nonisolated extension Crosswind_Control_InstalledApp: SwiftProtobuf.Message, Swi
       case 4: try { try decoder.decodeSingularStringField(value: &self.branch) }()
       case 5: try { try decoder.decodeSingularUInt64Field(value: &self.installedSize) }()
       case 6: try { try decoder.decodeSingularBoolField(value: &self.updateAvailable) }()
+      case 7: try { try decoder.decodeSingularStringField(value: &self.arch) }()
       default: break
       }
     }
@@ -3197,6 +3204,9 @@ nonisolated extension Crosswind_Control_InstalledApp: SwiftProtobuf.Message, Swi
     if self.updateAvailable != false {
       try visitor.visitSingularBoolField(value: self.updateAvailable, fieldNumber: 6)
     }
+    if !self.arch.isEmpty {
+      try visitor.visitSingularStringField(value: self.arch, fieldNumber: 7)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -3207,6 +3217,7 @@ nonisolated extension Crosswind_Control_InstalledApp: SwiftProtobuf.Message, Swi
     if lhs.branch != rhs.branch {return false}
     if lhs.installedSize != rhs.installedSize {return false}
     if lhs.updateAvailable != rhs.updateAvailable {return false}
+    if lhs.arch != rhs.arch {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -3309,7 +3320,7 @@ nonisolated extension Crosswind_Control_RunningList: SwiftProtobuf.Message, Swif
 
 nonisolated extension Crosswind_Control_Catalog: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Catalog"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}appstream_xml_gz\0\u{1}arch\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}appstream_xml_gz\0\u{1}arch\0\u{3}x86_appstream_xml_gz\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -3319,6 +3330,7 @@ nonisolated extension Crosswind_Control_Catalog: SwiftProtobuf.Message, SwiftPro
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularBytesField(value: &self.appstreamXmlGz) }()
       case 2: try { try decoder.decodeSingularStringField(value: &self.arch) }()
+      case 3: try { try decoder.decodeSingularBytesField(value: &self.x86AppstreamXmlGz) }()
       default: break
       }
     }
@@ -3331,12 +3343,16 @@ nonisolated extension Crosswind_Control_Catalog: SwiftProtobuf.Message, SwiftPro
     if !self.arch.isEmpty {
       try visitor.visitSingularStringField(value: self.arch, fieldNumber: 2)
     }
+    if !self.x86AppstreamXmlGz.isEmpty {
+      try visitor.visitSingularBytesField(value: self.x86AppstreamXmlGz, fieldNumber: 3)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Crosswind_Control_Catalog, rhs: Crosswind_Control_Catalog) -> Bool {
     if lhs.appstreamXmlGz != rhs.appstreamXmlGz {return false}
     if lhs.arch != rhs.arch {return false}
+    if lhs.x86AppstreamXmlGz != rhs.x86AppstreamXmlGz {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
