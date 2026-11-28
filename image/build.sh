@@ -50,10 +50,9 @@ done
 # OpenRC runlevels: only what a headless Wayland host needs.
 link() { mkdir -p "$ROOT/etc/runlevels/$1"; ln -sf "/etc/init.d/$2" "$ROOT/etc/runlevels/$1/$2"; }
 for s in devfs dmesg; do link sysinit "$s"; done
-for s in hostname sysctl modules bootmisc crosswind-data crosswind-rosetta networking; do link boot "$s"; done
+for s in hostname sysctl modules bootmisc crosswind-data crosswind-rosetta crosswind-net; do link boot "$s"; done
 for s in dbus crosswindd; do link default "$s"; done
 echo crosswind > "$ROOT/etc/hostname"
-printf 'auto lo\niface lo inet loopback\nauto eth0\niface eth0 inet dhcp\n' > "$ROOT/etc/network/interfaces"
 printf 'virtio_net\nvsock\nvmw_vsock_virtio_transport\nfuse\nvirtiofs\nvirtio_snd\n' > "$ROOT/etc/modules"
 : > "$ROOT/etc/fstab"
 

@@ -304,6 +304,33 @@ mod tests {
         assert_eq!(uri_path("file:///mnt/mac/%00"), None);
     }
 
+    /// Seeded random bytes through both URI functions: no panics, every URI is plain ASCII under the Mac share, and a
+    /// valid path survives the round trip.
+    #[test]
+    fn hostile_paths_and_uris_never_escape_the_share() {
+        let mut state = 0x9E37_79B9_7F4A_7C15u64;
+        let mut next = move || {
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+            state
+        };
+        let alphabet: Vec<char> = "abc/._-%20\n\0..~é ".chars().collect();
+        for _ in 0..20_000 {
+            let len = (next() % 40) as usize;
+            let text: String = (0..len).map(|_| alphabet[(next() % alphabet.len() as u64) as usize]).collect();
+            let candidate = format!("/mnt/mac/{text}");
+            if let Some(uri) = file_uri(&candidate) {
+                assert!(uri.is_ascii() && uri.starts_with("file:///mnt/mac/"), "{uri}");
+                assert!(uri.split('/').all(|part| part != ".."), "{uri}");
+                assert_eq!(uri_path(&uri).as_deref(), Some(candidate.as_str()));
+            }
+            if let Some(path) = uri_path(&format!("file://{text}")) {
+                assert!(!path.chars().any(char::is_control));
+            }
+        }
+    }
+
     #[test]
     fn uri_lists_end_every_line_with_crlf() {
         assert_eq!(uri_list(&["a".into(), "b".into()]), "a\r\nb\r\n");

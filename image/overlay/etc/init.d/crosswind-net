@@ -1,0 +1,17 @@
+#!/sbin/openrc-run
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Brings the network up without waiting for the DHCP lease: the standard `networking` service blocks boot until one
+# arrives (about two seconds), but nothing at boot needs the network, and Flatpak only does when an app is installed.
+description="Network (DHCP in the background)"
+depend() { need localmount; after modules; provide net; }
+start() {
+    ip link set lo up
+    ip link set eth0 up
+    # -b: go to the background when there is no lease yet; the lease is renewed from there. -S: log to syslog.
+    udhcpc -i eth0 -b -S -p /run/udhcpc.eth0.pid -x "hostname:$(hostname)"
+}
+stop() {
+    [ -f /run/udhcpc.eth0.pid ] && kill "$(cat /run/udhcpc.eth0.pid)" 2>/dev/null
+    ip link set eth0 down 2>/dev/null
+    return 0
+}
