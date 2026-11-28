@@ -26,7 +26,7 @@ order: 2
 ## What does not work yet
 
 - **GPU acceleration.** The Linux environment renders with the CPU, so OpenGL, Vulkan and WebGL apps are slow or unsupported.
-- **Intel-only apps** work in an experimental way through Rosetta; some, such as Electron apps, can crash.
+- **Intel-only apps** run through Rosetta, which is experimental: they are slower, and Electron apps can crash.
 - **Webcams, Bluetooth and USB devices.**
 
 See the [roadmap](/docs/roadmap/) for what is planned and the [compatibility list](/docs/compatibility/) for tested apps.

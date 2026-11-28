@@ -15,7 +15,7 @@ The Linux environment starts when you open an app, gives memory back when idle a
 
 ## An app I want is missing.
 
-Crosswind lists Flathub apps that have an Apple silicon (arm64) build. Intel-only apps need Rosetta support, which is experimental; turn it on under Settings > Environment.
+Crosswind lists Flathub apps that have an Apple silicon (arm64) build. Apps that Flathub builds only for Intel appear in the store too once Rosetta is installed and turned on under Settings > Environment. They run through Rosetta, which is experimental: they are slower, and Electron apps can crash.
 
 ## An app is slow or draws wrongly.
 
