@@ -256,3 +256,17 @@ struct RectCodecTests {
         try DisplayLimits.checkDragDrop(.with { $0.paths = ["/mnt/mac/../etc"] })
     }
 }
+
+@Test func aCaretRectangleIsBoundedByTheSurfaceLimits() {
+    #expect(
+        DisplayLimits.caretIsSane(
+            .with {
+                $0.x = 10
+                $0.y = 20
+                $0.width = 2
+                $0.height = 18
+            }))
+    #expect(!DisplayLimits.caretIsSane(.with { $0.width = DisplayLimits.maxSurfaceSide + 1 }))
+    #expect(!DisplayLimits.caretIsSane(.with { $0.x = Int32.min }))
+    #expect(!DisplayLimits.caretIsSane(.with { $0.y = Int32.max }))
+}

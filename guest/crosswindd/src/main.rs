@@ -16,6 +16,7 @@ mod render;
 mod satellite;
 mod state;
 mod supervisor;
+mod text_input;
 mod tray;
 mod x11;
 

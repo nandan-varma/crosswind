@@ -31,10 +31,10 @@ extension SurfaceView: @preconcurrency NSTextInputClient {
 
     func validAttributesForMarkedText() -> [NSAttributedString.Key] { [] }
 
-    /// Where the candidate window goes. The guest does not report the caret yet, so this is the view's top-left.
+    /// Where the candidate window goes: the caret the guest app reported, else the view's top-left.
     func firstRect(forCharacterRange range: NSRange, actualRange: NSRangePointer?) -> NSRect {
         guard let window else { return .zero }
-        let local = NSRect(x: 0, y: 0, width: 1, height: 1)
+        let local = caret ?? NSRect(x: 0, y: 0, width: 1, height: 1)
         return window.convertToScreen(convert(local, to: nil))
     }
 

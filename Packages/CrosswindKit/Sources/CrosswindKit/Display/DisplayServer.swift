@@ -70,7 +70,9 @@ public final class DisplayServer {
         case .cursor(let cursor):
             windows[cursor.window]?.view.setCursor(CursorMap.cursor(named: cursor.name))
         case .textInputState(let state):
-            windows[state.window]?.view.setTextInputEnabled(state.enabled)
+            windows[state.window]?.view.setTextInputEnabled(state.enabled, secure: state.secure)
+        case .textInputCursor(let cursor):
+            windows[cursor.window]?.view.setCaret(cursor)
         case .dragStarted(let drag):
             Log.display.debug("window \(drag.window): drag started (\(drag.uris.count) files)")
             windows[drag.window]?.view.pendingDrag = pendingDrag(from: drag)

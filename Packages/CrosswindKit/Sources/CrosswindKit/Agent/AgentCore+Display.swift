@@ -57,6 +57,9 @@ extension AgentCore {
         case .textInputState(let state)?:
             guard windows[state.window] != nil else { return }
             send(message, toStubOfWindow: state.window)
+        case .textInputCursor(let cursor)?:
+            guard windows[cursor.window] != nil, DisplayLimits.caretIsSane(cursor) else { return }
+            send(message, toStubOfWindow: cursor.window)
         case .dragStarted(let drag)?:
             route(drag: drag, message)
         case .dragStatus(let status)?:

@@ -19,6 +19,7 @@ message ToHost {
     TextInputState text_input_state = 6;
     DragStarted drag_started = 7;
     DragStatus drag_status = 8;
+    TextInputCursor text_input_cursor = 9;
   }
 }
 
@@ -42,6 +43,18 @@ message DragStatus {
 message TextInputState {
   uint32 window = 1;
   bool enabled = 2;
+  // The field takes a password or PIN (content purpose): the host skips input methods and composition for it.
+  bool secure = 3;
+}
+
+// Where the caret of the focused text input is (zwp_text_input_v3.set_cursor_rectangle), in the window's logical
+// points. The host puts the input method's candidate window there.
+message TextInputCursor {
+  uint32 window = 1;
+  sint32 x = 2;
+  sint32 y = 3;
+  uint32 width = 4;
+  uint32 height = 5;
 }
 
 enum WindowKind {

@@ -28,6 +28,5 @@ order: 2
 - **GPU acceleration.** The Linux environment renders with the CPU, so OpenGL, Vulkan and WebGL apps are slow or unsupported.
 - **Intel-only apps** work in an experimental way through Rosetta; some, such as Electron apps, can crash.
 - **Webcams, Bluetooth and USB devices.**
-- **Input method popups** appear at the window's corner rather than at the caret.
 
 See the [roadmap](/docs/roadmap/) for what is planned and the [compatibility list](/docs/compatibility/) for tested apps.

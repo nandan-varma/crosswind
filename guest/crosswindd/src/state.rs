@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 use std::{ffi::OsString, sync::Arc, time::Instant};
 
-use smithay::wayland::text_input::{TextInputManagerState, TextInputSeat};
 use smithay::{
     backend::renderer::{damage::OutputDamageTracker, pixman::PixmanRenderer},
     desktop::PopupManager,
@@ -27,6 +26,8 @@ use smithay::{
     },
 };
 
+use crate::text_input::TextInputGlobal;
+use smithay::reexports::wayland_protocols::wp::text_input::zv3::server::zwp_text_input_manager_v3::ZwpTextInputManagerV3;
 use crate::{
     control::{self, Control},
     link::{Link, arm_write},
@@ -83,6 +84,7 @@ pub struct State {
     pub output_manager_state: OutputManagerState,
     /// MIME types of a guest copy waiting to be read (see `SelectionHandler::new_selection`).
     pub guest_copy: Option<Vec<String>>,
+    pub text_inputs: crate::text_input::TextInputs,
     /// A drag from the Mac in progress, and the window an app-started drag began in (see `dnd`).
     pub host_drag: Option<crate::dnd::HostDrag>,
     pub guest_drag: Option<u32>,
@@ -131,11 +133,8 @@ impl State {
         let mut seat = seat_state.new_wl_seat(&dh, "seat0");
         seat.add_keyboard(Default::default(), 600, 25).expect("default xkb keymap");
         seat.add_pointer();
-        // The global lives as long as the display; the handle is not needed after this.
-        TextInputManagerState::new::<Self>(&dh);
-        // The compositor is the input method: text-input requests are processed without a real IME server, and the
-        // host's IME results are injected with `commit_string`/`preedit_string`.
-        seat.text_input().set_compositor_input_method(true);
+        // The compositor is the input method (see text_input.rs): the host's IME results go to the client directly.
+        dh.create_global::<Self, ZwpTextInputManagerV3, _>(1, TextInputGlobal);
 
         let output = Output::new(
             "crosswind".into(),
@@ -229,6 +228,7 @@ impl State {
             compositor_state: CompositorState::new::<Self>(&dh),
             xdg_shell_state: XdgShellState::new::<Self>(&dh),
             guest_copy: None,
+            text_inputs: Default::default(),
             host_drag: None,
             guest_drag: None,
             xdg_decoration_state: XdgDecorationState::new::<Self>(&dh),
@@ -256,9 +256,9 @@ impl State {
     }
 
     /// Tells the host whether the client of `surface` has text input enabled. Unknown surfaces are ignored.
-    pub fn send_text_input(&mut self, surface: &WlSurface, enabled: bool) {
+    pub fn send_text_input(&mut self, surface: &WlSurface, enabled: bool, secure: bool) {
         if let Some(id) = self.win_by_surface(surface).map(|w| w.id) {
-            self.send(pb::to_host::Msg::TextInputState(pb::TextInputState { window: id, enabled }));
+            self.send(pb::to_host::Msg::TextInputState(pb::TextInputState { window: id, enabled, secure }));
         }
     }
 

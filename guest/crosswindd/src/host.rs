@@ -17,7 +17,6 @@ use smithay::{
     wayland::{compositor::{with_surface_tree_downward, TraversalAction}, fractional_scale::with_fractional_scale},
 };
 use smithay::wayland::compositor::SurfaceData;
-use smithay::wayland::text_input::TextInputSeat;
 
 use crate::{
     limits,
@@ -56,7 +55,7 @@ impl State {
             }
             Msg::Input(i) => self.input(i),
             Msg::KeyboardLayout(l) => self.set_keyboard_layout(l),
-            Msg::TextInput(t) => self.text_input(t),
+            Msg::TextInput(t) => self.text_input_update(t),
             Msg::DragEnter(e) => self.drag_enter(e),
             Msg::DragMotion(m) => self.drag_motion(m),
             Msg::DragLeave(l) => self.drag_cancel(l.window),
@@ -149,32 +148,6 @@ impl State {
         if let Err(e) = kb.set_xkb_config(self, config) {
             tracing::warn!("xkb keymap {layout}/{variant} failed: {e}");
         }
-    }
-
-    /// Applies the host's composition result to the client that has text input focus. Dropped unless `window` is
-    /// the focused window, so a late update cannot land in another client.
-    fn text_input(&mut self, t: pb::TextInput) {
-        let text_input = self.seat.text_input().clone();
-        let Some(focus) = text_input.focus() else { return };
-        if self.win_by_surface(&focus).map(|w| w.id) != Some(t.window) {
-            tracing::debug!("text input for window {} dropped: not focused", t.window);
-            return;
-        }
-        text_input.with_active_text_input(|ti, _| {
-            if let Some(d) = &t.delete_surrounding {
-                ti.delete_surrounding_text(d.before, d.after);
-            }
-            if let Some(c) = &t.commit {
-                ti.commit_string((!c.text.is_empty()).then(|| c.text.clone()));
-            }
-            if let Some(p) = &t.preedit {
-                let text = (!p.text.is_empty()).then(|| p.text.clone());
-                let (begin, end) = preedit_cursor(&p.text, p.cursor_begin, p.cursor_end)
-                    .unwrap_or((p.text.len() as i32, p.text.len() as i32));
-                ti.preedit_string(text, begin, end);
-            }
-        });
-        text_input.done(false);
     }
 
     pub fn input(&mut self, input: pb::Input) {

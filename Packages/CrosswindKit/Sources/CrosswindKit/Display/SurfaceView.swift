@@ -16,6 +16,8 @@ final class SurfaceView: NSView {
     /// Set by the text-input methods while AppKit interprets one key event: true when text was produced.
     var keyConsumedByText = false
     private(set) var textInputEnabled = false
+    /// The caret rectangle the guest reported, in view coordinates (the view is flipped, so top-left based).
+    private(set) var caret: NSRect?
     /// Drag and drop (see SurfaceView+Drag.swift): events for the guest, whether the guest app under a Mac drag
     /// accepts it, and a drag an app started in the guest that has not left the app's windows yet.
     var onDrag: ((DragEvent) -> Void)?
@@ -126,9 +128,20 @@ final class SurfaceView: NSView {
     // MARK: Keyboard
 
     /// The guest client enabled or disabled text input. Disabling drops any composition.
-    func setTextInputEnabled(_ enabled: Bool) {
-        textInputEnabled = enabled
-        if !enabled { textInput = TextInputState() }
+    /// A password or PIN field (`secure`) gets no input method: keys go straight to the guest.
+    func setTextInputEnabled(_ enabled: Bool, secure: Bool) {
+        textInputEnabled = enabled && !secure
+        if !textInputEnabled {
+            textInput = TextInputState()
+            caret = nil
+        }
+        inputContext?.invalidateCharacterCoordinates()
+    }
+
+    /// Where the guest's text caret is, in this view's points (the candidate window is placed there).
+    func setCaret(_ cursor: Crosswind_Display_TextInputCursor) {
+        caret = NSRect(x: Int(cursor.x), y: Int(cursor.y), width: Int(cursor.width), height: Int(cursor.height))
+        inputContext?.invalidateCharacterCoordinates()
     }
 
     override func keyDown(with event: NSEvent) {

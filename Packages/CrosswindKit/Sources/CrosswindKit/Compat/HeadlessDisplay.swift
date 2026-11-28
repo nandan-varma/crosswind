@@ -60,7 +60,7 @@ public actor HeadlessDisplay {
                         $0.seq = frame.seq
                     })
             }
-        case .cursor?, .textInputState?, .dragStarted?, .dragStatus?, nil:
+        case .cursor?, .textInputState?, .dragStarted?, .dragStatus?, .textInputCursor?, nil:
             break
         }
         return nil

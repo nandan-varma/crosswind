@@ -136,6 +136,14 @@ public nonisolated struct Crosswind_Display_ToHost: Sendable {
     set {msg = .dragStatus(newValue)}
   }
 
+  public var textInputCursor: Crosswind_Display_TextInputCursor {
+    get {
+      if case .textInputCursor(let v)? = msg {return v}
+      return Crosswind_Display_TextInputCursor()
+    }
+    set {msg = .textInputCursor(newValue)}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public nonisolated enum OneOf_Msg: Equatable, Sendable {
@@ -147,6 +155,7 @@ public nonisolated struct Crosswind_Display_ToHost: Sendable {
     case textInputState(Crosswind_Display_TextInputState)
     case dragStarted(Crosswind_Display_DragStarted)
     case dragStatus(Crosswind_Display_DragStatus)
+    case textInputCursor(Crosswind_Display_TextInputCursor)
 
   }
 
@@ -199,6 +208,31 @@ public nonisolated struct Crosswind_Display_TextInputState: Sendable {
   public var window: UInt32 = 0
 
   public var enabled: Bool = false
+
+  /// The field takes a password or PIN (content purpose): the host skips input methods and composition for it.
+  public var secure: Bool = false
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+/// Where the caret of the focused text input is (zwp_text_input_v3.set_cursor_rectangle), in the window's logical
+/// points. The host puts the input method's candidate window there.
+public nonisolated struct Crosswind_Display_TextInputCursor: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var window: UInt32 = 0
+
+  public var x: Int32 = 0
+
+  public var y: Int32 = 0
+
+  public var width: UInt32 = 0
+
+  public var height: UInt32 = 0
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -979,7 +1013,7 @@ nonisolated extension Crosswind_Display_WindowKind: SwiftProtobuf._ProtoNameProv
 
 nonisolated extension Crosswind_Display_ToHost: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".ToHost"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}opened\0\u{1}changed\0\u{1}closed\0\u{1}frame\0\u{1}cursor\0\u{3}text_input_state\0\u{3}drag_started\0\u{3}drag_status\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}opened\0\u{1}changed\0\u{1}closed\0\u{1}frame\0\u{1}cursor\0\u{3}text_input_state\0\u{3}drag_started\0\u{3}drag_status\0\u{3}text_input_cursor\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1091,6 +1125,19 @@ nonisolated extension Crosswind_Display_ToHost: SwiftProtobuf.Message, SwiftProt
           self.msg = .dragStatus(v)
         }
       }()
+      case 9: try {
+        var v: Crosswind_Display_TextInputCursor?
+        var hadOneofValue = false
+        if let current = self.msg {
+          hadOneofValue = true
+          if case .textInputCursor(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.msg = .textInputCursor(v)
+        }
+      }()
       default: break
       }
     }
@@ -1133,6 +1180,10 @@ nonisolated extension Crosswind_Display_ToHost: SwiftProtobuf.Message, SwiftProt
     case .dragStatus?: try {
       guard case .dragStatus(let v)? = self.msg else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 8)
+    }()
+    case .textInputCursor?: try {
+      guard case .textInputCursor(let v)? = self.msg else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 9)
     }()
     case nil: break
     }
@@ -1223,7 +1274,7 @@ nonisolated extension Crosswind_Display_DragStatus: SwiftProtobuf.Message, Swift
 
 nonisolated extension Crosswind_Display_TextInputState: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".TextInputState"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}window\0\u{1}enabled\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}window\0\u{1}enabled\0\u{1}secure\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1233,6 +1284,7 @@ nonisolated extension Crosswind_Display_TextInputState: SwiftProtobuf.Message, S
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularUInt32Field(value: &self.window) }()
       case 2: try { try decoder.decodeSingularBoolField(value: &self.enabled) }()
+      case 3: try { try decoder.decodeSingularBoolField(value: &self.secure) }()
       default: break
       }
     }
@@ -1245,12 +1297,66 @@ nonisolated extension Crosswind_Display_TextInputState: SwiftProtobuf.Message, S
     if self.enabled != false {
       try visitor.visitSingularBoolField(value: self.enabled, fieldNumber: 2)
     }
+    if self.secure != false {
+      try visitor.visitSingularBoolField(value: self.secure, fieldNumber: 3)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Crosswind_Display_TextInputState, rhs: Crosswind_Display_TextInputState) -> Bool {
     if lhs.window != rhs.window {return false}
     if lhs.enabled != rhs.enabled {return false}
+    if lhs.secure != rhs.secure {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Crosswind_Display_TextInputCursor: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".TextInputCursor"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}window\0\u{1}x\0\u{1}y\0\u{1}width\0\u{1}height\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularUInt32Field(value: &self.window) }()
+      case 2: try { try decoder.decodeSingularSInt32Field(value: &self.x) }()
+      case 3: try { try decoder.decodeSingularSInt32Field(value: &self.y) }()
+      case 4: try { try decoder.decodeSingularUInt32Field(value: &self.width) }()
+      case 5: try { try decoder.decodeSingularUInt32Field(value: &self.height) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.window != 0 {
+      try visitor.visitSingularUInt32Field(value: self.window, fieldNumber: 1)
+    }
+    if self.x != 0 {
+      try visitor.visitSingularSInt32Field(value: self.x, fieldNumber: 2)
+    }
+    if self.y != 0 {
+      try visitor.visitSingularSInt32Field(value: self.y, fieldNumber: 3)
+    }
+    if self.width != 0 {
+      try visitor.visitSingularUInt32Field(value: self.width, fieldNumber: 4)
+    }
+    if self.height != 0 {
+      try visitor.visitSingularUInt32Field(value: self.height, fieldNumber: 5)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Crosswind_Display_TextInputCursor, rhs: Crosswind_Display_TextInputCursor) -> Bool {
+    if lhs.window != rhs.window {return false}
+    if lhs.x != rhs.x {return false}
+    if lhs.y != rhs.y {return false}
+    if lhs.width != rhs.width {return false}
+    if lhs.height != rhs.height {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

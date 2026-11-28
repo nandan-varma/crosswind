@@ -168,6 +168,15 @@ public enum DisplayLimits {
         }
     }
 
+    // MARK: Text input
+
+    /// The caret rectangle a guest app reports: no larger than a surface, and not far outside one.
+    public static func caretIsSane(_ cursor: Crosswind_Display_TextInputCursor) -> Bool {
+        let range = -Int32(maxSurfaceSide)...Int32(maxSurfaceSide)
+        return cursor.width <= maxSurfaceSide && cursor.height <= maxSurfaceSide && range.contains(cursor.x)
+            && range.contains(cursor.y)
+    }
+
     // MARK: Drag and drop
 
     /// A guest app's drag: bounded text and at most `maxDragFiles` `file://` URIs under the Mac share.
