@@ -66,14 +66,16 @@ impl CompositorHandler for State {
             match &win.role {
                 Role::Toplevel(t) => {
                     let sent = with_states(surface, |s| {
-                        s.data_map.get::<XdgToplevelSurfaceData>().expect("xdg data").lock().expect("lock").initial_configure_sent
+                        s.data_map.get::<XdgToplevelSurfaceData>().and_then(|d| d.lock().ok()).is_none_or(|d| d.initial_configure_sent)
                     });
                     if !sent {
                         t.send_configure();
                     }
                 }
                 Role::Popup(p) if !p.is_initial_configure_sent() => {
-                    p.send_configure().expect("initial popup configure");
+                    if let Err(e) = p.send_configure() {
+                        tracing::warn!("initial popup configure failed: {e}");
+                    }
                 }
                 Role::Popup(_) => {}
             }
@@ -346,7 +348,9 @@ pub struct ToplevelData {
 
 pub fn toplevel_data(surface: &WlSurface) -> ToplevelData {
     with_states(surface, |s| {
-        let data = s.data_map.get::<XdgToplevelSurfaceData>().expect("xdg data").lock().expect("lock");
+        let Some(data) = s.data_map.get::<XdgToplevelSurfaceData>().and_then(|d| d.lock().ok()) else {
+            return ToplevelData { title: String::new(), app_id: String::new() };
+        };
         ToplevelData { title: data.title.clone().unwrap_or_default(), app_id: data.app_id.clone().unwrap_or_default() }
     })
 }

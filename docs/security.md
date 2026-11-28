@@ -60,12 +60,11 @@ Messages that fail a check are dropped, never crash the process. Logs for refusa
 - **App identity is trusted from the guest.** A guest window carries the Flatpak id that the guest's process tree reports. The agent routes that window to the stub for that id, so a malicious app can open windows under another app's Dock identity. Needs the agent to verify ownership (for example, by launching only through the agent and matching launch ids) before this is closed.
 - **Titles are plain text.** A guest window can say "Save changes?" in its title. Titles stay in the window's own title bar, but this is still social-engineering surface. A fix would be a title-bar mark only the host draws (not done).
 - **Notification text is plain text** and is shown as a notification from the app's stub. Only the rate and sizes are limited.
-- **Display messages are not bounded in count.** The display stream is unbounded: a flooding guest can queue frames (up to 64 MiB each) faster than the agent forwards them. Per-window in-flight limits (acks) are not enforced by the agent. Memory use can spike; the agent does not drop frames to cope.
 - **Decode allocations.** A valid 16384x4096 damage rect allocates 256 MiB transiently in the stub. Limits cap the total, not the rate.
 - **Guest log and notification flood on the guest side.** Lines from app stdout are bounded per line but not per second in `crosswindd`; the host limits rate.
-- **Guest process panics.** Smithay glue in `handlers.rs` still uses `expect` on protocol state that a guest app drives. A misbehaving app can crash `crosswindd`; the host then sees the control and display links end. This is guest-internal, not a host compromise, but it is a denial of service.
+- **Guest process panics.** Protocol state a guest app drives (xdg data, popup configure, render target allocation) is handled without `expect`; the remaining `expect`s run at startup only.
 - **Fuzzing is seeded random, not coverage guided.** The tests in this pass (`SplitMix64`, xorshift) find panics and invariant breaks but not deep protocol bugs. No libFuzzer or cargo-fuzz target exists yet.
-- **Not reviewed in this pass:** shared folders and staging (`SharedFolders`, `Staging`), the image store, the portal settings backend, and the stub's file chooser path handling.
+- **Reviewed, one fix:** the staged copy is owned by the guest, so copy-back accepts regular files only (a planted symlink has no signature and is never copied to the Mac). Still not reviewed: the image store, the portal settings backend, and the stub's file chooser path handling.
 - **Shared fixtures depend on the Mac pasteboard.** `AgentCore` reads the real `NSPasteboard`, so tests see `OfferClipboard` requests; `FakeGuest` skips them, which hides any real clipboard bug from those tests.
 
 ## Added surfaces (2026-11)

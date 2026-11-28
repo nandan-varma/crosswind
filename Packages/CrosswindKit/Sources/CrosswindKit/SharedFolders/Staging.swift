@@ -60,8 +60,11 @@ public struct FileSignature: Equatable, Sendable {
         self.modified = modified
     }
 
+    /// Only regular files have a signature: the guest owns the staged copy, and a symlink it plants there must
+    /// never be copied to the Mac destination (`attributesOfItem` does not follow links).
     public init?(url: URL) {
         guard let attributes = try? FileManager.default.attributesOfItem(atPath: url.path),
+            attributes[.type] as? FileAttributeType == .typeRegular,
             let size = attributes[.size] as? UInt64,
             let modified = attributes[.modificationDate] as? Date
         else { return nil }

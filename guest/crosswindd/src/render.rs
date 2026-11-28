@@ -64,7 +64,13 @@ impl State {
         let win = &mut windows[idx];
         let reallocated = !matches!(&win.target, Some(t) if t.size == (pw, ph) && t.scale_120 == scale_120);
         if reallocated {
-            let image = renderer.create_buffer(Fourcc::Argb8888, (pw, ph).into()).expect("pixman buffer");
+            let image = match renderer.create_buffer(Fourcc::Argb8888, (pw, ph).into()) {
+                Ok(image) => image,
+                Err(e) => {
+                    tracing::warn!("cannot allocate a {pw}x{ph} buffer: {e}");
+                    return;
+                }
+            };
             win.target = Some(Target {
                 image,
                 tracker: OutputDamageTracker::new((pw, ph), scale, Transform::Normal),
@@ -73,7 +79,7 @@ impl State {
                 first: true,
             });
         }
-        let target = win.target.as_mut().expect("target");
+        let Some(target) = win.target.as_mut() else { return };
 
         let origin: Point<i32, Physical> = Point::<i32, Logical>::from((-geo.loc.x, -geo.loc.y)).to_physical_precise_round(scale);
         let elements: Vec<WaylandSurfaceRenderElement<PixmanRenderer>> =
@@ -81,7 +87,13 @@ impl State {
 
         let age = if target.first { 0 } else { 1 };
         let damage: Vec<Rectangle<i32, Physical>> = {
-            let mut fb = renderer.bind(&mut target.image).expect("bind pixman target");
+            let mut fb = match renderer.bind(&mut target.image) {
+                Ok(fb) => fb,
+                Err(e) => {
+                    tracing::warn!("cannot bind the render target: {e}");
+                    return;
+                }
+            };
             match target.tracker.render_output(renderer, &mut fb, age, &elements, Color32F::TRANSPARENT) {
                 Ok(r) => r.damage.cloned().unwrap_or_default(),
                 Err(e) => {

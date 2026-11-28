@@ -106,6 +106,18 @@ private func tempDirectory() throws -> URL {
         StagingSync.needsCopy(staged: FileSignature(size: 10, modified: now.addingTimeInterval(1)), copied: signature))
 }
 
+@Test func aStagedSymlinkHasNoSignatureSoItIsNeverCopiedBack() throws {
+    let dir = try tempDirectory()
+    defer { try? FileManager.default.removeItem(at: dir) }
+    let file = dir.appending(path: "a.txt")
+    try Data("x".utf8).write(to: file)
+    #expect(FileSignature(url: file) != nil)
+    let link = dir.appending(path: "link")
+    try FileManager.default.createSymbolicLink(at: link, withDestinationURL: file)
+    #expect(FileSignature(url: link) == nil)
+    #expect(FileSignature(url: dir) == nil)
+}
+
 @Test func stagingPathsAndCloneUseTheSession() throws {
     let root = try tempDirectory()
     let session = try Staging.makeSession(in: root)
