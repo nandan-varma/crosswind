@@ -19,6 +19,7 @@ Status as of 2026-11-26. Open work is tracked as GitHub issues (https://github.c
 - Open files from Finder (issue 10), standard stub menus, xdg-activation (raise requests), Konsole/terminal apps, portal frontend fix, detached-launcher apps (issue 19).
 - Rosetta spike (issue 11): share, binfmt, `apply_extra` shim and x86_64 installs work; store integration and Electron stability remain.
 - Website and docs (crosswind.nandan.fyi) in `site/`.
+- Drag and drop (issue 8): Mac to Linux (text, files via shared folders or staging) and Linux to Mac (text, files inside shared folders), verified with Kate.
 - Wrappers at install and URL scheme handlers (issue 10 follow-ups); default apps stay a macOS choice.
 - VM watchdog: heartbeat, hang detection, forced stop and a Restart item in the menu bar (issue 15).
 - Development tooling: `crosswindctl exec` (debug mode only), `scripts/ctl.sh`, `make image DEBUG_TOOLS=1`, docs/DEVELOPMENT.md.
@@ -26,7 +27,7 @@ Status as of 2026-11-26. Open work is tracked as GitHub issues (https://github.c
 ## Next (see issues)
 1. Human verification of what only a person at the screen can judge: clipboard, audio, notifications, dark mode, shared folders and file dialogs, window management (issues 5, 6, 7).
 2. IME caret position (issue 4) needs an upstream smithay accessor or our own text-input-v3.
-3. Drag and drop (issue 8), x86 apps via Rosetta (issue 11).
+3. x86 apps via Rosetta (issue 11).
 4. Performance and battery baselines in CI (issue 14).
 5. Release: notarization, DMG, appcast, hosted guest image, v0.1.0 (issue 13), after the public beta feature set is complete. Signing runs through `helpers sign` and `asc`.
 

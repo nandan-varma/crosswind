@@ -235,9 +235,13 @@ impl State {
 
     /// An app started a drag: read what it offers and tell the host (see `DragStarted`).
     pub fn guest_drag_started<S: Source>(&mut self, source: &S) {
-        let Some(window) = self.pointer_window else { return };
+        let Some(window) = self.pointer_window else {
+            tracing::debug!("guest drag without a pointer window");
+            return;
+        };
         self.guest_drag = Some(window);
         let offered = source.metadata().map(|m| m.mime_types).unwrap_or_default();
+        tracing::debug!(window, ?offered, "guest drag started");
         let deadline = Instant::now() + READ_TIMEOUT;
         let read = |wanted: &[&str], cap: usize| -> Option<std::thread::JoinHandle<Option<Vec<u8>>>> {
             let mime = wanted.iter().find(|m| offered.iter().any(|o| o == **m))?;
@@ -265,6 +269,7 @@ impl State {
             if text.is_empty() && uris.is_empty() {
                 return;
             }
+            tracing::debug!(window, text_bytes = text.len(), files = uris.len(), "guest drag sent to the host");
             let started = pb::DragStarted { window, text, uris };
             let _ = notes.send(Note::Display(pb::to_host::Msg::DragStarted(started)));
         });

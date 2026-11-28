@@ -72,6 +72,7 @@ public final class DisplayServer {
         case .textInputState(let state):
             windows[state.window]?.view.setTextInputEnabled(state.enabled)
         case .dragStarted(let drag):
+            Log.display.debug("window \(drag.window): drag started (\(drag.uris.count) files)")
             windows[drag.window]?.view.pendingDrag = pendingDrag(from: drag)
         case .dragStatus(let status):
             windows[status.window]?.view.dragAccepted = status.accepted
