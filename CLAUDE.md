@@ -46,4 +46,4 @@ Crosswind is a macOS app (AGPL-3.0-or-later, Developer ID distribution) that run
 
 ## Status
 
-Public beta readiness. Built and verified on a live guest: installs, windows, input, clipboard, dark mode, notifications, links, file dialogs, shared folders, audio output, tray icons, Open With and URL handlers, onboarding, release pipeline. Open work is in GitHub issues; `docs/ROADMAP.md` summarizes it.
+Public beta readiness. Built and verified on a live guest: installs, windows, input, clipboard, dark mode, notifications, links, file dialogs, shared folders, audio output, tray icons, Open With and URL handlers, onboarding, release pipeline. Beta 2 (v0.1.0-beta.2) is published. Open work is in GitHub issues; `docs/ROADMAP.md` summarizes it and `docs/KNOWLEDGE.md` has the latest session notes (Lima DNS fix, Intel apps, drag and drop, release steps).

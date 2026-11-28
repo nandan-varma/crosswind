@@ -32,3 +32,14 @@ Newest first. Add an entry whenever something cost more than 30 minutes.
 - Electron (VSCodium, `com.vscodium.codium`): no window in 90 s. Cause of the portal error fixed (FUSE, see 2026-11-01 entries); the app still exits 0 early, see the VSCodium entry above.
 - GTK4 TextEditor and Clocks: see the 2026-11-01 close entry (portal stall fixed; unsaved-changes prompt and GApplication hold explain the rest). Calculator closes cleanly.
 - Input and frames were observed for Calculator, TextEditor and Clocks. Rendering is CPU-only in the guest (pixman).
+
+## Session notes, 2026-11-27
+
+- **Lima DNS:** `make image` can fail with `DNS: transient error` inside `apk` although the VM has network. Fix: `limactl shell cwbuild sh -c 'sudo sh -c "printf \"nameserver 1.1.1.1\n\" > /etc/resolv.conf"'`, then rerun. It resets when the VM restarts.
+- **Flatpak and Intel apps:** libflatpak only sees its own architecture's summary and AppStream data, even with `xa.extra-arches=x86_64`. Installs and updates of Intel-only apps therefore run the `flatpak` command line with `--arch x86_64` (`run_cli` in `flatpak.rs`), and the Intel catalog is fetched with `curl` from `dl.flathub.org/repo/appstream/x86_64/appstream.xml.gz` (not signature-checked; see docs/security.md). Launching needs `flatpak run --arch=x86_64`.
+- **Drag and drop:** Mac to Linux is a smithay `DnDGrab` driven by a `HostSource`; the drop is a virtual button release. Linux to Mac reads the app's text and file list when the drag starts and begins a native drag once the pointer leaves every window of the app. `NSDraggingSession` needs a real mouse event, so tests drive it with `CGEvent` posts from a helper app.
+- **Testing GUI behavior:** capture only one window (`screencapture -l <windowID>`, IDs from `CGWindowListCopyWindowInfo`), never the full screen. Synthetic `CGEvent` mouse events work from Terminal because it has Accessibility. Qt starts a text drag only after the press is held about 0.5 s on already selected text.
+- **text-input-v3:** crosswindd serves its own `zwp_text_input_manager_v3` (`text_input.rs`) because smithay keeps the cursor rectangle private. `XDG_CURRENT_DESKTOP` etc. unaffected.
+- **dbusmenu:** `GetLayout` replies are `(u(ia{sv}av))`; decode as that tuple, not as a variant. zbus 6 renamed `Value` to `Variant`. The round trip test needs `dbus-daemon` in Lima (`apk add dbus`) and runs with `cargo test -- --ignored`.
+- **Boot time:** the `networking` service blocked boot on DHCP; `crosswind-net` starts `udhcpc -b` instead (about 1 s faster, 4.0 s total on an M4).
+- **Release:** `make release` with a clean `make image`, then `scripts/appcast.sh <dmg> <previous appcast>`, then `git tag -a` (annotated; a lightweight `git tag` failed without a message), then `gh release create --prerelease` with the DMG, appcast and the four image files. Bump `CURRENT_PROJECT_VERSION` first.

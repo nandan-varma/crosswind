@@ -16,7 +16,12 @@ Run on a clean Mac account (or after wiping Crosswind: see "Reset" below) with t
 - [ ] Open a file from Finder with Open With; open a folder from VSCodium's Open Folder.
 - [ ] Dark and light mode follow the system. A notification appears (macOS asks for permission once).
 - [ ] A tray icon (Telegram) appears in the menu bar and its click shows or hides the window.
-- [ ] Sound plays (VLC with a media file).
+- [ ] Sound plays (VLC with a media file). With the microphone on in Settings, an app (Audacity) sees an input device.
+- [ ] Right-click a tray icon that exports a menu (Telegram after login): a native menu appears and its entries work.
+- [ ] Drag text and a file from a Mac app onto a Linux editor (Kate); drag selected text and a shared-folder file out of a Linux app onto the Mac.
+- [ ] A second macOS keyboard layout and an input method (Pinyin, Kana) type the right characters; the candidate window opens at the caret.
+- [ ] An Intel-only app (Zoom) shows an "Intel app" notice, installs and opens (Rosetta on).
+- [ ] With the network off, an install fails with a message about reaching Flathub, and Retry works once it is back.
 
 ## Environment
 - [ ] Settings: every control works; Restart Environment and Reset Linux Environment behave.

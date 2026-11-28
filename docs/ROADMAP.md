@@ -1,6 +1,6 @@
 # Roadmap
 
-Status as of 2026-11-26. Open work is tracked as GitHub issues (https://github.com/nandan-varma/crosswind/issues).
+Status as of 2026-11-27. Public beta 0.1.0 beta 2 is published (https://github.com/nandan-varma/crosswind/releases/tag/v0.1.0-beta.2). Open work is tracked as GitHub issues (https://github.com/nandan-varma/crosswind/issues).
 
 ## Built (unit-tested; items marked * still need a live-guest or on-screen check)
 - VM on Virtualization.framework: direct kernel boot of an Alpine guest (erofs system disk + data disk), lazy start, idle stop, memory ballooning, resource settings, reset.
@@ -26,9 +26,12 @@ Status as of 2026-11-26. Open work is tracked as GitHub issues (https://github.c
 - Development tooling: `crosswindctl exec` (debug mode only), `scripts/ctl.sh`, `make image DEBUG_TOOLS=1`, docs/DEVELOPMENT.md.
 
 ## Next (see issues)
-1. Human verification of what only a person at the screen can judge: clipboard, audio, notifications, dark mode, shared folders and file dialogs, window management (issues 5, 6, 7).
-4. Battery baselines and CI for performance (issue 14): `scripts/perf.sh` records boot, latency and memory locally; hosted runners cannot run VMs.
-5. Release: notarization, DMG, appcast, hosted guest image, v0.1.0 (issue 13), after the public beta feature set is complete. Signing runs through `helpers sign` and `asc`.
+1. **Needs a person at the screen** (issues 5, 6, 7, 18, 20): clipboard both ways, notifications, dark mode, shared folders and file dialogs, window management, keyboard layouts and CJK input, the microphone (macOS permission prompt), the native tray menu (issue 9) and dragging files out of Linux. The checklist is in docs/beta-checklist.md.
+2. **Security leftovers** (issue 12): a coverage-guided fuzz target (needs the guest split into a library crate), a 256 MiB transient decode allocation, and reviews of the image store, the portal settings backend and the stub's file-chooser paths.
+3. **Performance** (issue 14): battery baseline on a laptop; hosted CI cannot run VMs, so `scripts/perf.sh` is a local gate.
+4. **Release follow-ups** (issue 13): CI on a macOS 27 runner (label unknown), and the first non-pre-release, because the Sparkle feed resolves through `releases/latest`.
+5. **Rosetta**: Electron apps crash in their renderer; try `--disable-gpu`/`--no-sandbox` flags per app before promising more.
+6. **Ideas not in issues**: a dead-guest recovery notification, bounded memory for huge Intel catalogs, Pinyin/Kana composition checks, an in-app "report a problem" flow.
 
 ## Explicit non-goals (v1)
 Guest GPU acceleration, webcams, Bluetooth, Mac App Store distribution.
