@@ -590,5 +590,6 @@ mod tests {
         }
         assert_eq!(events.lock().expect("events")[0], (2, "clicked".to_owned()));
         let _ = daemon.kill();
+        let _ = daemon.wait();
     }
 }
