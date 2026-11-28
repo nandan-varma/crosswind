@@ -14,7 +14,9 @@ extension AgentCore {
 
     func publish(tray change: TrayChange) {
         switch change {
-        case .changed(let item): trayIDs.insert(item.id)
+        case .changed(let item):
+            trayIDs.insert(item.id)
+            Log.display.debug("tray icon \(item.id, privacy: .public): \(item.menu.count) menu entries")
         case .removed(let id): trayIDs.remove(id)
         }
         onTray?(change)

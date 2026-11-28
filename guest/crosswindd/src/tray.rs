@@ -258,9 +258,10 @@ async fn menu_proxy<'a>(conn: &'a Connection, item: &zbus::Proxy<'_>, address: &
 /// enforces again.
 async fn read_menu(menu: &zbus::Proxy<'_>) -> zbus::Result<Vec<pb::TrayMenuItem>> {
     let _ = menu.call_method("AboutToShow", &(0i32,)).await;
-    let (_revision, layout): (u32, zbus::OwnedVariant) = menu.call("GetLayout", &(0i32, -1i32, Vec::<String>::new())).await?;
+    type Layout = (i32, HashMap<String, zbus::OwnedVariant>, Vec<zbus::OwnedVariant>);
+    let (_revision, layout): (u32, Layout) = menu.call("GetLayout", &(0i32, -1i32, Vec::<String>::new())).await?;
     let mut budget = limits::MAX_TRAY_MENU_ITEMS;
-    Ok(parse_layout(&layout, 0, &mut budget).map(|root| root.children).unwrap_or_default())
+    Ok(parse_layout(&zbus::Variant::from(layout), 0, &mut budget).map(|root| root.children).unwrap_or_default())
 }
 
 /// One dbusmenu node `(id, properties, children)`. `depth` 0 is the invisible root. Entries beyond the depth or the
@@ -356,13 +357,79 @@ fn best_icon(pixmaps: &[(i32, i32, Vec<u8>)]) -> Option<(u32, u32, Vec<u8>)> {
 
 #[cfg(test)]
 mod tests {
+    /// A dbusmenu node as the wire carries it: `(i, a{sv}, av)`, children wrapped in variants.
+    fn node(id: i32, props: &[(&str, Variant<'static>)], children: Vec<Variant<'static>>) -> Variant<'static> {
+        let props: HashMap<String, Variant<'static>> =
+            props.iter().map(|(k, v)| ((*k).to_owned(), Variant::Variant(Box::new(v.clone())))).collect();
+        let children: Vec<Variant<'static>> = children.into_iter().map(|c| Variant::Variant(Box::new(c))).collect();
+        Variant::Structure(
+            zbus::Structure::builder()
+                .add_field(id)
+                .append_field(Variant::from(props))
+                .append_field(Variant::from(children))
+                .build()
+                .expect("structure"),
+        )
+    }
+
+    #[test]
+    fn a_dbusmenu_layout_becomes_the_hosts_menu() {
+        let layout = node(
+            0,
+            &[],
+            vec![
+                node(1, &[("label", Variant::from("_Open"))], vec![]),
+                node(2, &[("type", Variant::from("separator"))], vec![]),
+                node(
+                    3,
+                    &[("label", Variant::from("Muted")), ("toggle-type", Variant::from("checkmark")), ("toggle-state", Variant::from(1i32))],
+                    vec![],
+                ),
+                node(4, &[("label", Variant::from("Hidden")), ("visible", Variant::from(false))], vec![]),
+                node(5, &[("label", Variant::from("More")), ("enabled", Variant::from(false))], vec![node(6, &[("label", Variant::from("Sub"))], vec![])]),
+            ],
+        );
+        let mut budget = 128;
+        let root = parse_layout(&layout, 0, &mut budget).expect("root");
+        let labels: Vec<_> = root.children.iter().map(|c| (c.id, c.label.as_str(), c.separator, c.enabled)).collect();
+        assert_eq!(labels, [(1, "Open", false, true), (2, "", true, true), (3, "Muted", false, true), (5, "More", false, false)]);
+        assert_eq!(root.children[2].check, crate::control_pb::tray_menu_item::Check::On as i32);
+        assert_eq!(root.children[3].children[0].label, "Sub");
+    }
+
+    #[test]
+    fn a_hostile_layout_is_cut_to_the_budget_and_depth() {
+        let mut deep = node(1, &[("label", Variant::from("x"))], vec![]);
+        for id in 2..20 {
+            deep = node(id, &[("label", Variant::from("x"))], vec![deep]);
+        }
+        let mut budget = 128;
+        let root = parse_layout(&node(0, &[], vec![deep]), 0, &mut budget).expect("root");
+        let mut levels = 0;
+        let mut at = &root;
+        while let Some(child) = at.children.first() {
+            levels += 1;
+            at = child;
+        }
+        assert_eq!(levels, crate::limits::MAX_TRAY_MENU_DEPTH);
+
+        let wide: Vec<_> = (1..400).map(|i| node(i, &[("label", Variant::from("x"))], vec![])).collect();
+        let mut budget = crate::limits::MAX_TRAY_MENU_ITEMS;
+        let root = parse_layout(&node(0, &[], wide), 0, &mut budget).expect("root");
+        assert_eq!(root.children.len(), crate::limits::MAX_TRAY_MENU_ITEMS);
+    }
+
     #[test]
     fn mnemonic_markers_go_and_double_underscores_stay() {
         assert_eq!(unmnemonic("_Open"), "Open");
         assert_eq!(unmnemonic("Save __as"), "Save _as");
     }
 
-    use super::{Address, best_icon, unmnemonic};
+    use std::collections::HashMap;
+
+    use zbus::Variant;
+
+    use super::{Address, best_icon, parse_layout, unmnemonic};
 
     #[test]
     fn a_bus_name_means_the_default_item_path() {
