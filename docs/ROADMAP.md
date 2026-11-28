@@ -15,7 +15,7 @@ Status as of 2026-11-26. Open work is tracked as GitHub issues (https://github.c
 - Live guest verified end to end on this Mac: install, launch, windows, input, X11 apps, Electron (VSCodium), Qt (Kate, KCalc), GTK (Calculator, GIMP), VLC, Audacity. See docs/compat/matrix.md.
 - Electron/Chromium apps start (issue 1): the guest's Flatpak system installation was empty, which broke the portal's nested sandboxes.
 - X11 windows are attributed to their Flatpak app through the X-Resource extension (issue 2).
-- Tray icons (issue 9): StatusNotifierWatcher in the guest, validated icons in the menu bar, clicks sent back. Verified with Telegram. Not yet: dbusmenu menus for apps that do not draw their own.
+- Tray icons (issue 9): StatusNotifierWatcher in the guest, validated icons in the menu bar, clicks sent back. Verified with Telegram. dbusmenu menus show as native menus (layout parsing unit-tested; not yet seen live because no installed app registered a menu).
 - Open files from Finder (issue 10), standard stub menus, xdg-activation (raise requests), Konsole/terminal apps, portal frontend fix, detached-launcher apps (issue 19).
 - Rosetta spike (issue 11): share, binfmt, `apply_extra` shim and x86_64 installs work; store integration and Electron stability remain.
 - Website and docs (crosswind.nandan.fyi) in `site/`.
@@ -28,7 +28,7 @@ Status as of 2026-11-26. Open work is tracked as GitHub issues (https://github.c
 ## Next (see issues)
 1. Human verification of what only a person at the screen can judge: clipboard, audio, notifications, dark mode, shared folders and file dialogs, window management (issues 5, 6, 7).
 3. x86 apps via Rosetta (issue 11).
-4. Performance and battery baselines in CI (issue 14).
+4. Battery baselines and CI for performance (issue 14): `scripts/perf.sh` records boot, latency and memory locally; hosted runners cannot run VMs.
 5. Release: notarization, DMG, appcast, hosted guest image, v0.1.0 (issue 13), after the public beta feature set is complete. Signing runs through `helpers sign` and `asc`.
 
 ## Explicit non-goals (v1)

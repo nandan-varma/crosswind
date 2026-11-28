@@ -13,7 +13,7 @@ Documentation and the project homepage: https://crosswind.nandan.fyi (source in 
 - Apple silicon only, macOS 27 or later.
 - The guest renders on the CPU. There is no GPU acceleration, so OpenGL, Vulkan and WebGL apps are slow or unsupported.
 - Only apps with an arm64 build on Flathub run. x86-only apps are not supported yet.
-- No dbusmenu tray menus and no webcam or Bluetooth yet.
+- No webcam or Bluetooth yet.
 - Direct distribution (Developer ID). Not for the Mac App Store.
 
 ## Architecture
