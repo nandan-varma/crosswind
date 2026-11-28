@@ -79,7 +79,7 @@ impl Dispatch2<ZwpTextInputManagerV3, State> for TextInputGlobal {
         if let zwp_text_input_manager_v3::Request::GetTextInput { id, .. } = request {
             let object = data_init.init(id, TextInputData);
             let inputs = &mut state.text_inputs;
-            if let Some(focus) = inputs.focus.as_ref().filter(|f| same_client(&object, f)) {
+            if let Some(focus) = inputs.focus.as_ref().filter(|f| f.is_alive() && same_client(&object, f)) {
                 object.enter(focus);
             }
             inputs.instances.push(Instance { object, serial: 0, purpose: ContentPurpose::Normal, pending: Pending::default() });
@@ -148,8 +148,11 @@ impl State {
         let Some(old) = inputs.focus.take() else {
             return self.text_input_enter(surface);
         };
-        for instance in inputs.instances.iter().filter(|i| same_client(&i.object, &old)) {
-            instance.object.leave(&old);
+        // A surface that is already gone (the window closed) needs no `leave`; the client has dropped it.
+        if old.is_alive() {
+            for instance in inputs.instances.iter().filter(|i| same_client(&i.object, &old)) {
+                instance.object.leave(&old);
+            }
         }
         let was_active = inputs.active.take().is_some();
         if was_active {
@@ -159,7 +162,7 @@ impl State {
     }
 
     fn text_input_enter(&mut self, surface: Option<WlSurface>) {
-        let Some(surface) = surface else { return };
+        let Some(surface) = surface.filter(Resource::is_alive) else { return };
         for instance in self.text_inputs.instances.iter().filter(|i| same_client(&i.object, &surface)) {
             instance.object.enter(&surface);
         }
