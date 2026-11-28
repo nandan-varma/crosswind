@@ -173,3 +173,29 @@ struct AppStreamParserTests {
         #expect(apps.first?.mediaTypes == ["image/png", "image/jpeg"])
     }
 }
+
+@Suite("Intel catalog")
+struct IntelCatalogTests {
+    @Test("apps without a native build are added and marked for Rosetta; known ones are not")
+    func onlyMissingAppsAreAdded() throws {
+        let sample = try CatalogFixtures.data("appstream-sample", "xml.gz")
+        let native = try AppStreamParser.parse(gzipped: sample)
+        #expect(!native.isEmpty)
+        // The same catalog as the Intel one: everything is known, so nothing is added.
+        let none = IntelCatalog.apps(sample, besides: native)
+        #expect(none.isEmpty)
+        // With one native app missing, exactly that one comes back, marked.
+        let missing = try #require(native.first)
+        let added = IntelCatalog.apps(sample, besides: Array(native.dropFirst()))
+        #expect(added.map(\.id) == [missing.id])
+        #expect(added.allSatisfy { $0.requiresRosetta })
+        #expect(native.allSatisfy { !$0.requiresRosetta })
+    }
+
+    @Test("a missing or broken Intel catalog adds nothing")
+    func brokenCatalogsAddNothing() {
+        #expect(IntelCatalog.apps(nil, besides: []).isEmpty)
+        #expect(IntelCatalog.apps(Data(), besides: []).isEmpty)
+        #expect(IntelCatalog.apps(Data("not gzip".utf8), besides: []).isEmpty)
+    }
+}
